@@ -11,11 +11,61 @@ import {
   Swords, 
   Trophy, 
   User as UserIcon,
-  X
+  X,
+  AlertTriangle,
+  Target,
+  TrendingDown,
+  ChevronRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
-import { mockNotifications, getDivisionColor } from '@/lib/mockData';
+import { getDivisionColor } from '@/lib/mockData';
+import { formatDistanceToNow } from 'date-fns';
+
+// Priority-based notification data for navbar dropdown
+const navbarNotifications = [
+  {
+    id: 'n-001',
+    priority: 'critical' as const,
+    title: 'RIVAL ALERT: You have been passed',
+    message: 'CodeNinja_X just overtook your rank.',
+    icon: Target,
+    iconColor: 'text-status-warning',
+    read: false,
+    createdAt: new Date(Date.now() - 15 * 60 * 1000),
+  },
+  {
+    id: 'n-002',
+    priority: 'critical' as const,
+    title: 'DEMOTION WARNING',
+    message: 'You are 3 positions from demotion zone.',
+    icon: TrendingDown,
+    iconColor: 'text-destructive',
+    read: false,
+    createdAt: new Date(Date.now() - 30 * 60 * 1000),
+  },
+  {
+    id: 'n-003',
+    priority: 'critical' as const,
+    title: 'STREAK EXPIRES IN 2 HOURS',
+    message: 'Complete a challenge or lose 12 days.',
+    icon: Flame,
+    iconColor: 'text-status-warning',
+    read: false,
+    createdAt: new Date(Date.now() - 45 * 60 * 1000),
+  },
+  {
+    id: 'n-004',
+    priority: 'important' as const,
+    title: 'SURVIVAL MATCH IN 1 HOUR',
+    message: 'Weekly Elimination #47 is mandatory.',
+    icon: Swords,
+    iconColor: 'text-primary',
+    read: false,
+    createdAt: new Date(Date.now() - 60 * 60 * 1000),
+  },
+];
 
 export function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -24,7 +74,8 @@ export function Navbar() {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
 
-  const unreadCount = mockNotifications.filter(n => !n.read).length;
+  const unreadCount = navbarNotifications.filter(n => !n.read).length;
+  const criticalCount = navbarNotifications.filter(n => n.priority === 'critical' && !n.read).length;
 
   const navLinks = isAuthenticated
     ? [
@@ -36,6 +87,12 @@ export function Navbar() {
     : [];
 
   const isActive = (path: string) => location.pathname === path;
+
+  const getPriorityStyle = (priority: 'critical' | 'important') => {
+    return priority === 'critical' 
+      ? 'bg-gradient-to-r from-destructive/15 to-transparent border-l-2 border-destructive'
+      : 'bg-gradient-to-r from-status-warning/10 to-transparent border-l-2 border-status-warning';
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border">
@@ -82,58 +139,113 @@ export function Navbar() {
                   </span>
                 </div>
 
-                {/* Notifications */}
+                {/* Notifications Bell - Enhanced */}
                 <div className="relative">
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => setNotificationsOpen(!notificationsOpen)}
-                    className="relative"
+                    className={`relative ${criticalCount > 0 ? 'text-destructive' : ''}`}
                   >
-                    <Bell className="h-5 w-5" />
+                    <Bell className={`h-5 w-5 ${criticalCount > 0 ? 'animate-pulse' : ''}`} />
                     {unreadCount > 0 && (
-                      <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-xs font-bold flex items-center justify-center animate-pulse">
+                      <span className={`absolute -top-1 -right-1 h-5 w-5 rounded-full text-xs font-bold flex items-center justify-center ${
+                        criticalCount > 0 
+                          ? 'bg-destructive text-destructive-foreground animate-pulse' 
+                          : 'bg-primary text-primary-foreground'
+                      }`}>
                         {unreadCount}
                       </span>
                     )}
+                    {/* Glow effect for critical alerts */}
+                    {criticalCount > 0 && (
+                      <div className="absolute inset-0 bg-destructive/20 blur-md rounded-full animate-pulse" />
+                    )}
                   </Button>
 
-                  {/* Notifications Dropdown */}
+                  {/* Notifications Dropdown - Enhanced */}
                   {notificationsOpen && (
-                    <div className="absolute right-0 top-full mt-2 w-80 bg-card border border-border rounded-lg shadow-arena overflow-hidden animate-scale-in">
+                    <div className="absolute right-0 top-full mt-2 w-96 bg-card border border-border rounded-lg shadow-arena overflow-hidden animate-scale-in">
+                      {/* Header with critical warning */}
                       <div className="p-4 border-b border-border">
-                        <div className="flex items-center justify-between">
-                          <h3 className="font-heading font-semibold">Notifications</h3>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-heading font-semibold">Command Center</h3>
+                            {criticalCount > 0 && (
+                              <Badge className="bg-destructive/20 text-destructive border-destructive/50 text-[10px]">
+                                {criticalCount} CRITICAL
+                              </Badge>
+                            )}
+                          </div>
                           <Link
                             to="/notifications"
-                            className="text-xs text-primary hover:underline"
+                            className="text-xs text-primary hover:underline font-semibold"
                             onClick={() => setNotificationsOpen(false)}
                           >
-                            View All
+                            View All →
                           </Link>
                         </div>
+                        {criticalCount > 0 && (
+                          <div className="flex items-center gap-2 text-xs text-destructive">
+                            <AlertTriangle className="h-3 w-3" />
+                            <span>Immediate action required</span>
+                          </div>
+                        )}
                       </div>
+
+                      {/* Notification Items */}
                       <div className="max-h-80 overflow-y-auto">
-                        {mockNotifications.slice(0, 4).map(notification => (
-                          <div
-                            key={notification.id}
-                            className={`p-4 border-b border-border hover:bg-secondary/50 transition-colors ${
-                              !notification.read ? 'bg-primary/5' : ''
-                            }`}
-                          >
-                            <div className="flex items-start gap-3">
-                              {!notification.read && (
-                                <div className="h-2 w-2 rounded-full bg-primary mt-2 flex-shrink-0" />
-                              )}
-                              <div className={!notification.read ? '' : 'ml-5'}>
-                                <p className="font-medium text-sm">{notification.title}</p>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  {notification.message}
-                                </p>
+                        {navbarNotifications.map(notification => {
+                          const IconComponent = notification.icon;
+                          return (
+                            <div
+                              key={notification.id}
+                              className={`p-4 border-b border-border hover:bg-secondary/50 transition-colors ${
+                                !notification.read ? getPriorityStyle(notification.priority) : ''
+                              }`}
+                            >
+                              <div className="flex items-start gap-3">
+                                <div className={`p-2 rounded-lg ${
+                                  notification.priority === 'critical' ? 'bg-destructive/20' : 'bg-status-warning/20'
+                                }`}>
+                                  <IconComponent className={`h-4 w-4 ${notification.iconColor} ${
+                                    notification.priority === 'critical' ? 'animate-pulse' : ''
+                                  }`} />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className={`font-medium text-sm ${
+                                    notification.priority === 'critical' ? 'text-destructive' : 'text-status-warning'
+                                  }`}>
+                                    {notification.title}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground mt-0.5">
+                                    {notification.message}
+                                  </p>
+                                  <p className="text-[10px] text-muted-foreground mt-1">
+                                    {formatDistanceToNow(notification.createdAt, { addSuffix: true })}
+                                  </p>
+                                </div>
+                                {!notification.read && (
+                                  <div className={`h-2 w-2 rounded-full flex-shrink-0 mt-2 ${
+                                    notification.priority === 'critical' ? 'bg-destructive animate-pulse' : 'bg-status-warning'
+                                  }`} />
+                                )}
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
+                      </div>
+
+                      {/* Footer CTA */}
+                      <div className="p-3 bg-muted/30 border-t border-border">
+                        <Link
+                          to="/notifications"
+                          onClick={() => setNotificationsOpen(false)}
+                          className="flex items-center justify-center gap-2 text-sm text-primary hover:text-primary/80 font-semibold"
+                        >
+                          View All Alerts
+                          <ChevronRight className="h-4 w-4" />
+                        </Link>
                       </div>
                     </div>
                   )}
