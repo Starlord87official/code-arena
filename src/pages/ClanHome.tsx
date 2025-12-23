@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams, Link, useSearchParams } from 'react-router-dom';
+import { useParams, Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { 
   Users, 
   Star, 
@@ -12,7 +12,10 @@ import {
   ChevronRight,
   AlertCircle,
   Swords,
-  Trophy
+  Trophy,
+  UserPlus,
+  CheckCircle,
+  Loader2
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -23,6 +26,9 @@ import { ClanMemberList } from '@/components/clan/ClanMemberList';
 import { ClassSessionCard } from '@/components/clan/ClassSessionCard';
 import { ClanLeagueBadge } from '@/components/clan/ClanLeagueBadge';
 import { BattleHistoryList } from '@/components/clan/BattleHistoryList';
+import { useAuth } from '@/contexts/AuthContext';
+import { useStudentClan, useJoinClan } from '@/hooks/useStudentClan';
+import { useUserClanRole } from '@/hooks/useClanRoles';
 import { 
   getClanById, 
   getMentorById, 
@@ -37,8 +43,14 @@ import { format } from 'date-fns';
 export default function ClanHome() {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const initialTab = searchParams.get('tab') || 'overview';
   const [activeTab, setActiveTab] = useState(initialTab);
+  
+  const { user, profile, isAuthenticated } = useAuth();
+  const { data: membership, isLoading: membershipLoading } = useStudentClan(user?.id);
+  const { data: userRole } = useUserClanRole(user?.id, id || 'global');
+  const joinClan = useJoinClan();
   
   const clan = getClanById(id || '');
   const mentor = clan ? getMentorById(clan.mentorId) : undefined;
@@ -52,6 +64,32 @@ export default function ClanHome() {
   // Check if this clan is in a live battle
   const isInBattle = clan && (mockBattle.clanA.id === clan.id || mockBattle.clanB.id === clan.id);
   const isBattleLive = mockBattle.status === 'live';
+  
+  // Check membership status
+  const isMember = membership?.clan_id === id;
+  const isMentor = userRole?.role === 'mentor';
+  const canJoin = clan && clan.isOpen && clan.memberCount < clan.maxMembers && !isMember && !isMentor;
+  
+  const handleJoinClan = async () => {
+    if (!isAuthenticated) {
+      sessionStorage.setItem('pending_clan_join', id || '');
+      navigate('/auth');
+      return;
+    }
+    
+    if (!user || !id || !profile?.username) return;
+    
+    try {
+      await joinClan.mutateAsync({
+        userId: user.id,
+        clanId: id,
+        username: profile.username,
+      });
+      navigate('/student/dashboard');
+    } catch (error) {
+      // Error handled by mutation
+    }
+  };
 
   if (!clan || !mentor) {
     return (
@@ -149,6 +187,52 @@ export default function ClanHome() {
                       Since {format(clan.createdAt, 'MMM yyyy')}
                     </span>
                   </div>
+                </div>
+                
+                {/* Join / Member Status */}
+                <div className="mt-6">
+                  {isMember ? (
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-status-success/20 text-status-success border-status-success/50">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Member
+                      </Badge>
+                      <Link to="/student/dashboard">
+                        <Button variant="outline" size="sm">
+                          Go to Dashboard
+                        </Button>
+                      </Link>
+                    </div>
+                  ) : isMentor ? (
+                    <Link to="/mentor-dashboard">
+                      <Button>
+                        <Crown className="h-4 w-4 mr-2" />
+                        Mentor Dashboard
+                      </Button>
+                    </Link>
+                  ) : canJoin ? (
+                    <Button onClick={handleJoinClan} disabled={joinClan.isPending}>
+                      {joinClan.isPending ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Joining...
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus className="h-4 w-4 mr-2" />
+                          Join Clan
+                        </>
+                      )}
+                    </Button>
+                  ) : !clan.isOpen ? (
+                    <Badge variant="outline" className="text-muted-foreground">
+                      Invite Only
+                    </Badge>
+                  ) : clan.memberCount >= clan.maxMembers ? (
+                    <Badge variant="outline" className="text-muted-foreground">
+                      Clan Full
+                    </Badge>
+                  ) : null}
                 </div>
               </div>
 

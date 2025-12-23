@@ -23,6 +23,8 @@ import Mentors from "./pages/Mentors";
 import MentorProfile from "./pages/MentorProfile";
 import ClanHome from "./pages/ClanHome";
 import MentorDashboard from "./pages/MentorDashboard";
+import StudentDashboard from "./pages/StudentDashboard";
+import JoinClan from "./pages/JoinClan";
 import ClanVsClanBattle from "./pages/ClanVsClanBattle";
 import BattleHistory from "./pages/BattleHistory";
 import AcceptMentorInvite from "./pages/AcceptMentorInvite";
@@ -57,6 +59,8 @@ const App = () => (
               <Route path="/mentor/:id" element={<MentorProfile />} />
               <Route path="/clan/:id" element={<ClanHome />} />
               <Route path="/mentor-dashboard" element={<MentorDashboard />} />
+              <Route path="/student/dashboard" element={<StudentDashboard />} />
+              <Route path="/join-clan" element={<JoinClan />} />
               <Route path="/battle/clan-vs-clan" element={<ClanVsClanBattle />} />
               <Route path="/battles" element={<BattleHistory />} />
               <Route path="/invite/mentor" element={<AcceptMentorInvite />} />

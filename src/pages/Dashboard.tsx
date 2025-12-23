@@ -9,7 +9,7 @@ import { LiveActivityFeed } from '@/components/dashboard/LiveActivityFeed';
 import { DivisionProgress } from '@/components/dashboard/DivisionProgress';
 import { mockChallenges, mockContests, mockLeaderboard, getXpProgress, User as MockUser } from '@/lib/mockData';
 import { mockBattle } from '@/lib/battleData';
-import { ChevronRight, Flame, Target, Trophy, Zap, Clock, AlertTriangle, TrendingUp, Swords, Loader2 } from 'lucide-react';
+import { ChevronRight, Flame, Target, Trophy, Zap, Clock, AlertTriangle, TrendingUp, Swords, Loader2, BookOpen, GraduationCap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
@@ -260,6 +260,18 @@ export default function Dashboard() {
                 <Button variant="arena" className="w-full h-12">
                   <Zap className="h-5 w-5" />
                   ENTER BATTLE MODE
+                </Button>
+              </Link>
+              <Link to="/student/dashboard">
+                <Button variant="outline" className="w-full">
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  Student Dashboard
+                </Button>
+              </Link>
+              <Link to="/mentor-dashboard">
+                <Button variant="outline" className="w-full">
+                  <GraduationCap className="h-4 w-4 mr-2" />
+                  Mentor Dashboard
                 </Button>
               </Link>
               <Link to="/challenges">
