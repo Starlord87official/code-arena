@@ -149,6 +149,45 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          division: string | null
+          email: string | null
+          id: string
+          streak: number | null
+          updated_at: string
+          username: string | null
+          xp: number | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          division?: string | null
+          email?: string | null
+          id: string
+          streak?: number | null
+          updated_at?: string
+          username?: string | null
+          xp?: number | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          division?: string | null
+          email?: string | null
+          id?: string
+          streak?: number | null
+          updated_at?: string
+          username?: string | null
+          xp?: number | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           clan_id: string
@@ -171,7 +210,15 @@ export type Database = {
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_user_roles_profile"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
