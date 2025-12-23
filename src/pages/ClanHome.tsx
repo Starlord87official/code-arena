@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { 
   Users, 
   Star, 
@@ -11,7 +11,8 @@ import {
   Crown,
   ChevronRight,
   AlertCircle,
-  Swords
+  Swords,
+  Trophy
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -20,6 +21,8 @@ import { Separator } from '@/components/ui/separator';
 import { ClanChat } from '@/components/clan/ClanChat';
 import { ClanMemberList } from '@/components/clan/ClanMemberList';
 import { ClassSessionCard } from '@/components/clan/ClassSessionCard';
+import { ClanLeagueBadge } from '@/components/clan/ClanLeagueBadge';
+import { BattleHistoryList } from '@/components/clan/BattleHistoryList';
 import { 
   getClanById, 
   getMentorById, 
@@ -28,16 +31,20 @@ import {
   getMentorRoleLabel
 } from '@/lib/mentorData';
 import { mockBattle } from '@/lib/battleData';
+import { getBattleHistory } from '@/lib/clanLeagueData';
 import { format } from 'date-fns';
 
 export default function ClanHome() {
   const { id } = useParams<{ id: string }>();
-  const [activeTab, setActiveTab] = useState('overview');
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') || 'overview';
+  const [activeTab, setActiveTab] = useState(initialTab);
   
   const clan = getClanById(id || '');
   const mentor = clan ? getMentorById(clan.mentorId) : undefined;
   const sessions = clan ? getClanSessions(clan.id) : [];
   const announcements = clan ? getClanAnnouncements(clan.id) : [];
+  const battleHistory = clan ? getBattleHistory(clan.id) : [];
   
   const upcomingSessions = sessions.filter(s => s.status === 'upcoming' || s.status === 'live');
   const liveSessions = sessions.filter(s => s.status === 'live');
@@ -112,10 +119,13 @@ export default function ClanHome() {
             {/* Clan Header */}
             <div className="flex flex-col md:flex-row gap-8 items-start">
               <div className="flex-1">
-                <Badge variant="outline" className="mb-3 border-primary/50 text-primary">
-                  <Users className="h-3 w-3 mr-1" />
-                  CLAN
-                </Badge>
+                <div className="flex items-center gap-3 mb-3">
+                  <Badge variant="outline" className="border-primary/50 text-primary">
+                    <Users className="h-3 w-3 mr-1" />
+                    CLAN
+                  </Badge>
+                  <ClanLeagueBadge totalXP={clan.totalXP} size="sm" />
+                </div>
                 <h1 className="font-display text-4xl font-bold mb-3">{clan.name}</h1>
                 <p className="text-lg text-muted-foreground mb-6">{clan.description}</p>
 
@@ -214,6 +224,10 @@ export default function ClanHome() {
                   <Users className="h-4 w-4" />
                   Members
                 </TabsTrigger>
+                <TabsTrigger value="battles" className="gap-2">
+                  <Trophy className="h-4 w-4" />
+                  Battles
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview">
@@ -294,6 +308,10 @@ export default function ClanHome() {
 
               <TabsContent value="members">
                 <ClanMemberList clanId={clan.id} maxHeight="600px" />
+              </TabsContent>
+
+              <TabsContent value="battles">
+                <BattleHistoryList clanId={clan.id} battles={battleHistory} />
               </TabsContent>
             </Tabs>
           </div>

@@ -8,7 +8,8 @@ import {
   Plus,
   Send,
   Clock,
-  Eye
+  Eye,
+  Swords
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -19,6 +20,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { ClassSessionCard } from '@/components/clan/ClassSessionCard';
 import { ClanMemberList } from '@/components/clan/ClanMemberList';
+import { ClanLeagueBadge } from '@/components/clan/ClanLeagueBadge';
+import { MentorBattleControls } from '@/components/mentor/MentorBattleControls';
 import { 
   mockMentors, 
   getClanByMentorId, 
@@ -165,6 +168,10 @@ export default function MentorDashboard() {
                 <TabsTrigger value="attendance" className="gap-2">
                   <Calendar className="h-4 w-4" />
                   Attendance
+                </TabsTrigger>
+                <TabsTrigger value="battles" className="gap-2">
+                  <Swords className="h-4 w-4" />
+                  Battles
                 </TabsTrigger>
               </TabsList>
 
