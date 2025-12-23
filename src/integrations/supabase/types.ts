@@ -14,7 +14,72 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      battle_history: {
+        Row: {
+          battle_id: string
+          clan_a_id: string
+          clan_a_name: string
+          clan_a_score: number
+          clan_b_id: string
+          clan_b_name: string
+          clan_b_score: number
+          created_at: string
+          elo_change: number
+          ended_at: string
+          id: string
+          mvp_username: string | null
+          mvp_xp: number | null
+          problems_solved_a: number
+          problems_solved_b: number
+          started_at: string
+          total_problems: number
+          winner: string | null
+          xp_change: number
+        }
+        Insert: {
+          battle_id: string
+          clan_a_id: string
+          clan_a_name: string
+          clan_a_score?: number
+          clan_b_id: string
+          clan_b_name: string
+          clan_b_score?: number
+          created_at?: string
+          elo_change?: number
+          ended_at?: string
+          id?: string
+          mvp_username?: string | null
+          mvp_xp?: number | null
+          problems_solved_a?: number
+          problems_solved_b?: number
+          started_at?: string
+          total_problems?: number
+          winner?: string | null
+          xp_change?: number
+        }
+        Update: {
+          battle_id?: string
+          clan_a_id?: string
+          clan_a_name?: string
+          clan_a_score?: number
+          clan_b_id?: string
+          clan_b_name?: string
+          clan_b_score?: number
+          created_at?: string
+          elo_change?: number
+          ended_at?: string
+          id?: string
+          mvp_username?: string | null
+          mvp_xp?: number | null
+          problems_solved_a?: number
+          problems_solved_b?: number
+          started_at?: string
+          total_problems?: number
+          winner?: string | null
+          xp_change?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

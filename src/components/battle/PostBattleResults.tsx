@@ -14,12 +14,16 @@ import {
   Shield,
   Activity,
   Percent,
-  Sparkles
+  Sparkles,
+  Share2
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { ClanBattle, BattleContributor } from '@/lib/battleData';
+import { useBattleSounds } from '@/hooks/useBattleSounds';
+import { BattleShareDialog } from './BattleShareDialog';
+import { PostBattleCTAs } from './PostBattleCTAs';
 
 interface PostBattleResultsProps {
   battle: ClanBattle;
@@ -91,9 +95,23 @@ export function PostBattleResults({
     navigate(`/clan/${userClanId}`);
   };
 
-  // Animation sequence
+  // Sound effects
+  const { playVictory, playDefeat, playReveal } = useBattleSounds(battle.id);
+
+  // Animation sequence with sounds
   useEffect(() => {
-    const timer1 = setTimeout(() => setShowContent(true), 300);
+    // Play reveal sound immediately
+    playReveal();
+    
+    const timer1 = setTimeout(() => {
+      setShowContent(true);
+      // Play victory/defeat sound when content shows
+      if (isWinner) {
+        playVictory();
+      } else if (!isDraw) {
+        playDefeat();
+      }
+    }, 300);
     const timer2 = setTimeout(() => setShowMVP(true), 1200);
     const timer3 = setTimeout(() => setShowStats(true), 2000);
     const timer4 = setTimeout(() => setShowSummary(true), 2800);
@@ -103,7 +121,7 @@ export function PostBattleResults({
       clearTimeout(timer3);
       clearTimeout(timer4);
     };
-  }, []);
+  }, [isWinner, isDraw, playVictory, playDefeat, playReveal]);
 
   const problemsSolvedA = battle.problems.filter(p => 
     p.status === 'solved-a' || p.status === 'solved-both'
@@ -489,23 +507,29 @@ export function PostBattleResults({
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className={`flex flex-col sm:flex-row gap-4 justify-center transition-all duration-700 delay-500 ${showSummary ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-          <Button 
-            variant="arena" 
-            size="lg" 
-            className="w-full sm:w-auto"
-            onClick={handleClose}
-          >
-            <Users className="h-5 w-5 mr-2" />
-            Return to Clan
-          </Button>
-          <Link to={`/clan/${userClanId}?tab=battles`}>
-            <Button variant="arenaOutline" size="lg" className="w-full sm:w-auto">
-              View Battle Details
-              <ChevronRight className="h-5 w-5 ml-2" />
-            </Button>
-          </Link>
+        {/* Share Button */}
+        <div className={`flex justify-center mb-6 transition-all duration-700 delay-300 ${showSummary ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+          <BattleShareDialog
+            battle={battle}
+            contributorsA={contributorsA}
+            contributorsB={contributorsB}
+            userClanId={userClanId}
+            trigger={
+              <Button variant="arenaOutline" size="lg" className="gap-2">
+                <Share2 className="w-5 h-5" />
+                Share Result
+              </Button>
+            }
+          />
+        </div>
+
+        {/* Dynamic CTAs based on win/loss */}
+        <div className={`max-w-md mx-auto transition-all duration-700 delay-500 ${showSummary ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+          <PostBattleCTAs
+            isWinner={isWinner}
+            isDraw={isDraw}
+            clanId={userClanId}
+          />
         </div>
       </div>
     </div>
