@@ -149,6 +149,48 @@ export type Database = {
         }
         Relationships: []
       }
+      mentor_invites: {
+        Row: {
+          accepted_at: string | null
+          accepted_by: string | null
+          clan_id: string | null
+          created_at: string
+          email: string
+          expertise: Database["public"]["Enums"]["mentor_expertise"] | null
+          id: string
+          invited_by: string
+          name: string | null
+          status: Database["public"]["Enums"]["invite_status"]
+          token: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          clan_id?: string | null
+          created_at?: string
+          email: string
+          expertise?: Database["public"]["Enums"]["mentor_expertise"] | null
+          id?: string
+          invited_by: string
+          name?: string | null
+          status?: Database["public"]["Enums"]["invite_status"]
+          token: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          clan_id?: string | null
+          created_at?: string
+          email?: string
+          expertise?: Database["public"]["Enums"]["mentor_expertise"] | null
+          id?: string
+          invited_by?: string
+          name?: string | null
+          status?: Database["public"]["Enums"]["invite_status"]
+          token?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -225,6 +267,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_mentor_invite: { Args: { invite_token: string }; Returns: Json }
       has_clan_role: {
         Args: {
           _clan_id: string
@@ -236,6 +279,8 @@ export type Database = {
     }
     Enums: {
       app_role: "mentor" | "student"
+      invite_status: "pending" | "accepted" | "expired"
+      mentor_expertise: "dsa" | "cp" | "web" | "system_design"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -364,6 +409,8 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["mentor", "student"],
+      invite_status: ["pending", "accepted", "expired"],
+      mentor_expertise: ["dsa", "cp", "web", "system_design"],
     },
   },
 } as const

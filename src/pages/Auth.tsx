@@ -10,9 +10,7 @@ import {
   EyeOff,
   Loader2,
   ArrowRight,
-  Swords,
-  Shield,
-  GraduationCap
+  Swords
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,8 +18,6 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSupabaseAuth } from '@/hooks/useAuth';
-import { useAuth } from '@/contexts/AuthContext';
-import { useAssignRole, useUserClanRole } from '@/hooks/useClanRoles';
 import { toast } from 'sonner';
 
 // Validation schemas
@@ -29,15 +25,9 @@ const emailSchema = z.string().email('Please enter a valid email address');
 const passwordSchema = z.string().min(6, 'Password must be at least 6 characters');
 const usernameSchema = z.string().min(3, 'Username must be at least 3 characters').max(20, 'Username must be less than 20 characters');
 
-// Test clan ID for role assignment
-const TEST_CLAN_ID = 'test-clan-1';
-
 export default function Auth() {
   const navigate = useNavigate();
-  const { isAuthenticated, isLoading: authLoading, signIn, signUp, user } = useSupabaseAuth();
-  const { user: authUser } = useAuth();
-  const assignRole = useAssignRole();
-  const { data: currentRole, isLoading: roleLoading } = useUserClanRole(user?.id, TEST_CLAN_ID);
+  const { isAuthenticated, isLoading: authLoading, signIn, signUp } = useSupabaseAuth();
   
   const [tab, setTab] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
@@ -47,18 +37,17 @@ export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const handleAssignRole = async (role: 'mentor' | 'student') => {
-    if (!user?.id) {
-      toast.error('You must be logged in to assign a role');
-      return;
+  // Check for pending mentor invite after auth
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      const pendingInvite = sessionStorage.getItem('pending_mentor_invite');
+      if (pendingInvite) {
+        navigate(`/invite/mentor?token=${pendingInvite}`);
+      } else {
+        navigate('/dashboard');
+      }
     }
-    
-    await assignRole.mutateAsync({
-      userId: user.id,
-      clanId: TEST_CLAN_ID,
-      role,
-    });
-  };
+  }, [isAuthenticated, authLoading, navigate]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -104,7 +93,6 @@ export default function Auth() {
     }
 
     toast.success('Welcome back!');
-    navigate('/dashboard');
   };
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -125,7 +113,6 @@ export default function Auth() {
     }
 
     toast.success('Account created! Welcome to CodeLock!');
-    navigate('/dashboard');
   };
 
   if (authLoading) {
@@ -304,61 +291,6 @@ export default function Auth() {
             </Tabs>
           </CardContent>
         </Card>
-
-        {/* Role Assignment for Testing (only shown when logged in) */}
-        {isAuthenticated && user && (
-          <Card className="mt-4 border-dashed border-yellow-500/50 bg-yellow-500/5">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Shield className="h-4 w-4 text-yellow-500" />
-                Developer Testing
-              </CardTitle>
-              <CardDescription className="text-xs">
-                Assign yourself a role for testing mentor features
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Current role:</span>
-                <span className="font-medium capitalize">
-                  {roleLoading ? 'Loading...' : currentRole?.role || 'None'}
-                </span>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant={currentRole?.role === 'mentor' ? 'default' : 'outline'}
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => handleAssignRole('mentor')}
-                  disabled={assignRole.isPending}
-                >
-                  <Shield className="h-3 w-3 mr-1" />
-                  Mentor
-                </Button>
-                <Button
-                  variant={currentRole?.role === 'student' ? 'default' : 'outline'}
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => handleAssignRole('student')}
-                  disabled={assignRole.isPending}
-                >
-                  <GraduationCap className="h-3 w-3 mr-1" />
-                  Student
-                </Button>
-              </div>
-              {currentRole?.role === 'mentor' && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full text-xs"
-                  onClick={() => navigate('/mentor-dashboard')}
-                >
-                  Go to Mentor Dashboard →
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        )}
 
         {/* Footer */}
         <p className="text-center text-sm text-muted-foreground mt-6">
