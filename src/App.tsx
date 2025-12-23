@@ -18,6 +18,10 @@ import Settings from "./pages/Settings";
 import Contests from "./pages/Contests";
 import ContestLive from "./pages/ContestLive";
 import Battle from "./pages/Battle";
+import Mentors from "./pages/Mentors";
+import MentorProfile from "./pages/MentorProfile";
+import ClanHome from "./pages/ClanHome";
+import MentorDashboard from "./pages/MentorDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,6 +48,10 @@ const App = () => (
               <Route path="/contests" element={<Contests />} />
               <Route path="/contest/:id/live" element={<ContestLive />} />
               <Route path="/battle" element={<Battle />} />
+              <Route path="/mentors" element={<Mentors />} />
+              <Route path="/mentor/:id" element={<MentorProfile />} />
+              <Route path="/clan/:id" element={<ClanHome />} />
+              <Route path="/mentor/dashboard" element={<MentorDashboard />} />
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>

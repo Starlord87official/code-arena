@@ -15,7 +15,8 @@ import {
   AlertTriangle,
   Target,
   TrendingDown,
-  ChevronRight
+  ChevronRight,
+  GraduationCap
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -82,6 +83,7 @@ export function Navbar() {
         { path: '/dashboard', label: 'Dashboard', icon: Code2 },
         { path: '/challenges', label: 'Challenges', icon: Swords },
         { path: '/contests', label: 'Contests', icon: Trophy },
+        { path: '/mentors', label: 'Mentors', icon: GraduationCap },
         { path: '/leaderboard', label: 'Leaderboard', icon: Trophy },
       ]
     : [];
