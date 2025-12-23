@@ -82,6 +82,7 @@ export function Navbar() {
     ? [
         { path: '/dashboard', label: 'Dashboard', icon: Code2 },
         { path: '/challenges', label: 'Challenges', icon: Swords },
+        { path: '/battles', label: 'Battles', icon: Trophy },
         { path: '/contests', label: 'Contests', icon: Trophy },
         { path: '/mentors', label: 'Mentors', icon: GraduationCap },
         { path: '/leaderboard', label: 'Leaderboard', icon: Trophy },
