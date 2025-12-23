@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { Search, Filter, Users, Star, GraduationCap } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Search, Filter, Users, Star, GraduationCap, LayoutDashboard } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MentorCard } from '@/components/mentor/MentorCard';
 import { mockMentors, TeachingFocus, getFocusColor } from '@/lib/mentorData';
+import { useAuth } from '@/contexts/AuthContext';
 
 const focusOptions: TeachingFocus[] = [
   'DSA',
@@ -15,6 +17,7 @@ const focusOptions: TeachingFocus[] = [
 ];
 
 export default function Mentors() {
+  const { isAuthenticated } = useAuth();
   const [search, setSearch] = useState('');
   const [selectedFocus, setSelectedFocus] = useState<TeachingFocus | 'all'>('all');
 
@@ -74,6 +77,17 @@ export default function Mentors() {
                 </div>
                 <p className="text-sm text-muted-foreground">Students Taught</p>
               </div>
+              {isAuthenticated && (
+                <>
+                  <div className="h-8 w-px bg-border" />
+                  <Link to="/mentor/dashboard">
+                    <Button variant="outline" className="gap-2">
+                      <LayoutDashboard className="h-4 w-4" />
+                      My Dashboard
+                    </Button>
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
