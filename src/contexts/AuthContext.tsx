@@ -1,60 +1,37 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
-import { User, mockUser } from '@/lib/mockData';
+import { createContext, useContext, ReactNode } from 'react';
+import { useSupabaseAuth, Profile } from '@/hooks/useAuth';
+import { User, Session } from '@supabase/supabase-js';
 
 interface AuthContextType {
   user: User | null;
+  session: Session | null;
+  profile: Profile | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  loginWithGoogle: () => Promise<void>;
-  register: (email: string, password: string, username: string) => Promise<void>;
-  logout: () => void;
+  signIn: (email: string, password: string) => Promise<{ data: any; error: any }>;
+  signUp: (email: string, password: string, username: string) => Promise<{ data: any; error: any }>;
+  signOut: () => Promise<{ error: any }>;
+  updateProfile: (updates: Partial<Profile>) => Promise<{ data?: any; error: any }>;
+  refreshProfile: () => void;
+  // Legacy aliases for compatibility
+  login: (email: string, password: string) => Promise<{ data: any; error: any }>;
+  logout: () => Promise<{ error: any }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const auth = useSupabaseAuth();
 
-  const login = async (email: string, password: string) => {
-    setIsLoading(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setUser(mockUser);
-    setIsLoading(false);
-  };
-
-  const loginWithGoogle = async () => {
-    setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setUser(mockUser);
-    setIsLoading(false);
-  };
-
-  const register = async (email: string, password: string, username: string) => {
-    setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setUser({ ...mockUser, email, username });
-    setIsLoading(false);
-  };
-
-  const logout = () => {
-    setUser(null);
+  // Create legacy aliases
+  const contextValue: AuthContextType = {
+    ...auth,
+    login: auth.signIn,
+    logout: auth.signOut,
   };
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isAuthenticated: !!user,
-        isLoading,
-        login,
-        loginWithGoogle,
-        register,
-        logout,
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

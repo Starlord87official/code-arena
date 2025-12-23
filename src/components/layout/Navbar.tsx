@@ -69,7 +69,7 @@ const navbarNotifications = [
 ];
 
 export function Navbar() {
-  const { user, isAuthenticated, logout } = useAuth();
+  const { profile, isAuthenticated, logout } = useAuth();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -138,7 +138,7 @@ export function Navbar() {
                 <div className="hidden sm:flex items-center gap-1 px-3 py-1.5 rounded-full bg-secondary border border-border">
                   <Flame className="h-4 w-4 text-status-warning streak-flame" />
                   <span className="font-display text-sm font-semibold text-status-warning">
-                    {user?.streak}
+                    {profile?.streak || 0}
                   </span>
                 </div>
 
@@ -261,12 +261,12 @@ export function Navbar() {
                     className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors"
                   >
                     <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center font-display font-bold text-primary-foreground">
-                      {user?.username[0]}
+                      {profile?.username?.[0] || '?'}
                     </div>
                     <div className="hidden sm:block text-left">
-                      <p className="font-heading font-semibold text-sm">{user?.username}</p>
-                      <p className={`text-xs uppercase ${getDivisionColor(user?.division || 'bronze')}`}>
-                        {user?.division}
+                      <p className="font-heading font-semibold text-sm">{profile?.username || 'User'}</p>
+                      <p className={`text-xs uppercase ${getDivisionColor((profile?.division || 'bronze') as any)}`}>
+                        {profile?.division || 'bronze'}
                       </p>
                     </div>
                     <ChevronDown className="h-4 w-4 text-muted-foreground" />

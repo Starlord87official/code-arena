@@ -8,6 +8,7 @@ import { Layout } from "@/components/layout/Layout";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Challenges from "./pages/Challenges";
 import Solve from "./pages/Solve";
@@ -38,6 +39,7 @@ const App = () => (
           <Routes>
             <Route element={<Layout />}>
               <Route path="/" element={<Landing />} />
+              <Route path="/auth" element={<Auth />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/dashboard" element={<Dashboard />} />
