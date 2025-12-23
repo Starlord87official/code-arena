@@ -7,6 +7,7 @@ import { ClanBattlePanel } from '@/components/battle/ClanBattlePanel';
 import { BattleArena } from '@/components/battle/BattleArena';
 import { BattleChatPanel } from '@/components/battle/BattleChatPanel';
 import { BattleResultBanner } from '@/components/battle/BattleResultBanner';
+import { PostBattleResults } from '@/components/battle/PostBattleResults';
 import { 
   mockBattle, 
   mockContributorsA, 
@@ -18,11 +19,18 @@ import {
 export default function ClanVsClanBattle() {
   const navigate = useNavigate();
   const [showResult, setShowResult] = useState(false);
+  const [showPostBattle, setShowPostBattle] = useState(false);
   
   // For demo: Toggle between live and ended state
   const battle = showResult 
     ? { ...mockBattle, status: 'ended' as const, winner: 'A' as const }
     : mockBattle;
+
+  // Show post-battle screen when battle ends
+  const handleShowResult = () => {
+    setShowResult(true);
+    setShowPostBattle(true);
+  };
 
   return (
     <>
@@ -56,10 +64,17 @@ export default function ClanVsClanBattle() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setShowResult(!showResult)}
+                  onClick={() => {
+                    if (showResult) {
+                      setShowResult(false);
+                      setShowPostBattle(false);
+                    } else {
+                      handleShowResult();
+                    }
+                  }}
                   className="text-xs"
                 >
-                  {showResult ? 'Show Live' : 'Show Result'}
+                  {showResult ? 'Show Live' : 'End Battle'}
                 </Button>
               </div>
             </div>
@@ -122,6 +137,17 @@ export default function ClanVsClanBattle() {
           </div>
         </div>
       </div>
+
+      {/* Post-Battle Results Overlay */}
+      {showPostBattle && battle.status === 'ended' && (
+        <PostBattleResults
+          battle={battle}
+          contributorsA={mockContributorsA}
+          contributorsB={mockContributorsB}
+          userClanId={battle.clanA.id}
+          onClose={() => setShowPostBattle(false)}
+        />
+      )}
     </>
   );
 }
