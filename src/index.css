@@ -141,35 +141,112 @@
     transform: translateY(-2px);
   }
 
-  /* Rank Badge Auras */
+  /* Rank Badge Auras - Enhanced with animations */
   .rank-aura-bronze {
     box-shadow: 0 0 20px hsla(30, 70%, 45%, 0.4);
+    animation: bronzePulse 3s ease-in-out infinite;
   }
   .rank-aura-silver {
     box-shadow: 0 0 20px hsla(210, 10%, 60%, 0.4);
+    animation: silverPulse 3s ease-in-out infinite;
   }
   .rank-aura-gold {
     box-shadow: 0 0 25px hsla(45, 90%, 55%, 0.5);
+    animation: goldPulse 2.5s ease-in-out infinite;
   }
   .rank-aura-platinum {
     box-shadow: 0 0 25px hsla(185, 50%, 65%, 0.5);
+    animation: platinumPulse 2.5s ease-in-out infinite;
   }
   .rank-aura-diamond {
     box-shadow: 0 0 30px hsla(199, 100%, 60%, 0.6);
+    animation: diamondPulse 2s ease-in-out infinite;
   }
   .rank-aura-master {
     box-shadow: 0 0 35px hsla(265, 100%, 60%, 0.6);
+    animation: masterPulse 1.8s ease-in-out infinite;
   }
   .rank-aura-legend {
     box-shadow: 
       0 0 40px hsla(340, 100%, 60%, 0.5),
-      0 0 60px hsla(265, 100%, 60%, 0.3);
-    animation: legendPulse 2s ease-in-out infinite;
+      0 0 60px hsla(265, 100%, 60%, 0.3),
+      0 0 80px hsla(199, 100%, 50%, 0.2);
+    animation: legendPulse 1.5s ease-in-out infinite;
   }
 
+  @keyframes bronzePulse {
+    0%, 100% { box-shadow: 0 0 15px hsla(30, 70%, 45%, 0.3); }
+    50% { box-shadow: 0 0 25px hsla(30, 70%, 45%, 0.5); }
+  }
+  @keyframes silverPulse {
+    0%, 100% { box-shadow: 0 0 15px hsla(210, 10%, 60%, 0.3); }
+    50% { box-shadow: 0 0 25px hsla(210, 10%, 60%, 0.5); }
+  }
+  @keyframes goldPulse {
+    0%, 100% { box-shadow: 0 0 20px hsla(45, 90%, 55%, 0.4); }
+    50% { box-shadow: 0 0 35px hsla(45, 90%, 55%, 0.7); }
+  }
+  @keyframes platinumPulse {
+    0%, 100% { box-shadow: 0 0 20px hsla(185, 50%, 65%, 0.4); }
+    50% { box-shadow: 0 0 35px hsla(185, 50%, 65%, 0.7); }
+  }
+  @keyframes diamondPulse {
+    0%, 100% { box-shadow: 0 0 25px hsla(199, 100%, 60%, 0.5); }
+    50% { box-shadow: 0 0 45px hsla(199, 100%, 60%, 0.8); }
+  }
+  @keyframes masterPulse {
+    0%, 100% { box-shadow: 0 0 30px hsla(265, 100%, 60%, 0.5); }
+    50% { box-shadow: 0 0 50px hsla(265, 100%, 60%, 0.8); }
+  }
   @keyframes legendPulse {
     0%, 100% { box-shadow: 0 0 40px hsla(340, 100%, 60%, 0.5), 0 0 60px hsla(265, 100%, 60%, 0.3); }
-    50% { box-shadow: 0 0 50px hsla(340, 100%, 60%, 0.7), 0 0 80px hsla(265, 100%, 60%, 0.5); }
+    50% { box-shadow: 0 0 60px hsla(340, 100%, 60%, 0.8), 0 0 90px hsla(265, 100%, 60%, 0.6), 0 0 120px hsla(199, 100%, 50%, 0.3); }
+  }
+
+  /* At Risk Indicator */
+  .at-risk {
+    position: relative;
+  }
+  .at-risk::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border: 2px solid hsl(var(--destructive));
+    border-radius: inherit;
+    animation: riskPulse 1s ease-in-out infinite;
+  }
+  @keyframes riskPulse {
+    0%, 100% { opacity: 0.5; box-shadow: 0 0 10px hsla(0, 72%, 51%, 0.3); }
+    50% { opacity: 1; box-shadow: 0 0 20px hsla(0, 72%, 51%, 0.6); }
+  }
+
+  /* Rival Highlight */
+  .rival-card {
+    position: relative;
+    border: 1px solid hsla(45, 90%, 55%, 0.5);
+    background: linear-gradient(135deg, hsla(45, 90%, 55%, 0.05) 0%, transparent 50%);
+  }
+  .rival-card::after {
+    content: 'RIVAL';
+    position: absolute;
+    top: -10px;
+    right: 10px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 2px 8px;
+    background: linear-gradient(135deg, hsl(45 90% 55%), hsl(30 70% 45%));
+    color: hsl(222 47% 6%);
+    border-radius: 4px;
+    font-family: 'Orbitron', sans-serif;
+  }
+
+  /* Ahead indicator */
+  .player-ahead {
+    border-left: 3px solid hsl(var(--destructive));
+  }
+  .player-behind {
+    border-left: 3px solid hsl(var(--success));
   }
 
   /* Progress Bar Animations */
@@ -194,7 +271,7 @@
     100% { left: 100%; }
   }
 
-  /* XP Bar */
+  /* XP Bar - Enhanced with energy pulse */
   .xp-bar {
     @apply relative h-2 rounded-full overflow-hidden;
     background: hsl(var(--secondary));
@@ -202,8 +279,73 @@
 
   .xp-bar-fill {
     @apply h-full rounded-full transition-all duration-500;
-    background: linear-gradient(90deg, hsl(var(--neon-blue)), hsl(var(--neon-cyan)));
-    box-shadow: 0 0 10px hsl(var(--neon-blue));
+    background: linear-gradient(90deg, hsl(var(--neon-blue)), hsl(var(--neon-cyan)), hsl(var(--neon-blue)));
+    background-size: 200% 100%;
+    box-shadow: 0 0 10px hsl(var(--neon-blue)), 0 0 20px hsla(var(--neon-cyan), 0.3);
+    animation: xpFlow 2s linear infinite;
+  }
+
+  @keyframes xpFlow {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+  }
+
+  .xp-bar-intense {
+    @apply relative h-3 rounded-full overflow-hidden;
+    background: hsl(var(--secondary));
+    box-shadow: inset 0 2px 4px hsla(0, 0%, 0%, 0.3);
+  }
+
+  .xp-bar-intense .xp-bar-fill {
+    background: linear-gradient(90deg, 
+      hsl(var(--neon-blue)), 
+      hsl(var(--neon-cyan)), 
+      hsl(var(--neon-purple)),
+      hsl(var(--neon-cyan)),
+      hsl(var(--neon-blue))
+    );
+    background-size: 300% 100%;
+    box-shadow: 
+      0 0 15px hsl(var(--neon-blue)), 
+      0 0 30px hsla(var(--neon-cyan), 0.5),
+      inset 0 1px 0 hsla(255, 255%, 255%, 0.2);
+    animation: xpFlowIntense 3s linear infinite;
+  }
+
+  @keyframes xpFlowIntense {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 300% 50%; }
+  }
+
+  /* Live indicator */
+  .live-pulse {
+    @apply relative;
+  }
+  .live-pulse::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: currentColor;
+    animation: livePing 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+  @keyframes livePing {
+    0% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+    100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; }
+  }
+
+  /* Pressure indicator */
+  .pressure-high {
+    animation: pressureShake 0.5s ease-in-out infinite;
+  }
+  @keyframes pressureShake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-1px); }
+    75% { transform: translateX(1px); }
   }
 
   /* Streak Flame Effect */
