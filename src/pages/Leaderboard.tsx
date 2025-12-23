@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Trophy, Crown, Medal, TrendingUp, TrendingDown, Zap, Flame, ChevronUp, ChevronDown, AlertTriangle, Target, Skull, Swords, ShieldAlert } from 'lucide-react';
+import { Trophy, Crown, Medal, TrendingUp, TrendingDown, Zap, Flame, ChevronUp, ChevronDown, AlertTriangle, Target, Swords, ShieldAlert, ChevronsUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -98,17 +98,25 @@ export default function Leaderboard() {
   return (
     <div className="min-h-screen bg-background py-8 px-4">
       <div className="max-w-6xl mx-auto">
-        {/* Threatening Header */}
+        {/* Elite Arena Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-3 mb-4">
-            <Skull className="h-8 w-8 text-destructive" />
+          <div className="inline-flex items-center gap-4 mb-4">
+            <div className="flex items-center gap-1">
+              <ChevronsUp className="h-6 w-6 text-primary animate-pulse" />
+              <div className="w-12 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent"></div>
+            </div>
+            <Crown className="h-10 w-10 text-rank-gold drop-shadow-[0_0_10px_hsl(var(--rank-gold))]" />
             <h1 className="font-display text-4xl font-bold text-foreground">
               THE <span className="text-primary neon-text">ARENA</span>
             </h1>
-            <Skull className="h-8 w-8 text-destructive" />
+            <Crown className="h-10 w-10 text-rank-gold drop-shadow-[0_0_10px_hsl(var(--rank-gold))]" />
+            <div className="flex items-center gap-1">
+              <div className="w-12 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent"></div>
+              <ChevronsUp className="h-6 w-6 text-primary animate-pulse" />
+            </div>
           </div>
           <p className="text-muted-foreground text-lg">
-            Prove your worth or be <span className="text-destructive font-bold">eliminated</span>.
+            Only the <span className="text-primary font-bold">elite</span> rise. Prove your dominance.
           </p>
         </div>
 
