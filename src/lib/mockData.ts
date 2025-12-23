@@ -23,6 +23,15 @@ export interface Challenge {
   description: string;
   solvedBy: number;
   successRate: number;
+  // Enhanced problem details
+  problemStatement: string;
+  examples: { input: string; output: string; explanation?: string }[];
+  constraints: string[];
+  hints?: string[];
+  rankImpact: { win: number; loss: number };
+  timeLimit: number; // in minutes
+  isDaily?: boolean;
+  expiresIn?: number; // hours until daily expires
 }
 
 export interface Submission {
@@ -82,7 +91,7 @@ export const mockUser: User = {
   rank: 156,
 };
 
-// Mock challenges
+// Mock challenges with enhanced data
 export const mockChallenges: Challenge[] = [
   {
     id: 'ch-001',
@@ -93,6 +102,29 @@ export const mockChallenges: Challenge[] = [
     description: 'Find two numbers that sum to a target. Destroy inefficiency.',
     solvedBy: 15420,
     successRate: 78,
+    problemStatement: `Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.
+
+You may assume that each input would have exactly one solution, and you may not use the same element twice.
+
+You can return the answer in any order.
+
+**Your mission:** Prove you can handle the basics. This is where champions begin.`,
+    examples: [
+      { input: 'nums = [2,7,11,15], target = 9', output: '[0,1]', explanation: 'Because nums[0] + nums[1] == 9, we return [0, 1].' },
+      { input: 'nums = [3,2,4], target = 6', output: '[1,2]' },
+      { input: 'nums = [3,3], target = 6', output: '[0,1]' },
+    ],
+    constraints: [
+      '2 <= nums.length <= 10^4',
+      '-10^9 <= nums[i] <= 10^9',
+      '-10^9 <= target <= 10^9',
+      'Only one valid answer exists.',
+    ],
+    hints: ['A brute force approach has O(n²) complexity. Can you do better?', 'Consider using a hash map to store visited values.'],
+    rankImpact: { win: 1, loss: 0 },
+    timeLimit: 30,
+    isDaily: true,
+    expiresIn: 4,
   },
   {
     id: 'ch-002',
@@ -103,6 +135,22 @@ export const mockChallenges: Challenge[] = [
     description: 'Assert dominance over binary tree traversal. No weak solutions.',
     solvedBy: 8930,
     successRate: 54,
+    problemStatement: `Given the root of a binary tree, return its maximum depth.
+
+A binary tree's maximum depth is the number of nodes along the longest path from the root node down to the farthest leaf node.
+
+**Your mission:** Navigate the tree with precision. Weak recursion will be exposed.`,
+    examples: [
+      { input: 'root = [3,9,20,null,null,15,7]', output: '3', explanation: 'The tree has a maximum depth of 3.' },
+      { input: 'root = [1,null,2]', output: '2' },
+    ],
+    constraints: [
+      'The number of nodes in the tree is in the range [0, 10^4].',
+      '-100 <= Node.val <= 100',
+    ],
+    hints: ['Think recursively: the depth of a tree is 1 + max(depth of left, depth of right).'],
+    rankImpact: { win: 2, loss: 1 },
+    timeLimit: 45,
   },
   {
     id: 'ch-003',
@@ -113,6 +161,26 @@ export const mockChallenges: Challenge[] = [
     description: 'Only those with true ego can solve this DP problem optimally.',
     solvedBy: 2340,
     successRate: 28,
+    problemStatement: `You are climbing a staircase. It takes n steps to reach the top.
+
+Each time you can either climb 1 or 2 steps. In how many distinct ways can you climb to the top?
+
+But here is the twist: you must also track the maximum steps taken in a single move across all paths.
+
+**Your mission:** This separates the elite from the average. Brute force will fail. Only optimal DP solutions survive.`,
+    examples: [
+      { input: 'n = 2', output: '2', explanation: '1. 1 step + 1 step\n2. 2 steps' },
+      { input: 'n = 3', output: '3', explanation: '1. 1+1+1\n2. 1+2\n3. 2+1' },
+      { input: 'n = 45', output: '1836311903' },
+    ],
+    constraints: [
+      '1 <= n <= 45',
+      'Your solution must run in O(n) time.',
+      'Memory usage will be monitored.',
+    ],
+    hints: ['This is a classic Fibonacci sequence problem.', 'Can you optimize space to O(1)?'],
+    rankImpact: { win: 5, loss: 2 },
+    timeLimit: 60,
   },
   {
     id: 'ch-004',
@@ -123,6 +191,25 @@ export const mockChallenges: Challenge[] = [
     description: 'Conquer the graph. Find the shortest path to victory.',
     solvedBy: 1890,
     successRate: 32,
+    problemStatement: `You are given a network of n nodes, labeled from 1 to n. You are also given times, a list of travel times as directed edges times[i] = (ui, vi, wi).
+
+Find the minimum time it takes for all nodes to receive a signal sent from a starting node k. If it is impossible for all nodes to receive the signal, return -1.
+
+**Your mission:** Master Dijkstra's algorithm. The weak fall here.`,
+    examples: [
+      { input: 'times = [[2,1,1],[2,3,1],[3,4,1]], n = 4, k = 2', output: '2' },
+      { input: 'times = [[1,2,1]], n = 2, k = 1', output: '1' },
+      { input: 'times = [[1,2,1]], n = 2, k = 2', output: '-1' },
+    ],
+    constraints: [
+      '1 <= k <= n <= 100',
+      '1 <= times.length <= 6000',
+      '1 <= ui, vi <= n',
+      'ui != vi',
+      '0 <= wi <= 100',
+    ],
+    rankImpact: { win: 6, loss: 3 },
+    timeLimit: 75,
   },
   {
     id: 'ch-005',
@@ -133,6 +220,26 @@ export const mockChallenges: Challenge[] = [
     description: 'Only legends complete this. There is only one #1.',
     solvedBy: 234,
     successRate: 8,
+    problemStatement: `Given a string s and a dictionary of strings wordDict, return true if s can be segmented into a space-separated sequence of one or more dictionary words.
+
+Note that the same word in the dictionary may be reused multiple times in the segmentation.
+
+**Your mission:** This is the ultimate test. 92% fail. The elite 8% prove their worth here. There are no second chances.`,
+    examples: [
+      { input: 's = "leetcode", wordDict = ["leet","code"]', output: 'true', explanation: 'Return true because "leetcode" can be segmented as "leet code".' },
+      { input: 's = "applepenapple", wordDict = ["apple","pen"]', output: 'true', explanation: 'Return true because "applepenapple" can be segmented as "apple pen apple".' },
+      { input: 's = "catsandog", wordDict = ["cats","dog","sand","and","cat"]', output: 'false' },
+    ],
+    constraints: [
+      '1 <= s.length <= 300',
+      '1 <= wordDict.length <= 1000',
+      '1 <= wordDict[i].length <= 20',
+      's and wordDict[i] consist of only lowercase English letters.',
+      'All strings in wordDict are unique.',
+    ],
+    hints: ['Consider using dynamic programming with memoization.', 'Think about what subproblems you need to solve.'],
+    rankImpact: { win: 15, loss: 5 },
+    timeLimit: 90,
   },
   {
     id: 'ch-006',
@@ -143,6 +250,21 @@ export const mockChallenges: Challenge[] = [
     description: 'Master the basics of string manipulation.',
     solvedBy: 18920,
     successRate: 85,
+    problemStatement: `Write a function that reverses a string. The input string is given as an array of characters s.
+
+You must do this by modifying the input array in-place with O(1) extra memory.
+
+**Your mission:** Simple, but precision matters. Show you can execute the fundamentals flawlessly.`,
+    examples: [
+      { input: 's = ["h","e","l","l","o"]', output: '["o","l","l","e","h"]' },
+      { input: 's = ["H","a","n","n","a","h"]', output: '["h","a","n","n","a","H"]' },
+    ],
+    constraints: [
+      '1 <= s.length <= 10^5',
+      's[i] is a printable ascii character.',
+    ],
+    rankImpact: { win: 1, loss: 0 },
+    timeLimit: 20,
   },
   {
     id: 'ch-007',
@@ -153,6 +275,21 @@ export const mockChallenges: Challenge[] = [
     description: 'Navigate the battlefield of pointers and nodes.',
     solvedBy: 7650,
     successRate: 48,
+    problemStatement: `Given the head of a singly linked list, reverse the list, and return the reversed list.
+
+**Your mission:** Pointer manipulation separates junior devs from senior engineers. Which are you?`,
+    examples: [
+      { input: 'head = [1,2,3,4,5]', output: '[5,4,3,2,1]' },
+      { input: 'head = [1,2]', output: '[2,1]' },
+      { input: 'head = []', output: '[]' },
+    ],
+    constraints: [
+      'The number of nodes in the list is in the range [0, 5000].',
+      '-5000 <= Node.val <= 5000',
+    ],
+    hints: ['You can solve this iteratively or recursively.', 'Track three pointers: prev, current, and next.'],
+    rankImpact: { win: 3, loss: 1 },
+    timeLimit: 40,
   },
   {
     id: 'ch-008',
@@ -163,6 +300,25 @@ export const mockChallenges: Challenge[] = [
     description: 'Build and manipulate heaps like a champion.',
     solvedBy: 3120,
     successRate: 35,
+    problemStatement: `Design a class to find the kth largest element in a stream. Note that it is the kth largest element in the sorted order, not the kth distinct element.
+
+Implement KthLargest class:
+- KthLargest(int k, int[] nums) Initializes the object with the integer k and the stream of integers nums.
+- int add(int val) Appends the integer val to the stream and returns the element representing the kth largest element in the stream.
+
+**Your mission:** Heap mastery is required. Inefficient solutions will time out. Only optimal approaches survive.`,
+    examples: [
+      { input: '["KthLargest", "add", "add", "add", "add", "add"]\n[[3, [4, 5, 8, 2]], [3], [5], [10], [9], [4]]', output: '[null, 4, 5, 5, 8, 8]', explanation: 'Maintaining top k elements efficiently.' },
+    ],
+    constraints: [
+      '1 <= k <= 10^4',
+      '0 <= nums.length <= 10^4',
+      '-10^4 <= nums[i] <= 10^4',
+      '-10^4 <= val <= 10^4',
+      'At most 10^4 calls will be made to add.',
+    ],
+    rankImpact: { win: 5, loss: 2 },
+    timeLimit: 60,
   },
 ];
 
