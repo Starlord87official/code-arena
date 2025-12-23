@@ -14,7 +14,8 @@ import {
   Shield,
   Crown,
   Mail,
-  UserPlus
+  UserPlus,
+  Send
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -29,9 +30,9 @@ import { MentorBattleControls } from '@/components/mentor/MentorBattleControls';
 import { ClanPerformanceStats } from '@/components/mentor/ClanPerformanceStats';
 import { AnnouncementManager } from '@/components/mentor/AnnouncementManager';
 import { InviteMentorModal } from '@/components/mentor/InviteMentorModal';
+import { MentorInvitesList } from '@/components/mentor/MentorInvitesList';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserClanRole } from '@/hooks/useClanRoles';
-import { useMentorInvites } from '@/hooks/useMentorInvites';
 import { 
   mockMentors, 
   getClanByMentorId, 
@@ -52,7 +53,6 @@ export default function MentorDashboard() {
   
   // Check if user is a mentor (check for any mentor role)
   const { data: userRole, isLoading: roleLoading } = useUserClanRole(user?.id, currentClan?.id || 'global');
-  const { data: invites } = useMentorInvites();
   
   const isMentor = userRole?.role === 'mentor';
   const isLoading = authLoading || roleLoading;
@@ -221,6 +221,10 @@ export default function MentorDashboard() {
                 <TabsTrigger value="battles" className="gap-2">
                   <Swords className="h-4 w-4" />
                   Battles
+                </TabsTrigger>
+                <TabsTrigger value="invites" className="gap-2">
+                  <Send className="h-4 w-4" />
+                  Invites
                 </TabsTrigger>
               </TabsList>
 
@@ -504,6 +508,23 @@ export default function MentorDashboard() {
                     <h3 className="font-heading font-bold text-lg mb-4">Battle Performance</h3>
                     <ClanPerformanceStats clanId={currentClan.id} />
                   </div>
+                </div>
+              </TabsContent>
+
+              {/* Invites Tab */}
+              <TabsContent value="invites">
+                <div className="max-w-2xl">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-heading font-bold text-lg flex items-center gap-2">
+                      <Send className="h-5 w-5 text-primary" />
+                      Mentor Invites
+                    </h3>
+                    <InviteMentorModal 
+                      clanId={currentClan.id} 
+                      clanName={currentClan.name}
+                    />
+                  </div>
+                  <MentorInvitesList />
                 </div>
               </TabsContent>
             </Tabs>
