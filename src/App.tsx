@@ -23,6 +23,7 @@ import MentorProfile from "./pages/MentorProfile";
 import ClanHome from "./pages/ClanHome";
 import MentorDashboard from "./pages/MentorDashboard";
 import ClanVsClanBattle from "./pages/ClanVsClanBattle";
+import BattleHistory from "./pages/BattleHistory";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -54,6 +55,7 @@ const App = () => (
               <Route path="/clan/:id" element={<ClanHome />} />
               <Route path="/mentor/dashboard" element={<MentorDashboard />} />
               <Route path="/battle/clan-vs-clan" element={<ClanVsClanBattle />} />
+              <Route path="/battles" element={<BattleHistory />} />
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>
