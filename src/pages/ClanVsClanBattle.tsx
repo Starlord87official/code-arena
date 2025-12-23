@@ -8,6 +8,8 @@ import { BattleArena } from '@/components/battle/BattleArena';
 import { BattleChatPanel } from '@/components/battle/BattleChatPanel';
 import { BattleResultBanner } from '@/components/battle/BattleResultBanner';
 import { PostBattleResults } from '@/components/battle/PostBattleResults';
+import { useSaveBattle } from '@/hooks/useBattleHistory';
+import { useBattleSounds } from '@/hooks/useBattleSounds';
 import { 
   mockBattle, 
   mockContributorsA, 
@@ -50,6 +52,13 @@ function persistState(state: PersistedBattleState) {
 export default function ClanVsClanBattle() {
   const navigate = useNavigate();
   const hasInitialized = useRef(false);
+  const hasSavedBattle = useRef(false);
+  
+  // Mutation to save battle to history
+  const saveBattle = useSaveBattle();
+  
+  // Sound effects for reset
+  const { resetSounds } = useBattleSounds(mockBattle.id);
   
   // Check for persisted state on mount
   const initialState = (): { status: BattleStatus; showOverlay: boolean } => {
@@ -88,6 +97,11 @@ export default function ClanVsClanBattle() {
     ? { ...demoBattle, status: 'ended' as const, winner: 'A' as const }
     : demoBattle;
 
+  // Mock ELO/XP changes
+  const isWinner = battle.winner === 'A';
+  const eloChange = isWinner ? 25 : -15;
+  const xpChange = isWinner ? 450 : 50;
+
   // Handle timer reaching zero
   const handleTimerEnd = useCallback(() => {
     if (battleStatus !== 'live') return;
@@ -111,13 +125,37 @@ export default function ClanVsClanBattle() {
     }, 2000);
   }, [battleStatus]);
 
+  // Save battle to database when it ends (only once)
+  useEffect(() => {
+    if (battleStatus === 'ended' && !hasSavedBattle.current) {
+      hasSavedBattle.current = true;
+      
+      // Create the ended battle object
+      const endedBattle: ClanBattle = {
+        ...demoBattle,
+        status: 'ended',
+        winner: 'A',
+      };
+      
+      saveBattle.mutate({
+        battle: endedBattle,
+        contributorsA: mockContributorsA,
+        contributorsB: mockContributorsB,
+        xpChange,
+        eloChange,
+      });
+    }
+  }, [battleStatus, demoBattle, saveBattle, xpChange, eloChange]);
+
   // Manual trigger for testing
   const handleManualEndBattle = () => {
     if (battleStatus === 'live') {
       handleTimerEnd();
     } else {
-      // Reset to live state for testing - clear persisted state
+      // Reset to live state for testing - clear persisted state and sounds
       sessionStorage.removeItem(BATTLE_STATE_KEY);
+      hasSavedBattle.current = false;
+      resetSounds();
       setBattleStatus('live');
       setShowPostBattle(false);
       setDemoBattle({
