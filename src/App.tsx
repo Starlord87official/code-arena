@@ -9,6 +9,15 @@ import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
+import Challenges from "./pages/Challenges";
+import Solve from "./pages/Solve";
+import Leaderboard from "./pages/Leaderboard";
+import Notifications from "./pages/Notifications";
+import Profile from "./pages/Profile";
+import Settings from "./pages/Settings";
+import Contests from "./pages/Contests";
+import ContestLive from "./pages/ContestLive";
+import Battle from "./pages/Battle";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +35,15 @@ const App = () => (
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/challenges" element={<Challenges />} />
+              <Route path="/solve/:id" element={<Solve />} />
+              <Route path="/leaderboard" element={<Leaderboard />} />
+              <Route path="/notifications" element={<Notifications />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/contests" element={<Contests />} />
+              <Route path="/contest/:id/live" element={<ContestLive />} />
+              <Route path="/battle" element={<Battle />} />
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>
