@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Shield, Zap, Clock, Flame } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -6,24 +6,37 @@ import { ClanBattle, getTimeRemaining, getBattleMomentum } from '@/lib/battleDat
 
 interface BattleHeaderProps {
   battle: ClanBattle;
+  onTimerEnd?: () => void;
+  isEnded?: boolean;
 }
 
-export function BattleHeader({ battle }: BattleHeaderProps) {
+export function BattleHeader({ battle, onTimerEnd, isEnded }: BattleHeaderProps) {
   const [timeRemaining, setTimeRemaining] = useState(getTimeRemaining(battle.endTime));
   const [momentum, setMomentum] = useState(getBattleMomentum(battle));
+  const hasTriggeredEnd = useRef(false);
 
   useEffect(() => {
+    if (isEnded) return; // Stop timer if battle ended
+    
     const interval = setInterval(() => {
-      setTimeRemaining(getTimeRemaining(battle.endTime));
+      const remaining = getTimeRemaining(battle.endTime);
+      setTimeRemaining(remaining);
+      
+      // Trigger end callback when timer reaches zero
+      if (remaining.minutes === 0 && remaining.seconds === 0 && !hasTriggeredEnd.current) {
+        hasTriggeredEnd.current = true;
+        onTimerEnd?.();
+      }
     }, 1000);
     return () => clearInterval(interval);
-  }, [battle.endTime]);
+  }, [battle.endTime, onTimerEnd, isEnded]);
 
   useEffect(() => {
     setMomentum(getBattleMomentum(battle));
   }, [battle]);
 
   const isUrgent = timeRemaining.minutes < 10;
+  const isEnding = timeRemaining.minutes === 0 && timeRemaining.seconds <= 10;
 
   return (
     <div className="relative overflow-hidden">
@@ -41,23 +54,31 @@ export function BattleHeader({ battle }: BattleHeaderProps) {
         {/* Live Badge & Timer Row */}
         <div className="flex items-center justify-center gap-4 mb-6">
           <Badge 
-            variant="destructive" 
-            className="px-4 py-1.5 text-sm font-display uppercase tracking-widest animate-pulse"
+            variant={isEnded ? "secondary" : "destructive"}
+            className={`px-4 py-1.5 text-sm font-display uppercase tracking-widest ${!isEnded ? 'animate-pulse' : ''}`}
           >
-            <span className="relative flex h-2 w-2 mr-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive-foreground opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-destructive-foreground"></span>
-            </span>
-            LIVE BATTLE
+            {!isEnded && (
+              <span className="relative flex h-2 w-2 mr-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive-foreground opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-destructive-foreground"></span>
+              </span>
+            )}
+            {isEnded ? 'BATTLE ENDED' : 'LIVE BATTLE'}
           </Badge>
           
-          <div className={`flex items-center gap-2 px-4 py-2 rounded-lg border ${
-            isUrgent 
-              ? 'border-destructive/50 bg-destructive/10 text-destructive' 
-              : 'border-border bg-card/50 text-foreground'
+          <div className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all duration-300 ${
+            isEnded
+              ? 'border-muted bg-muted/30 text-muted-foreground'
+              : isEnding
+                ? 'border-destructive bg-destructive/20 text-destructive animate-pulse scale-110'
+                : isUrgent 
+                  ? 'border-destructive/50 bg-destructive/10 text-destructive' 
+                  : 'border-border bg-card/50 text-foreground'
           }`}>
-            <Clock className={`w-5 h-5 ${isUrgent ? 'animate-pulse' : ''}`} />
-            <span className={`font-display text-2xl font-bold tracking-wider ${isUrgent ? 'text-destructive' : 'neon-text'}`}>
+            <Clock className={`w-5 h-5 ${isEnding ? 'animate-bounce' : isUrgent ? 'animate-pulse' : ''}`} />
+            <span className={`font-display text-2xl font-bold tracking-wider ${
+              isEnded ? 'text-muted-foreground' : isEnding ? 'text-destructive' : isUrgent ? 'text-destructive' : 'neon-text'
+            }`}>
               {String(timeRemaining.minutes).padStart(2, '0')}:{String(timeRemaining.seconds).padStart(2, '0')}
             </span>
           </div>
