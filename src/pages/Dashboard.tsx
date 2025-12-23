@@ -8,8 +8,10 @@ import { RivalsSection } from '@/components/dashboard/RivalsSection';
 import { LiveActivityFeed } from '@/components/dashboard/LiveActivityFeed';
 import { DivisionProgress } from '@/components/dashboard/DivisionProgress';
 import { mockChallenges, mockContests, mockLeaderboard, getXpProgress } from '@/lib/mockData';
-import { ChevronRight, Flame, Target, Trophy, Zap, Clock, AlertTriangle, TrendingUp } from 'lucide-react';
+import { mockBattle } from '@/lib/battleData';
+import { ChevronRight, Flame, Target, Trophy, Zap, Clock, AlertTriangle, TrendingUp, Swords } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -19,6 +21,11 @@ export default function Dashboard() {
   const xpProgress = getXpProgress(user.xp, user.level);
   const xpToNextLevel = (user.level * 500) - user.xp;
   const streakAtRisk = new Date().getHours() >= 20; // After 8 PM
+  
+  // Check if user's clan is in battle (mock: assume user is in clan "Algorithm Elite")
+  const userClanId = 'clan-001'; // Mock user's clan
+  const isUserClanInBattle = mockBattle.clanA.id === userClanId || mockBattle.clanB.id === userClanId;
+  const isClanBattleLive = mockBattle.status === 'live';
 
   return (
     <div className="min-h-screen py-8">
@@ -60,6 +67,44 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+
+        {/* Clan Battle Banner */}
+        {isUserClanInBattle && isClanBattleLive && (
+          <Link to="/battle/clan-vs-clan">
+            <div className="mb-8 p-5 rounded-xl bg-gradient-to-r from-destructive/20 via-neon-purple/10 to-primary/20 border border-neon-purple/50 hover:border-neon-purple transition-all group relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-neon-purple/5 via-transparent to-neon-purple/5 animate-pulse"></div>
+              
+              <div className="relative flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-neon-purple/20 rounded-lg relative">
+                    <Swords className="h-8 w-8 text-neon-purple animate-pulse" />
+                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-destructive rounded-full animate-ping"></div>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-3 mb-1">
+                      <Badge className="bg-destructive text-destructive-foreground border-0 font-bold animate-pulse">
+                        ⚔️ YOUR CLAN IS IN BATTLE
+                      </Badge>
+                    </div>
+                    <h2 className="font-display text-xl font-bold text-foreground group-hover:text-neon-purple transition-colors">
+                      {mockBattle.clanA.name} vs {mockBattle.clanB.name}
+                    </h2>
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <span>Your clan needs you in the arena!</span>
+                      <span className="font-bold text-primary">{mockBattle.clanA.battleScore}</span>
+                      <span>-</span>
+                      <span className="font-bold text-accent">{mockBattle.clanB.battleScore}</span>
+                    </div>
+                  </div>
+                </div>
+                <Button variant="arena" className="bg-neon-purple hover:bg-neon-purple/80 font-bold group-hover:scale-105 transition-transform">
+                  <Swords className="h-4 w-4 mr-2" />
+                  JOIN BATTLE
+                </Button>
+              </div>
+            </div>
+          </Link>
+        )}
 
         {/* Pressure Stats Bar */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
