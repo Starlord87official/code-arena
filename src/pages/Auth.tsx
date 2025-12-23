@@ -37,12 +37,16 @@ export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Check for pending mentor invite after auth
+  // Check for pending invites/joins after auth
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
-      const pendingInvite = sessionStorage.getItem('pending_mentor_invite');
-      if (pendingInvite) {
-        navigate(`/invite/mentor?token=${pendingInvite}`);
+      const pendingMentorInvite = sessionStorage.getItem('pending_mentor_invite');
+      const pendingClanJoin = sessionStorage.getItem('pending_clan_join');
+      
+      if (pendingMentorInvite) {
+        navigate(`/invite/mentor?token=${pendingMentorInvite}`);
+      } else if (pendingClanJoin) {
+        navigate(`/join-clan?clan=${pendingClanJoin}`);
       } else {
         navigate('/dashboard');
       }
