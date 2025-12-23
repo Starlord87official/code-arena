@@ -10,7 +10,8 @@ import {
   Video,
   Crown,
   ChevronRight,
-  AlertCircle
+  AlertCircle,
+  Swords
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -26,6 +27,7 @@ import {
   getClanAnnouncements,
   getMentorRoleLabel
 } from '@/lib/mentorData';
+import { mockBattle } from '@/lib/battleData';
 import { format } from 'date-fns';
 
 export default function ClanHome() {
@@ -39,6 +41,10 @@ export default function ClanHome() {
   
   const upcomingSessions = sessions.filter(s => s.status === 'upcoming' || s.status === 'live');
   const liveSessions = sessions.filter(s => s.status === 'live');
+  
+  // Check if this clan is in a live battle
+  const isInBattle = clan && (mockBattle.clanA.id === clan.id || mockBattle.clanB.id === clan.id);
+  const isBattleLive = mockBattle.status === 'live';
 
   if (!clan || !mentor) {
     return (
@@ -63,6 +69,32 @@ export default function ClanHome() {
         
         <div className="container mx-auto px-4 relative">
           <div className="max-w-5xl mx-auto">
+            {/* Live Battle Alert */}
+            {isInBattle && isBattleLive && (
+              <Link to="/battle/clan-vs-clan">
+                <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-destructive/20 via-primary/10 to-destructive/20 border border-destructive/50 flex items-center gap-4 hover:border-primary transition-colors group cursor-pointer">
+                  <div className="p-2 rounded-lg bg-destructive/20">
+                    <Swords className="h-6 w-6 text-destructive animate-pulse" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Badge className="bg-destructive text-destructive-foreground border-0 text-xs animate-pulse">
+                        ⚔️ LIVE BATTLE
+                      </Badge>
+                    </div>
+                    <p className="font-heading font-semibold text-foreground">
+                      {mockBattle.clanA.name} vs {mockBattle.clanB.name}
+                    </p>
+                    <p className="text-sm text-muted-foreground">Your clan is fighting! Join the battle now.</p>
+                  </div>
+                  <Button variant="arena" className="bg-destructive hover:bg-destructive/90 group-hover:scale-105 transition-transform">
+                    <Swords className="h-4 w-4 mr-2" />
+                    ENTER BATTLE
+                  </Button>
+                </div>
+              </Link>
+            )}
+
             {/* Live Session Alert */}
             {liveSessions.length > 0 && (
               <div className="mb-6 p-4 rounded-xl bg-success/10 border border-success/30 flex items-center gap-4">

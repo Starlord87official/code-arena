@@ -8,6 +8,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { mockContests, Contest } from '@/lib/mockData';
+import { mockBattle } from '@/lib/battleData';
 import { format, formatDistanceToNow, differenceInHours, differenceInMinutes, differenceInSeconds } from 'date-fns';
 
 const statusFilters = ['all', 'upcoming', 'live', 'ended'] as const;
@@ -123,6 +124,7 @@ export default function Contests() {
 
   const liveContest = contestsWithStatus.find(c => c.status === 'live');
   const upcomingUrgent = contestsWithStatus.filter(c => c.status === 'upcoming' && differenceInHours(c.startTime, new Date()) < 24);
+  const isClanBattleLive = mockBattle.status === 'live';
 
   return (
     <div className="min-h-screen bg-background py-8 px-4">
@@ -160,6 +162,50 @@ export default function Contests() {
               <span className="text-muted-foreground text-sm">— Missing these will cost you ranks</span>
             </div>
           </div>
+        )}
+
+        {/* Clan vs Clan Battle Card */}
+        {isClanBattleLive && (
+          <Link to="/battle/clan-vs-clan">
+            <div className="arena-card p-6 mb-8 border-neon-purple/50 bg-gradient-to-r from-neon-purple/15 via-primary/5 to-neon-purple/15 hover:border-neon-purple transition-all group relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-neon-purple/5 via-transparent to-neon-purple/5 animate-pulse"></div>
+              
+              <div className="relative flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-neon-purple/20 rounded-lg relative">
+                    <Swords className="h-8 w-8 text-neon-purple" />
+                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-neon-purple rounded-full animate-ping"></div>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-3 mb-2">
+                      <Badge className="bg-neon-purple text-background border-0 font-bold">
+                        ⚔️ CLAN BATTLE LIVE
+                      </Badge>
+                    </div>
+                    <h2 className="font-display text-2xl font-bold text-foreground group-hover:text-neon-purple transition-colors mb-2">
+                      {mockBattle.clanA.name} vs {mockBattle.clanB.name}
+                    </h2>
+                    <div className="flex items-center gap-4 text-sm">
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground">Score:</span>
+                        <span className="font-bold text-primary">{mockBattle.clanA.battleScore}</span>
+                        <span className="text-muted-foreground">-</span>
+                        <span className="font-bold text-accent">{mockBattle.clanB.battleScore}</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-muted-foreground">
+                        <Users className="h-4 w-4" />
+                        <span>{mockBattle.clanA.memberCount + mockBattle.clanB.memberCount} warriors</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <Button variant="arena" className="bg-neon-purple hover:bg-neon-purple/80 font-bold">
+                  SPECTATE BATTLE
+                  <ChevronRight className="h-4 w-4 ml-2" />
+                </Button>
+              </div>
+            </div>
+          </Link>
         )}
 
         {/* Live Contest Banner - High Intensity */}
