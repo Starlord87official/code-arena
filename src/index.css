@@ -1,96 +1,87 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
-
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* CodeLock Dark Theme - Electric Blue Competition */
+    --background: 222 47% 6%;
+    --foreground: 210 40% 98%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 222 47% 8%;
+    --card-foreground: 210 40% 98%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 222 47% 7%;
+    --popover-foreground: 210 40% 98%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Electric Blue Primary */
+    --primary: 199 100% 50%;
+    --primary-foreground: 222 47% 6%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Deep Blue Secondary */
+    --secondary: 222 47% 12%;
+    --secondary-foreground: 210 40% 98%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 222 30% 15%;
+    --muted-foreground: 215 20% 55%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Cyan Accent */
+    --accent: 185 100% 50%;
+    --accent-foreground: 222 47% 6%;
 
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 222 30% 18%;
+    --input: 222 30% 15%;
+    --ring: 199 100% 50%;
 
     --radius: 0.5rem;
 
-    --sidebar-background: 0 0% 98%;
+    /* Custom CodeLock Colors */
+    --neon-blue: 199 100% 50%;
+    --neon-cyan: 185 100% 50%;
+    --neon-purple: 265 100% 60%;
+    --electric-glow: 199 100% 60%;
+    --arena-dark: 222 47% 4%;
+    --arena-surface: 222 47% 8%;
+    --arena-border: 222 30% 20%;
+    
+    /* Rank Colors */
+    --rank-bronze: 30 70% 45%;
+    --rank-silver: 210 10% 60%;
+    --rank-gold: 45 90% 55%;
+    --rank-platinum: 185 50% 65%;
+    --rank-diamond: 199 100% 60%;
+    --rank-master: 265 100% 60%;
+    --rank-legend: 340 100% 60%;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
+    /* Status Colors */
+    --success: 142 76% 45%;
+    --warning: 45 93% 47%;
+    --info: 199 100% 50%;
 
-    --sidebar-primary: 240 5.9% 10%;
+    /* Gradients as color stops */
+    --gradient-arena: linear-gradient(135deg, hsl(222 47% 6%) 0%, hsl(222 47% 10%) 50%, hsl(222 47% 6%) 100%);
+    --gradient-electric: linear-gradient(135deg, hsl(199 100% 50%) 0%, hsl(185 100% 50%) 100%);
+    --gradient-legendary: linear-gradient(135deg, hsl(265 100% 60%) 0%, hsl(340 100% 60%) 50%, hsl(199 100% 50%) 100%);
+    --gradient-card-glow: linear-gradient(180deg, hsla(199, 100%, 50%, 0.1) 0%, transparent 100%);
 
-    --sidebar-primary-foreground: 0 0% 98%;
+    /* Shadows */
+    --shadow-neon: 0 0 20px hsla(199, 100%, 50%, 0.3);
+    --shadow-neon-strong: 0 0 40px hsla(199, 100%, 50%, 0.5);
+    --shadow-card: 0 4px 20px hsla(0, 0%, 0%, 0.3);
 
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 222 47% 6%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 199 100% 50%;
+    --sidebar-primary-foreground: 222 47% 6%;
+    --sidebar-accent: 222 47% 12%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 222 30% 18%;
+    --sidebar-ring: 199 100% 50%;
   }
 }
 
@@ -100,6 +91,269 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
+    background: linear-gradient(135deg, hsl(222 47% 4%) 0%, hsl(222 47% 8%) 50%, hsl(222 47% 4%) 100%);
+    background-attachment: fixed;
   }
+}
+
+@layer components {
+  /* Neon Glow Effects */
+  .neon-text {
+    text-shadow: 
+      0 0 5px hsl(var(--neon-blue)),
+      0 0 10px hsl(var(--neon-blue)),
+      0 0 20px hsl(var(--neon-blue));
+  }
+
+  .neon-text-cyan {
+    text-shadow: 
+      0 0 5px hsl(var(--neon-cyan)),
+      0 0 10px hsl(var(--neon-cyan)),
+      0 0 20px hsl(var(--neon-cyan));
+  }
+
+  .neon-box {
+    box-shadow: 
+      0 0 5px hsl(var(--neon-blue)),
+      0 0 10px hsl(var(--neon-blue)),
+      inset 0 0 5px hsla(var(--neon-blue), 0.1);
+  }
+
+  .neon-border {
+    border: 1px solid hsl(var(--neon-blue));
+    box-shadow: 
+      0 0 10px hsla(var(--neon-blue), 0.3),
+      inset 0 0 10px hsla(var(--neon-blue), 0.1);
+  }
+
+  /* Card Styles */
+  .arena-card {
+    @apply bg-card border border-border rounded-lg;
+    background: linear-gradient(180deg, hsla(199, 100%, 50%, 0.03) 0%, transparent 100%),
+                hsl(var(--card));
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .arena-card:hover {
+    border-color: hsla(199, 100%, 50%, 0.3);
+    box-shadow: 0 0 30px hsla(199, 100%, 50%, 0.1);
+    transform: translateY(-2px);
+  }
+
+  /* Rank Badge Auras */
+  .rank-aura-bronze {
+    box-shadow: 0 0 20px hsla(30, 70%, 45%, 0.4);
+  }
+  .rank-aura-silver {
+    box-shadow: 0 0 20px hsla(210, 10%, 60%, 0.4);
+  }
+  .rank-aura-gold {
+    box-shadow: 0 0 25px hsla(45, 90%, 55%, 0.5);
+  }
+  .rank-aura-platinum {
+    box-shadow: 0 0 25px hsla(185, 50%, 65%, 0.5);
+  }
+  .rank-aura-diamond {
+    box-shadow: 0 0 30px hsla(199, 100%, 60%, 0.6);
+  }
+  .rank-aura-master {
+    box-shadow: 0 0 35px hsla(265, 100%, 60%, 0.6);
+  }
+  .rank-aura-legend {
+    box-shadow: 
+      0 0 40px hsla(340, 100%, 60%, 0.5),
+      0 0 60px hsla(265, 100%, 60%, 0.3);
+    animation: legendPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes legendPulse {
+    0%, 100% { box-shadow: 0 0 40px hsla(340, 100%, 60%, 0.5), 0 0 60px hsla(265, 100%, 60%, 0.3); }
+    50% { box-shadow: 0 0 50px hsla(340, 100%, 60%, 0.7), 0 0 80px hsla(265, 100%, 60%, 0.5); }
+  }
+
+  /* Progress Bar Animations */
+  .progress-glow {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .progress-glow::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, hsla(199, 100%, 50%, 0.4), transparent);
+    animation: progressShine 2s ease-in-out infinite;
+  }
+
+  @keyframes progressShine {
+    0% { left: -100%; }
+    100% { left: 100%; }
+  }
+
+  /* XP Bar */
+  .xp-bar {
+    @apply relative h-2 rounded-full overflow-hidden;
+    background: hsl(var(--secondary));
+  }
+
+  .xp-bar-fill {
+    @apply h-full rounded-full transition-all duration-500;
+    background: linear-gradient(90deg, hsl(var(--neon-blue)), hsl(var(--neon-cyan)));
+    box-shadow: 0 0 10px hsl(var(--neon-blue));
+  }
+
+  /* Streak Flame Effect */
+  .streak-flame {
+    animation: flicker 1.5s ease-in-out infinite alternate;
+  }
+
+  @keyframes flicker {
+    0% { filter: drop-shadow(0 0 5px hsl(var(--warning))); }
+    100% { filter: drop-shadow(0 0 15px hsl(var(--warning))) brightness(1.2); }
+  }
+
+  /* Grid Pattern Background */
+  .grid-pattern {
+    background-image: 
+      linear-gradient(hsla(199, 100%, 50%, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, hsla(199, 100%, 50%, 0.03) 1px, transparent 1px);
+    background-size: 50px 50px;
+  }
+
+  /* Scanline Effect */
+  .scanlines::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      hsla(0, 0%, 0%, 0.03) 2px,
+      hsla(0, 0%, 0%, 0.03) 4px
+    );
+    pointer-events: none;
+  }
+
+  /* Button Animations */
+  .btn-arena {
+    @apply relative overflow-hidden;
+  }
+
+  .btn-arena::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(45deg, transparent, hsla(199, 100%, 50%, 0.2), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.5s;
+  }
+
+  .btn-arena:hover::before {
+    transform: translateX(100%);
+  }
+
+  /* Typing cursor */
+  .typing-cursor::after {
+    content: '|';
+    animation: blink 1s step-end infinite;
+  }
+
+  @keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+  }
+
+  /* Stats counter animation */
+  .stat-value {
+    @apply font-display font-bold;
+    text-shadow: 0 0 10px currentColor;
+  }
+
+  /* Division badge */
+  .division-badge {
+    @apply px-3 py-1 rounded-full font-semibold text-xs uppercase tracking-wider;
+    border: 1px solid currentColor;
+    box-shadow: 0 0 15px currentColor;
+  }
+
+  /* Code Editor Style */
+  .code-line-numbers {
+    counter-reset: line;
+  }
+
+  .code-line-numbers > div::before {
+    counter-increment: line;
+    content: counter(line);
+    @apply mr-4 text-muted-foreground inline-block w-8 text-right;
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: 'Orbitron', sans-serif;
+  }
+
+  .font-heading {
+    font-family: 'Rajdhani', sans-serif;
+  }
+
+  .font-sans {
+    font-family: 'Space Grotesk', sans-serif;
+  }
+
+  .text-gradient-electric {
+    background: linear-gradient(135deg, hsl(var(--neon-blue)) 0%, hsl(var(--neon-cyan)) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-legendary {
+    background: linear-gradient(135deg, hsl(var(--neon-purple)) 0%, hsl(var(--rank-legend)) 50%, hsl(var(--neon-blue)) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .bg-arena {
+    background: linear-gradient(135deg, hsl(var(--arena-dark)) 0%, hsl(var(--arena-surface)) 50%, hsl(var(--arena-dark)) 100%);
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+
+  .animate-pulse-glow {
+    animation: pulseGlow 2s ease-in-out infinite;
+  }
+
+  @keyframes pulseGlow {
+    0%, 100% { box-shadow: 0 0 20px hsla(199, 100%, 50%, 0.3); }
+    50% { box-shadow: 0 0 40px hsla(199, 100%, 50%, 0.6); }
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.5s ease-out forwards;
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .delay-100 { animation-delay: 100ms; }
+  .delay-200 { animation-delay: 200ms; }
+  .delay-300 { animation-delay: 300ms; }
+  .delay-400 { animation-delay: 400ms; }
+  .delay-500 { animation-delay: 500ms; }
 }
