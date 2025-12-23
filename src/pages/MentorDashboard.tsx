@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   Users, 
   Calendar, 
@@ -12,7 +12,9 @@ import {
   Swords,
   BarChart3,
   Shield,
-  Crown
+  Crown,
+  Mail,
+  UserPlus
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -26,6 +28,10 @@ import { ClanMemberList } from '@/components/clan/ClanMemberList';
 import { MentorBattleControls } from '@/components/mentor/MentorBattleControls';
 import { ClanPerformanceStats } from '@/components/mentor/ClanPerformanceStats';
 import { AnnouncementManager } from '@/components/mentor/AnnouncementManager';
+import { InviteMentorModal } from '@/components/mentor/InviteMentorModal';
+import { useAuth } from '@/contexts/AuthContext';
+import { useUserClanRole } from '@/hooks/useClanRoles';
+import { useMentorInvites } from '@/hooks/useMentorInvites';
 import { 
   mockMentors, 
   getClanByMentorId, 
@@ -38,12 +44,18 @@ import { useToast } from '@/hooks/use-toast';
 const currentMentor = mockMentors[0];
 const currentClan = getClanByMentorId(currentMentor.id);
 
-// For demo purposes, we'll simulate the mentor role
-const IS_MENTOR = true;
-
 export default function MentorDashboard() {
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { user, isLoading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
+  
+  // Check if user is a mentor (check for any mentor role)
+  const { data: userRole, isLoading: roleLoading } = useUserClanRole(user?.id, currentClan?.id || 'global');
+  const { data: invites } = useMentorInvites();
+  
+  const isMentor = userRole?.role === 'mentor';
+  const isLoading = authLoading || roleLoading;
   
   // Class form state
   const [classTitle, setClassTitle] = useState('');
@@ -88,6 +100,31 @@ export default function MentorDashboard() {
     setClassMeetLink('');
   };
 
+  // Access control - redirect non-mentors
+  if (!isLoading && !isMentor && user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center">
+              <Shield className="h-6 w-6 text-destructive" />
+            </div>
+            <CardTitle>Access Denied</CardTitle>
+            <CardDescription>
+              You don't have permission to access the Mentor Dashboard. 
+              Only users with mentor roles can access this page.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="text-center">
+            <Button onClick={() => navigate('/dashboard')} variant="outline">
+              Go to Dashboard
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (!currentClan) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -112,7 +149,7 @@ export default function MentorDashboard() {
                     <Crown className="h-3 w-3 mr-1" />
                     MENTOR DASHBOARD
                   </Badge>
-                  {IS_MENTOR && (
+                  {isMentor && (
                     <Badge className="bg-status-warning/20 text-status-warning border-status-warning/50">
                       <Shield className="h-3 w-3 mr-1" />
                       Admin Access
@@ -123,6 +160,16 @@ export default function MentorDashboard() {
                 <p className="text-muted-foreground">Manage your clan, schedule classes, and track progress</p>
               </div>
               <div className="flex items-center gap-4">
+                <InviteMentorModal 
+                  clanId={currentClan.id} 
+                  clanName={currentClan.name}
+                  trigger={
+                    <Button variant="default" className="gap-2">
+                      <UserPlus className="h-4 w-4" />
+                      Invite Mentor
+                    </Button>
+                  }
+                />
                 <Link to={`/clan/${currentClan.id}`}>
                   <Button variant="outline" className="gap-2">
                     <Eye className="h-4 w-4" />
@@ -373,7 +420,7 @@ export default function MentorDashboard() {
                   <AnnouncementManager 
                     clanId={currentClan.id} 
                     mentorId={currentMentor.id}
-                    isMentor={IS_MENTOR}
+                    isMentor={isMentor}
                   />
                 </div>
               </TabsContent>
@@ -383,7 +430,7 @@ export default function MentorDashboard() {
                 <div className="max-w-2xl">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="font-heading font-bold text-lg">Clan Members</h3>
-                    {IS_MENTOR && (
+                    {isMentor && (
                       <Badge className="bg-status-warning/20 text-status-warning border-status-warning/50">
                         <Shield className="h-3 w-3 mr-1" />
                         Admin View
@@ -436,7 +483,7 @@ export default function MentorDashboard() {
               {/* Battles Tab */}
               <TabsContent value="battles">
                 <div className="space-y-6">
-                  {IS_MENTOR && (
+                  {isMentor && (
                     <Card className="border-primary/30 bg-gradient-to-r from-primary/5 to-transparent">
                       <CardHeader>
                         <CardTitle className="flex items-center gap-2">
