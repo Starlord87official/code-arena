@@ -80,15 +80,115 @@ export type Database = {
         }
         Relationships: []
       }
+      clan_announcements: {
+        Row: {
+          clan_id: string
+          content: string
+          created_at: string
+          id: string
+          is_pinned: boolean
+          mentor_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          clan_id: string
+          content: string
+          created_at?: string
+          id?: string
+          is_pinned?: boolean
+          mentor_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          clan_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          is_pinned?: boolean
+          mentor_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      clan_members: {
+        Row: {
+          avatar: string | null
+          clan_id: string
+          id: string
+          joined_at: string
+          last_active: string
+          streak: number
+          user_id: string | null
+          username: string
+          xp: number
+        }
+        Insert: {
+          avatar?: string | null
+          clan_id: string
+          id?: string
+          joined_at?: string
+          last_active?: string
+          streak?: number
+          user_id?: string | null
+          username: string
+          xp?: number
+        }
+        Update: {
+          avatar?: string | null
+          clan_id?: string
+          id?: string
+          joined_at?: string
+          last_active?: string
+          streak?: number
+          user_id?: string | null
+          username?: string
+          xp?: number
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          clan_id: string
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          clan_id: string
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          clan_id?: string
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_clan_role: {
+        Args: {
+          _clan_id: string
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "mentor" | "student"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -215,6 +315,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["mentor", "student"],
+    },
   },
 } as const

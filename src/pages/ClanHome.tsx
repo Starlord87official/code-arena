@@ -179,6 +179,14 @@ export default function ClanHome() {
                   </div>
                   <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors ml-auto" />
                 </div>
+                <div className="mt-3 pt-3 border-t border-border">
+                  <Link to="/mentor/dashboard" onClick={(e) => e.stopPropagation()}>
+                    <Button variant="outline" size="sm" className="w-full gap-2">
+                      <Crown className="h-4 w-4" />
+                      Mentor Dashboard
+                    </Button>
+                  </Link>
+                </div>
               </Link>
             </div>
           </div>

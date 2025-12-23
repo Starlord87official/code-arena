@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { 
   Users, 
   Calendar, 
@@ -6,10 +7,12 @@ import {
   TrendingUp, 
   Video,
   Plus,
-  Send,
   Clock,
   Eye,
-  Swords
+  Swords,
+  BarChart3,
+  Shield,
+  Crown
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -20,8 +23,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { ClassSessionCard } from '@/components/clan/ClassSessionCard';
 import { ClanMemberList } from '@/components/clan/ClanMemberList';
-import { ClanLeagueBadge } from '@/components/clan/ClanLeagueBadge';
 import { MentorBattleControls } from '@/components/mentor/MentorBattleControls';
+import { ClanPerformanceStats } from '@/components/mentor/ClanPerformanceStats';
+import { AnnouncementManager } from '@/components/mentor/AnnouncementManager';
 import { 
   mockMentors, 
   getClanByMentorId, 
@@ -30,9 +34,12 @@ import {
 } from '@/lib/mentorData';
 import { useToast } from '@/hooks/use-toast';
 
-// Mock: assume current user is the first mentor
+// Mock: assume current user is the first mentor (in production, this would come from auth)
 const currentMentor = mockMentors[0];
 const currentClan = getClanByMentorId(currentMentor.id);
+
+// For demo purposes, we'll simulate the mentor role
+const IS_MENTOR = true;
 
 export default function MentorDashboard() {
   const { toast } = useToast();
@@ -45,10 +52,6 @@ export default function MentorDashboard() {
   const [classTime, setClassTime] = useState('');
   const [classDuration, setClassDuration] = useState('60');
   const [classMeetLink, setClassMeetLink] = useState('');
-
-  // Announcement form state
-  const [announcementTitle, setAnnouncementTitle] = useState('');
-  const [announcementContent, setAnnouncementContent] = useState('');
 
   const sessions = currentClan ? getClanSessions(currentClan.id) : [];
   const members = currentClan ? getClanMembers(currentClan.id) : [];
@@ -85,26 +88,6 @@ export default function MentorDashboard() {
     setClassMeetLink('');
   };
 
-  const handlePostAnnouncement = () => {
-    if (!announcementTitle || !announcementContent) {
-      toast({
-        title: 'Missing Information',
-        description: 'Please fill in both title and content.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    toast({
-      title: 'Announcement Posted',
-      description: 'Your announcement has been sent to all clan members.',
-    });
-
-    // Reset form
-    setAnnouncementTitle('');
-    setAnnouncementContent('');
-  };
-
   if (!currentClan) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -124,13 +107,28 @@ export default function MentorDashboard() {
           <div className="max-w-6xl mx-auto">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div>
-                <Badge variant="outline" className="mb-2 border-primary/50 text-primary">
-                  MENTOR DASHBOARD
-                </Badge>
+                <div className="flex items-center gap-2 mb-2">
+                  <Badge variant="outline" className="border-primary/50 text-primary">
+                    <Crown className="h-3 w-3 mr-1" />
+                    MENTOR DASHBOARD
+                  </Badge>
+                  {IS_MENTOR && (
+                    <Badge className="bg-status-warning/20 text-status-warning border-status-warning/50">
+                      <Shield className="h-3 w-3 mr-1" />
+                      Admin Access
+                    </Badge>
+                  )}
+                </div>
                 <h1 className="font-display text-3xl font-bold">{currentClan.name}</h1>
                 <p className="text-muted-foreground">Manage your clan, schedule classes, and track progress</p>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-4">
+                <Link to={`/clan/${currentClan.id}`}>
+                  <Button variant="outline" className="gap-2">
+                    <Eye className="h-4 w-4" />
+                    View Clan Page
+                  </Button>
+                </Link>
                 <div className="text-right">
                   <p className="text-sm text-muted-foreground">Clan Members</p>
                   <p className="font-display text-2xl font-bold text-primary">
@@ -148,10 +146,14 @@ export default function MentorDashboard() {
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="mb-8">
+              <TabsList className="mb-8 flex-wrap">
                 <TabsTrigger value="overview" className="gap-2">
                   <Eye className="h-4 w-4" />
                   Overview
+                </TabsTrigger>
+                <TabsTrigger value="performance" className="gap-2">
+                  <BarChart3 className="h-4 w-4" />
+                  Performance
                 </TabsTrigger>
                 <TabsTrigger value="classes" className="gap-2">
                   <Video className="h-4 w-4" />
@@ -159,7 +161,7 @@ export default function MentorDashboard() {
                 </TabsTrigger>
                 <TabsTrigger value="announcements" className="gap-2">
                   <Megaphone className="h-4 w-4" />
-                  Announcement
+                  Announcements
                 </TabsTrigger>
                 <TabsTrigger value="members" className="gap-2">
                   <Users className="h-4 w-4" />
@@ -195,12 +197,12 @@ export default function MentorDashboard() {
                   <Card>
                     <CardHeader className="pb-2">
                       <CardDescription>Clan XP</CardDescription>
-                      <CardTitle className="text-3xl font-display text-success">
+                      <CardTitle className="text-3xl font-display text-status-success">
                         {currentClan.totalXP.toLocaleString()}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="flex items-center gap-1 text-xs text-success">
+                      <div className="flex items-center gap-1 text-xs text-status-success">
                         <TrendingUp className="h-3 w-3" />
                         <span>+2,340 this week</span>
                       </div>
@@ -262,6 +264,19 @@ export default function MentorDashboard() {
                       Recent Activity
                     </h3>
                     <ClanMemberList clanId={currentClan.id} maxHeight="300px" />
+                  </div>
+                </div>
+              </TabsContent>
+
+              {/* Performance Tab */}
+              <TabsContent value="performance">
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="font-heading font-bold text-lg mb-4 flex items-center gap-2">
+                      <BarChart3 className="h-5 w-5 text-primary" />
+                      Battle Performance Stats
+                    </h3>
+                    <ClanPerformanceStats clanId={currentClan.id} />
                   </div>
                 </div>
               </TabsContent>
@@ -354,49 +369,27 @@ export default function MentorDashboard() {
 
               {/* Announcements Tab */}
               <TabsContent value="announcements">
-                <Card className="max-w-2xl">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Megaphone className="h-5 w-5" />
-                      Post Announcement
-                    </CardTitle>
-                    <CardDescription>
-                      Send a message to all clan members. Use this for important updates.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="announcementTitle">Title *</Label>
-                      <Input
-                        id="announcementTitle"
-                        value={announcementTitle}
-                        onChange={(e) => setAnnouncementTitle(e.target.value)}
-                        placeholder="e.g., Weekly Focus Update"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="announcementContent">Content *</Label>
-                      <Textarea
-                        id="announcementContent"
-                        value={announcementContent}
-                        onChange={(e) => setAnnouncementContent(e.target.value)}
-                        placeholder="What do you want to tell your clan?"
-                        rows={5}
-                      />
-                    </div>
-
-                    <Button onClick={handlePostAnnouncement} className="w-full">
-                      <Send className="h-4 w-4 mr-2" />
-                      Post Announcement
-                    </Button>
-                  </CardContent>
-                </Card>
+                <div className="max-w-2xl">
+                  <AnnouncementManager 
+                    clanId={currentClan.id} 
+                    mentorId={currentMentor.id}
+                    isMentor={IS_MENTOR}
+                  />
+                </div>
               </TabsContent>
 
               {/* Members Tab */}
               <TabsContent value="members">
                 <div className="max-w-2xl">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-heading font-bold text-lg">Clan Members</h3>
+                    {IS_MENTOR && (
+                      <Badge className="bg-status-warning/20 text-status-warning border-status-warning/50">
+                        <Shield className="h-3 w-3 mr-1" />
+                        Admin View
+                      </Badge>
+                    )}
+                  </div>
                   <ClanMemberList clanId={currentClan.id} maxHeight="600px" />
                 </div>
               </TabsContent>
@@ -436,6 +429,33 @@ export default function MentorDashboard() {
                         </CardContent>
                       </Card>
                     ))}
+                  </div>
+                </div>
+              </TabsContent>
+
+              {/* Battles Tab */}
+              <TabsContent value="battles">
+                <div className="space-y-6">
+                  {IS_MENTOR && (
+                    <Card className="border-primary/30 bg-gradient-to-r from-primary/5 to-transparent">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Shield className="h-5 w-5 text-primary" />
+                          Mentor Battle Controls
+                        </CardTitle>
+                        <CardDescription>
+                          As a mentor, you can start and schedule clan battles
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <MentorBattleControls clanId={currentClan.id} clanName={currentClan.name} />
+                      </CardContent>
+                    </Card>
+                  )}
+                  
+                  <div>
+                    <h3 className="font-heading font-bold text-lg mb-4">Battle Performance</h3>
+                    <ClanPerformanceStats clanId={currentClan.id} />
                   </div>
                 </div>
               </TabsContent>
