@@ -19,7 +19,7 @@ export function ClanRoleProvider({
   clanId: string;
 }) {
   const { user } = useAuth();
-  const { data: userRole, isLoading } = useUserClanRole(user?.uid, clanId);
+  const { data: userRole, isLoading } = useUserClanRole(user?.id, clanId);
 
   const value = useMemo(() => ({
     role: userRole?.role || null,
