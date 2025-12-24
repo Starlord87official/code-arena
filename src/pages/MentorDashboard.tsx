@@ -32,7 +32,7 @@ import { AnnouncementManager } from '@/components/mentor/AnnouncementManager';
 import { InviteMentorModal } from '@/components/mentor/InviteMentorModal';
 import { MentorInvitesList } from '@/components/mentor/MentorInvitesList';
 import { useAuth } from '@/contexts/AuthContext';
-import { useUserClanRole } from '@/hooks/useClanRoles';
+import { useIsMentorAnywhere } from '@/hooks/useUserRole';
 import { 
   mockMentors, 
   getClanByMentorId, 
@@ -51,10 +51,9 @@ export default function MentorDashboard() {
   const { user, isLoading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   
-  // Check if user is a mentor (check for any mentor role)
-  const { data: userRole, isLoading: roleLoading } = useUserClanRole(user?.id, currentClan?.id || 'global');
+  // Check if user is a mentor in any clan
+  const { isMentor, isLoading: roleLoading } = useIsMentorAnywhere(user?.id);
   
-  const isMentor = userRole?.role === 'mentor';
   const isLoading = authLoading || roleLoading;
   
   // Class form state

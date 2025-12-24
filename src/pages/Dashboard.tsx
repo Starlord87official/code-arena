@@ -12,11 +12,13 @@ import { mockBattle } from '@/lib/battleData';
 import { ChevronRight, Flame, Target, Trophy, Zap, Clock, AlertTriangle, TrendingUp, Swords, Loader2, BookOpen, GraduationCap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useIsMentorAnywhere } from '@/hooks/useUserRole';
 
 export default function Dashboard() {
-  const { profile, isAuthenticated, isLoading } = useAuth();
+  const { profile, user, isAuthenticated, isLoading } = useAuth();
+  const { isMentor, isLoading: roleLoading } = useIsMentorAnywhere(user?.id);
   
-  if (isLoading) {
+  if (isLoading || roleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -268,12 +270,14 @@ export default function Dashboard() {
                   Student Dashboard
                 </Button>
               </Link>
-              <Link to="/mentor-dashboard">
-                <Button variant="outline" className="w-full">
-                  <GraduationCap className="h-4 w-4 mr-2" />
-                  Mentor Dashboard
-                </Button>
-              </Link>
+              {isMentor && (
+                <Link to="/mentor-dashboard">
+                  <Button variant="outline" className="w-full">
+                    <GraduationCap className="h-4 w-4 mr-2" />
+                    Mentor Dashboard
+                  </Button>
+                </Link>
+              )}
               <Link to="/challenges">
                 <Button variant="outline" className="w-full">
                   <Target className="h-4 w-4 mr-2" />
