@@ -21,7 +21,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/contexts/AuthContext';
 import { useStudentClan } from '@/hooks/useStudentClan';
-import { useUserClanRole } from '@/hooks/useClanRoles';
+import { useIsMentorAnywhere } from '@/hooks/useUserRole';
 import { 
   getClanById, 
   getMentorById,
@@ -38,15 +38,12 @@ export default function StudentDashboard() {
   const { data: membership, isLoading: membershipLoading } = useStudentClan(user?.id);
   
   // Get user role
-  const clanId = membership?.clan_id || 'global';
-  const { data: userRole, isLoading: roleLoading } = useUserClanRole(user?.id, clanId);
+  const { isMentor, isLoading: roleLoading } = useIsMentorAnywhere(user?.id);
   
   // Get battle history
   const { data: battles } = useAllBattleHistory();
   
   const isLoading = authLoading || membershipLoading || roleLoading;
-  const isStudent = userRole?.role === 'student';
-  const isMentor = userRole?.role === 'mentor';
   
   // Get clan and mentor info
   const clan = membership ? getClanById(membership.clan_id) : null;

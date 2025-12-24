@@ -18,6 +18,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSupabaseAuth } from '@/hooks/useAuth';
+import { useIsMentorAnywhere } from '@/hooks/useUserRole';
 import { toast } from 'sonner';
 
 // Validation schemas
@@ -27,7 +28,8 @@ const usernameSchema = z.string().min(3, 'Username must be at least 3 characters
 
 export default function Auth() {
   const navigate = useNavigate();
-  const { isAuthenticated, isLoading: authLoading, signIn, signUp } = useSupabaseAuth();
+  const { user, isAuthenticated, isLoading: authLoading, signIn, signUp } = useSupabaseAuth();
+  const { isMentor, isLoading: roleLoading } = useIsMentorAnywhere(user?.id);
   
   const [tab, setTab] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
@@ -37,9 +39,9 @@ export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Check for pending invites/joins after auth
+  // Redirect based on role after auth
   useEffect(() => {
-    if (!authLoading && isAuthenticated) {
+    if (!authLoading && !roleLoading && isAuthenticated) {
       const pendingMentorInvite = sessionStorage.getItem('pending_mentor_invite');
       const pendingClanJoin = sessionStorage.getItem('pending_clan_join');
       
@@ -47,11 +49,15 @@ export default function Auth() {
         navigate(`/invite/mentor?token=${pendingMentorInvite}`);
       } else if (pendingClanJoin) {
         navigate(`/join-clan?clan=${pendingClanJoin}`);
+      } else if (isMentor) {
+        // Redirect mentors to mentor dashboard
+        navigate('/mentor-dashboard');
       } else {
+        // Redirect students to dashboard
         navigate('/dashboard');
       }
     }
-  }, [isAuthenticated, authLoading, navigate]);
+  }, [isAuthenticated, authLoading, roleLoading, isMentor, navigate]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -119,7 +125,7 @@ export default function Auth() {
     toast.success('Account created! Welcome to CodeLock!');
   };
 
-  if (authLoading) {
+  if (authLoading || (isAuthenticated && roleLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
