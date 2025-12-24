@@ -29,6 +29,7 @@ import { BattleHistoryList } from '@/components/clan/BattleHistoryList';
 import { useAuth } from '@/contexts/AuthContext';
 import { useStudentClan, useJoinClan } from '@/hooks/useStudentClan';
 import { useUserClanRole } from '@/hooks/useClanRoles';
+import { useUserRole } from '@/hooks/useUserRole';
 import { 
   getClanById, 
   getMentorById, 
@@ -50,6 +51,7 @@ export default function ClanHome() {
   const { user, profile, isAuthenticated } = useAuth();
   const { data: membership, isLoading: membershipLoading } = useStudentClan(user?.id);
   const { data: userRole } = useUserClanRole(user?.id, id || 'global');
+  const { isMentor: isCurrentUserMentor, isLoading: roleLoading } = useUserRole(user?.id);
   const joinClan = useJoinClan();
   
   const clan = getClanById(id || '');
@@ -67,8 +69,9 @@ export default function ClanHome() {
   
   // Check membership status
   const isMember = membership?.clan_id === id;
-  const isMentor = userRole?.role === 'mentor';
-  const canJoin = clan && clan.isOpen && clan.memberCount < clan.maxMembers && !isMember && !isMentor;
+  // isMentorOfThisClan: user has mentor role in THIS specific clan
+  const isMentorOfThisClan = userRole?.role === 'mentor';
+  const canJoin = clan && clan.isOpen && clan.memberCount < clan.maxMembers && !isMember && !isMentorOfThisClan;
   
   const handleJoinClan = async () => {
     if (!isAuthenticated) {
@@ -191,7 +194,7 @@ export default function ClanHome() {
                 
                 {/* Join / Member Status */}
                 <div className="mt-6">
-                  {isMember ? (
+                {isMember ? (
                     <div className="flex items-center gap-2">
                       <Badge className="bg-status-success/20 text-status-success border-status-success/50">
                         <CheckCircle className="h-3 w-3 mr-1" />
@@ -203,7 +206,7 @@ export default function ClanHome() {
                         </Button>
                       </Link>
                     </div>
-                  ) : isMentor ? (
+                  ) : isMentorOfThisClan && isCurrentUserMentor ? (
                     <Link to="/mentor-dashboard">
                       <Button>
                         <Crown className="h-4 w-4 mr-2" />
@@ -236,7 +239,7 @@ export default function ClanHome() {
                 </div>
               </div>
 
-              {/* Mentor Card */}
+              {/* Mentor Card - Shows mentor info but NO mentor dashboard button for students */}
               <Link 
                 to={`/mentor/${mentor.id}`}
                 className="w-full md:w-auto p-4 bg-card border border-border rounded-xl hover:border-primary/50 transition-colors group"
@@ -263,14 +266,17 @@ export default function ClanHome() {
                   </div>
                   <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors ml-auto" />
                 </div>
-                <div className="mt-3 pt-3 border-t border-border">
-                  <Link to="/mentor/dashboard" onClick={(e) => e.stopPropagation()}>
-                    <Button variant="outline" size="sm" className="w-full gap-2">
-                      <Crown className="h-4 w-4" />
-                      Mentor Dashboard
-                    </Button>
-                  </Link>
-                </div>
+                {/* ONLY show Mentor Dashboard button for actual mentors */}
+                {isCurrentUserMentor && !roleLoading && (
+                  <div className="mt-3 pt-3 border-t border-border">
+                    <Link to="/mentor-dashboard" onClick={(e) => e.stopPropagation()}>
+                      <Button variant="outline" size="sm" className="w-full gap-2">
+                        <Crown className="h-4 w-4" />
+                        Mentor Dashboard
+                      </Button>
+                    </Link>
+                  </div>
+                )}
               </Link>
             </div>
           </div>

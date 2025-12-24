@@ -22,7 +22,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
-import { useRoleValidation } from '@/hooks/useUserRole';
+import { useUserRole } from '@/hooks/useUserRole';
 import { getDivisionColor } from '@/lib/mockData';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -72,7 +72,7 @@ const navbarNotifications = [
 
 export function Navbar() {
   const { profile, user, isAuthenticated, logout } = useAuth();
-  const { isMentor, isStudent, isLoading: roleLoading } = useRoleValidation(user?.id);
+  const { isMentor, isStudent, isLoading: roleLoading } = useUserRole(user?.id);
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -83,11 +83,13 @@ export function Navbar() {
 
   // Role-based dashboard path - only show after role validation
   // Mentors get mentor dashboard, students get regular dashboard
-  const dashboardPath = isMentor ? '/mentor-dashboard' : '/dashboard';
+  // While loading, don't show dashboard link to prevent flicker
+  const dashboardPath = roleLoading ? null : (isMentor ? '/mentor-dashboard' : '/dashboard');
 
   const navLinks = isAuthenticated
     ? [
-        { path: dashboardPath, label: 'Dashboard', icon: LayoutDashboard },
+        // Only include dashboard link after role is validated
+        ...(dashboardPath ? [{ path: dashboardPath, label: 'Dashboard', icon: LayoutDashboard }] : []),
         { path: '/challenges', label: 'Challenges', icon: Swords },
         { path: '/battles', label: 'Battles', icon: Trophy },
         { path: '/contests', label: 'Contests', icon: Trophy },

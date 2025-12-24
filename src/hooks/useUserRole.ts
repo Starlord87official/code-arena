@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 export type AppRole = 'mentor' | 'student';
+export type RoleStatus = 'mentor' | 'student' | 'loading';
 
 export interface UserRoleInfo {
   id: string;
@@ -11,8 +12,8 @@ export interface UserRoleInfo {
   created_at: string;
 }
 
-// Fetch all roles for a user
-export function useUserRole(userId: string | undefined) {
+// Fetch all roles for a user from Supabase
+function useUserRolesQuery(userId: string | undefined) {
   return useQuery({
     queryKey: ['user-roles', userId],
     queryFn: async () => {
@@ -32,36 +33,42 @@ export function useUserRole(userId: string | undefined) {
   });
 }
 
-// Central hook to check mentor status - single source of truth
-export function useIsMentorAnywhere(userId: string | undefined) {
-  const { data: roles, isLoading, isFetching } = useUserRole(userId);
+/**
+ * SINGLE SOURCE OF TRUTH for user role.
+ * Returns role: 'student' | 'mentor' | 'loading'
+ * 
+ * While loading, ALL role-specific UI must be hidden.
+ * Only renders role-specific content AFTER role is resolved from Supabase.
+ */
+export function useUserRole(userId: string | undefined): {
+  role: RoleStatus;
+  isMentor: boolean;
+  isStudent: boolean;
+  isLoading: boolean;
+  isValidated: boolean;
+  roles: UserRoleInfo[] | null;
+} {
+  const { data: roles, isLoading, isFetching } = useUserRolesQuery(userId);
+  
+  // Loading state - role not yet determined
+  const loading = isLoading || isFetching || (userId !== undefined && roles === undefined);
   
   // User is a mentor if they have the 'mentor' role in any clan
   const isMentor = roles?.some(r => r.role === 'mentor') ?? false;
   
-  // User is a student (default role) - has student role or no roles yet
-  const isStudent = !isMentor;
+  // Determine role status
+  const role: RoleStatus = loading ? 'loading' : (isMentor ? 'mentor' : 'student');
   
   return {
-    isMentor,
-    isStudent,
-    isLoading: isLoading || isFetching,
-    roles,
-    // Helper to check specific role
-    hasRole: (role: AppRole) => roles?.some(r => r.role === role) ?? false,
+    role,
+    isMentor: role === 'mentor',
+    isStudent: role === 'student',
+    isLoading: loading,
+    isValidated: !loading && roles !== null && roles !== undefined,
+    roles: roles ?? null,
   };
 }
 
-// Hook to check if role validation is complete (for route protection)
-export function useRoleValidation(userId: string | undefined) {
-  const { isMentor, isStudent, isLoading, roles } = useIsMentorAnywhere(userId);
-  
-  return {
-    isMentor,
-    isStudent,
-    isLoading,
-    // Role is validated when we have loaded and user has roles assigned
-    isValidated: !isLoading && roles !== null && roles !== undefined,
-    roles,
-  };
-}
+// Aliases for backward compatibility
+export const useIsMentorAnywhere = useUserRole;
+export const useRoleValidation = useUserRole;
