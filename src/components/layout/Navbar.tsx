@@ -16,11 +16,13 @@ import {
   Target,
   TrendingDown,
   ChevronRight,
-  GraduationCap
+  GraduationCap,
+  LayoutDashboard
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
+import { useIsMentorAnywhere } from '@/hooks/useUserRole';
 import { getDivisionColor } from '@/lib/mockData';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -69,7 +71,8 @@ const navbarNotifications = [
 ];
 
 export function Navbar() {
-  const { profile, isAuthenticated, logout } = useAuth();
+  const { profile, user, isAuthenticated, logout } = useAuth();
+  const { isMentor } = useIsMentorAnywhere(user?.id);
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -78,9 +81,12 @@ export function Navbar() {
   const unreadCount = navbarNotifications.filter(n => !n.read).length;
   const criticalCount = navbarNotifications.filter(n => n.priority === 'critical' && !n.read).length;
 
+  // Role-based dashboard path
+  const dashboardPath = isMentor ? '/mentor-dashboard' : '/dashboard';
+
   const navLinks = isAuthenticated
     ? [
-        { path: '/dashboard', label: 'Dashboard', icon: Code2 },
+        { path: dashboardPath, label: 'Dashboard', icon: LayoutDashboard },
         { path: '/challenges', label: 'Challenges', icon: Swords },
         { path: '/battles', label: 'Battles', icon: Trophy },
         { path: '/contests', label: 'Contests', icon: Trophy },
