@@ -30,6 +30,11 @@ export default function Dashboard() {
     return <Navigate to="/auth" replace />;
   }
 
+  // Redirect mentors to mentor dashboard
+  if (isMentor) {
+    return <Navigate to="/mentor-dashboard" replace />;
+  }
+
   // Create a compatible user object from profile for existing components
   const userForComponents: MockUser = {
     uid: profile?.id || '',
@@ -270,14 +275,6 @@ export default function Dashboard() {
                   Student Dashboard
                 </Button>
               </Link>
-              {isMentor && (
-                <Link to="/mentor-dashboard">
-                  <Button variant="outline" className="w-full">
-                    <GraduationCap className="h-4 w-4 mr-2" />
-                    Mentor Dashboard
-                  </Button>
-                </Link>
-              )}
               <Link to="/challenges">
                 <Button variant="outline" className="w-full">
                   <Target className="h-4 w-4 mr-2" />

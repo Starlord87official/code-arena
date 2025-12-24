@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { 
   Users, 
   Calendar, 
@@ -13,9 +13,9 @@ import {
   BarChart3,
   Shield,
   Crown,
-  Mail,
   UserPlus,
-  Send
+  Send,
+  Loader2
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -47,7 +47,6 @@ const currentClan = getClanByMentorId(currentMentor.id);
 
 export default function MentorDashboard() {
   const { toast } = useToast();
-  const navigate = useNavigate();
   const { user, isLoading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   
@@ -101,25 +100,14 @@ export default function MentorDashboard() {
 
   // Access control - redirect non-mentors
   if (!isLoading && !isMentor && user) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  // Show loading while checking roles
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Card className="max-w-md">
-          <CardHeader className="text-center">
-            <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center">
-              <Shield className="h-6 w-6 text-destructive" />
-            </div>
-            <CardTitle>Access Denied</CardTitle>
-            <CardDescription>
-              You don't have permission to access the Mentor Dashboard. 
-              Only users with mentor roles can access this page.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="text-center">
-            <Button onClick={() => navigate('/dashboard')} variant="outline">
-              Go to Dashboard
-            </Button>
-          </CardContent>
-        </Card>
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
