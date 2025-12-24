@@ -13,7 +13,9 @@ import {
   Flame,
   ChevronRight,
   GraduationCap,
-  Loader2
+  Loader2,
+  Megaphone,
+  Pin
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -22,6 +24,7 @@ import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/contexts/AuthContext';
 import { useStudentClan } from '@/hooks/useStudentClan';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useClanAnnouncements } from '@/hooks/useClanAnnouncements';
 import { 
   getClanById, 
   getMentorById,
@@ -29,6 +32,7 @@ import {
   mockClans
 } from '@/lib/mentorData';
 import { useAllBattleHistory } from '@/hooks/useBattleHistory';
+import { format } from 'date-fns';
 
 export default function StudentDashboard() {
   const navigate = useNavigate();
@@ -49,6 +53,9 @@ export default function StudentDashboard() {
   const clan = membership ? getClanById(membership.clan_id) : null;
   const mentor = clan ? getMentorById(clan.mentorId) : null;
   const upcomingSessions = clan ? getClanSessions(clan.id).filter(s => s.status === 'upcoming' || s.status === 'live') : [];
+  
+  // Get clan announcements (only for students in a clan)
+  const { data: announcements } = useClanAnnouncements(membership?.clan_id || '');
   
   // Calculate battle stats
   const battleStats = {
@@ -303,6 +310,55 @@ export default function StudentDashboard() {
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* Clan Announcements (Read-only) */}
+                {announcements && announcements.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Megaphone className="h-5 w-5 text-primary" />
+                        Clan Announcements
+                      </CardTitle>
+                      <CardDescription>Latest updates from your mentor</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {announcements.slice(0, 3).map((announcement) => (
+                        <div
+                          key={announcement.id}
+                          className={`p-4 rounded-lg border ${
+                            announcement.is_pinned 
+                              ? 'bg-gradient-to-r from-primary/10 to-transparent border-primary/30' 
+                              : 'bg-secondary/30 border-border'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 mb-2">
+                            {announcement.is_pinned && (
+                              <Badge variant="outline" className="text-primary border-primary text-[10px]">
+                                <Pin className="h-3 w-3 mr-1" />
+                                PINNED
+                              </Badge>
+                            )}
+                            <span className="text-xs text-muted-foreground">
+                              {format(new Date(announcement.created_at), 'MMM d, yyyy')}
+                            </span>
+                          </div>
+                          <h4 className="font-heading font-semibold text-sm mb-1">{announcement.title}</h4>
+                          <p className="text-sm text-muted-foreground line-clamp-2">
+                            {announcement.content}
+                          </p>
+                        </div>
+                      ))}
+                      {announcements.length > 3 && (
+                        <Link to={`/clan/${membership?.clan_id}?tab=overview`}>
+                          <Button variant="ghost" size="sm" className="w-full">
+                            View All Announcements
+                            <ChevronRight className="h-4 w-4 ml-1" />
+                          </Button>
+                        </Link>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
               </div>
 
               {/* Right Column - Upcoming Classes */}

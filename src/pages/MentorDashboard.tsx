@@ -417,7 +417,7 @@ export default function MentorDashboard() {
                 <div className="max-w-2xl">
                   <AnnouncementManager 
                     clanId={currentClan.id} 
-                    mentorId={currentMentor.id}
+                    mentorId={user.id}
                     isMentor={isMentor}
                   />
                 </div>
