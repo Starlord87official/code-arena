@@ -69,9 +69,11 @@ export default function ClanHome() {
   
   // Check membership status
   const isMember = membership?.clan_id === id;
+  const isInAnotherClan = membership !== null && membership?.clan_id !== id;
   // isMentorOfThisClan: user has mentor role in THIS specific clan
   const isMentorOfThisClan = userRole?.role === 'mentor';
-  const canJoin = clan && clan.isOpen && clan.memberCount < clan.maxMembers && !isMember && !isMentorOfThisClan;
+  // Students can only join if not already in ANY clan (one-clan-per-student rule)
+  const canJoin = clan && clan.isOpen && clan.memberCount < clan.maxMembers && !isMember && !isInAnotherClan && !isMentorOfThisClan;
   
   const handleJoinClan = async () => {
     if (!isAuthenticated) {
@@ -227,6 +229,17 @@ export default function ClanHome() {
                         </>
                       )}
                     </Button>
+                  ) : isInAnotherClan ? (
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-muted-foreground">
+                        Already in a Clan
+                      </Badge>
+                      <Link to={`/clan/${membership?.clan_id}`}>
+                        <Button variant="outline" size="sm">
+                          View Your Clan
+                        </Button>
+                      </Link>
+                    </div>
                   ) : !clan.isOpen ? (
                     <Badge variant="outline" className="text-muted-foreground">
                       Invite Only
