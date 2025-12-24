@@ -12,13 +12,14 @@ import { mockBattle } from '@/lib/battleData';
 import { ChevronRight, Flame, Target, Trophy, Zap, Clock, AlertTriangle, TrendingUp, Swords, Loader2, BookOpen, GraduationCap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useIsMentorAnywhere } from '@/hooks/useUserRole';
+import { useRoleValidation } from '@/hooks/useUserRole';
 
 export default function Dashboard() {
   const { profile, user, isAuthenticated, isLoading } = useAuth();
-  const { isMentor, isLoading: roleLoading } = useIsMentorAnywhere(user?.id);
+  const { isMentor, isLoading: roleLoading, isValidated } = useRoleValidation(user?.id);
   
-  if (isLoading || roleLoading) {
+  // Show loading while auth or role validation is in progress
+  if (isLoading || roleLoading || (isAuthenticated && !isValidated)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -26,11 +27,12 @@ export default function Dashboard() {
     );
   }
 
+  // Redirect unauthenticated users
   if (!isAuthenticated) {
     return <Navigate to="/auth" replace />;
   }
 
-  // Redirect mentors to mentor dashboard
+  // Strictly redirect mentors to mentor dashboard - no exceptions
   if (isMentor) {
     return <Navigate to="/mentor-dashboard" replace />;
   }

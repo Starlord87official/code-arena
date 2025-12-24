@@ -32,7 +32,7 @@ import { AnnouncementManager } from '@/components/mentor/AnnouncementManager';
 import { InviteMentorModal } from '@/components/mentor/InviteMentorModal';
 import { MentorInvitesList } from '@/components/mentor/MentorInvitesList';
 import { useAuth } from '@/contexts/AuthContext';
-import { useIsMentorAnywhere } from '@/hooks/useUserRole';
+import { useRoleValidation } from '@/hooks/useUserRole';
 import { 
   mockMentors, 
   getClanByMentorId, 
@@ -50,10 +50,11 @@ export default function MentorDashboard() {
   const { user, isLoading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   
-  // Check if user is a mentor in any clan
-  const { isMentor, isLoading: roleLoading } = useIsMentorAnywhere(user?.id);
+  // Check if user is a mentor - single source of truth
+  const { isMentor, isLoading: roleLoading, isValidated } = useRoleValidation(user?.id);
   
-  const isLoading = authLoading || roleLoading;
+  // Combined loading state - must wait for both auth AND role validation
+  const isLoading = authLoading || roleLoading || (!authLoading && user && !isValidated);
   
   // Class form state
   const [classTitle, setClassTitle] = useState('');
@@ -98,18 +99,24 @@ export default function MentorDashboard() {
     setClassMeetLink('');
   };
 
-  // Access control - redirect non-mentors
-  if (!isLoading && !isMentor && user) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
-  // Show loading while checking roles
+  // CRITICAL: Show loading FIRST while checking roles
+  // This prevents any mentor UI from rendering before validation completes
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
+  }
+
+  // Access control - strictly redirect non-mentors after role validation
+  if (!isMentor && user) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  // Redirect unauthenticated users
+  if (!user) {
+    return <Navigate to="/auth" replace />;
   }
 
   if (!currentClan) {
