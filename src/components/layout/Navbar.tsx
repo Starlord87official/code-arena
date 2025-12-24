@@ -22,7 +22,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
-import { useIsMentorAnywhere } from '@/hooks/useUserRole';
+import { useRoleValidation } from '@/hooks/useUserRole';
 import { getDivisionColor } from '@/lib/mockData';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -72,7 +72,7 @@ const navbarNotifications = [
 
 export function Navbar() {
   const { profile, user, isAuthenticated, logout } = useAuth();
-  const { isMentor } = useIsMentorAnywhere(user?.id);
+  const { isMentor, isStudent, isLoading: roleLoading } = useRoleValidation(user?.id);
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -81,7 +81,8 @@ export function Navbar() {
   const unreadCount = navbarNotifications.filter(n => !n.read).length;
   const criticalCount = navbarNotifications.filter(n => n.priority === 'critical' && !n.read).length;
 
-  // Role-based dashboard path
+  // Role-based dashboard path - only show after role validation
+  // Mentors get mentor dashboard, students get regular dashboard
   const dashboardPath = isMentor ? '/mentor-dashboard' : '/dashboard';
 
   const navLinks = isAuthenticated
