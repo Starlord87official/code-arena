@@ -1,6 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 import { AppRole } from './useUserRole';
 
 export type { AppRole };
@@ -59,44 +58,6 @@ export function useIsMentor(userId: string | undefined, clanId: string) {
     isLoading,
   };
 }
-
-// Assign role to user
-export function useAssignRole() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({
-      userId,
-      clanId,
-      role,
-    }: {
-      userId: string;
-      clanId: string;
-      role: AppRole;
-    }) => {
-      const { data, error } = await supabase
-        .from('user_roles')
-        .upsert({
-          user_id: userId,
-          clan_id: clanId,
-          role,
-        }, {
-          onConflict: 'user_id,clan_id',
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['user-role', variables.userId, variables.clanId] });
-      queryClient.invalidateQueries({ queryKey: ['clan-roles', variables.clanId] });
-      toast.success('Role assigned successfully');
-    },
-    onError: (error) => {
-      console.error('Failed to assign role:', error);
-      toast.error('Failed to assign role');
-    },
-  });
-}
+// NOTE: Direct role assignment has been removed for security.
+// Mentor role can ONLY be assigned via accept_mentor_invite() database function.
+// This ensures mentor role is invite-only.
