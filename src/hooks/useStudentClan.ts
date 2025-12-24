@@ -48,7 +48,7 @@ export function useJoinClan() {
       clanId: string;
       username: string;
     }) => {
-      // First, add as clan member
+      // First, add as clan member (backend trigger enforces one-clan-per-student)
       const { data: member, error: memberError } = await supabase
         .from('clan_members')
         .insert({
@@ -61,7 +61,13 @@ export function useJoinClan() {
         .select()
         .single();
 
-      if (memberError) throw memberError;
+      if (memberError) {
+        // Check for the one-clan-per-student constraint
+        if (memberError.message?.includes('Students can only join one clan')) {
+          throw new Error('You can only be a member of one clan at a time');
+        }
+        throw memberError;
+      }
 
       // Then, assign student role
       const { error: roleError } = await supabase
