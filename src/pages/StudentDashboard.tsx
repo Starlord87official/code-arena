@@ -21,7 +21,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/contexts/AuthContext';
 import { useStudentClan } from '@/hooks/useStudentClan';
-import { useIsMentorAnywhere } from '@/hooks/useUserRole';
+import { useUserRole } from '@/hooks/useUserRole';
 import { 
   getClanById, 
   getMentorById,
@@ -37,8 +37,8 @@ export default function StudentDashboard() {
   // Get student's clan membership
   const { data: membership, isLoading: membershipLoading } = useStudentClan(user?.id);
   
-  // Get user role
-  const { isMentor, isLoading: roleLoading } = useIsMentorAnywhere(user?.id);
+  // Get user role - single source of truth
+  const { isMentor, isLoading: roleLoading } = useUserRole(user?.id);
   
   // Get battle history
   const { data: battles } = useAllBattleHistory();
@@ -57,32 +57,18 @@ export default function StudentDashboard() {
     totalXp: battles?.reduce((acc, b) => acc + b.xp_change, 0) || 0,
   };
 
-  // Access control - redirect mentors to mentor dashboard
-  if (!isLoading && isMentor) {
+  // CRITICAL: Show loading FIRST - prevents mentor UI flash
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Card className="max-w-md">
-          <CardHeader className="text-center">
-            <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-              <GraduationCap className="h-6 w-6 text-primary" />
-            </div>
-            <CardTitle>You're a Mentor!</CardTitle>
-            <CardDescription>
-              As a mentor, you have access to the Mentor Dashboard instead.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="text-center">
-            <Button onClick={() => navigate('/mentor-dashboard')}>
-              Go to Mentor Dashboard
-            </Button>
-          </CardContent>
-        </Card>
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
-  // Loading state
-  if (isLoading) {
+  // Access control - strictly redirect mentors to mentor dashboard (no UI shown)
+  if (isMentor) {
+    navigate('/mentor-dashboard', { replace: true });
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

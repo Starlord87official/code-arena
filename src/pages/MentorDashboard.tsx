@@ -32,7 +32,7 @@ import { AnnouncementManager } from '@/components/mentor/AnnouncementManager';
 import { InviteMentorModal } from '@/components/mentor/InviteMentorModal';
 import { MentorInvitesList } from '@/components/mentor/MentorInvitesList';
 import { useAuth } from '@/contexts/AuthContext';
-import { useRoleValidation } from '@/hooks/useUserRole';
+import { useUserRole } from '@/hooks/useUserRole';
 import { 
   mockMentors, 
   getClanByMentorId, 
@@ -51,7 +51,7 @@ export default function MentorDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   
   // Check if user is a mentor - single source of truth
-  const { isMentor, isLoading: roleLoading, isValidated } = useRoleValidation(user?.id);
+  const { isMentor, isLoading: roleLoading, isValidated } = useUserRole(user?.id);
   
   // Combined loading state - must wait for both auth AND role validation
   const isLoading = authLoading || roleLoading || (!authLoading && user && !isValidated);

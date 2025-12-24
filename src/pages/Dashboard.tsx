@@ -12,11 +12,11 @@ import { mockBattle } from '@/lib/battleData';
 import { ChevronRight, Flame, Target, Trophy, Zap, Clock, AlertTriangle, TrendingUp, Swords, Loader2, BookOpen, GraduationCap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useRoleValidation } from '@/hooks/useUserRole';
+import { useUserRole } from '@/hooks/useUserRole';
 
 export default function Dashboard() {
   const { profile, user, isAuthenticated, isLoading } = useAuth();
-  const { isMentor, isLoading: roleLoading, isValidated } = useRoleValidation(user?.id);
+  const { isMentor, isLoading: roleLoading, isValidated } = useUserRole(user?.id);
   
   // Show loading while auth or role validation is in progress
   if (isLoading || roleLoading || (isAuthenticated && !isValidated)) {
