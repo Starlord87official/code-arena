@@ -12,8 +12,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
-import { useJoinClan, useStudentClan } from '@/hooks/useStudentClan';
+import { useJoinClan, useStudentClan, useClanCooldown } from '@/hooks/useStudentClan';
 import { getClanById, getMentorById } from '@/lib/mentorData';
+import { AlertTriangle, Clock as ClockIcon } from 'lucide-react';
 
 export default function JoinClan() {
   const [searchParams] = useSearchParams();
@@ -22,12 +23,13 @@ export default function JoinClan() {
   
   const { user, profile, isAuthenticated, isLoading: authLoading } = useAuth();
   const { data: existingMembership, isLoading: membershipLoading } = useStudentClan(user?.id);
+  const { data: cooldown, isLoading: cooldownLoading } = useClanCooldown(user?.id);
   const joinClan = useJoinClan();
   
   const clan = clanId ? getClanById(clanId) : null;
   const mentor = clan ? getMentorById(clan.mentorId) : null;
   
-  const isLoading = authLoading || membershipLoading;
+  const isLoading = authLoading || membershipLoading || cooldownLoading;
 
   // Store clan ID in session if not authenticated
   useEffect(() => {
@@ -126,6 +128,43 @@ export default function JoinClan() {
                 View Current Clan
               </Button>
             )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // User is in cooldown period
+  if (cooldown?.isInCooldown) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <Card className="max-w-md w-full">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-status-warning/10 flex items-center justify-center">
+              <ClockIcon className="h-6 w-6 text-status-warning" />
+            </div>
+            <CardTitle>Cooldown Active</CardTitle>
+            <CardDescription>
+              You recently left a clan. Please wait before joining a new one.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="p-4 rounded-lg bg-status-warning/10 border border-status-warning/30">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="h-5 w-5 text-status-warning flex-shrink-0" />
+                <div>
+                  <p className="font-heading font-semibold">
+                    {cooldown.remainingDays} days {cooldown.remainingHours} hours remaining
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    You can join a new clan after the 7-day cooldown period ends.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <Button variant="outline" className="w-full" onClick={() => navigate('/student/dashboard')}>
+              Go to Dashboard
+            </Button>
           </CardContent>
         </Card>
       </div>
