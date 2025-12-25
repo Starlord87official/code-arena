@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   Users, 
@@ -15,14 +16,26 @@ import {
   GraduationCap,
   Loader2,
   Megaphone,
-  Pin
+  Pin,
+  LogOut,
+  AlertTriangle
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useAuth } from '@/contexts/AuthContext';
-import { useStudentClan } from '@/hooks/useStudentClan';
+import { useStudentClan, useClanCooldown, useLeaveClan } from '@/hooks/useStudentClan';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useClanAnnouncements } from '@/hooks/useClanAnnouncements';
 import { 
@@ -37,9 +50,16 @@ import { format } from 'date-fns';
 export default function StudentDashboard() {
   const navigate = useNavigate();
   const { user, profile, isLoading: authLoading } = useAuth();
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   
   // Get student's clan membership
   const { data: membership, isLoading: membershipLoading } = useStudentClan(user?.id);
+  
+  // Get cooldown status
+  const { data: cooldown, isLoading: cooldownLoading } = useClanCooldown(user?.id);
+  
+  // Leave clan mutation
+  const leaveClan = useLeaveClan();
   
   // Get user role - single source of truth
   const { isMentor, isLoading: roleLoading } = useUserRole(user?.id);
@@ -47,7 +67,7 @@ export default function StudentDashboard() {
   // Get battle history
   const { data: battles } = useAllBattleHistory();
   
-  const isLoading = authLoading || membershipLoading || roleLoading;
+  const isLoading = authLoading || membershipLoading || roleLoading || cooldownLoading;
   
   // Get clan and mentor info
   const clan = membership ? getClanById(membership.clan_id) : null;
@@ -62,6 +82,18 @@ export default function StudentDashboard() {
     participated: battles?.length || 0,
     wins: battles?.filter(b => b.winner === membership?.clan_id).length || 0,
     totalXp: battles?.reduce((acc, b) => acc + b.xp_change, 0) || 0,
+  };
+  
+  const handleLeaveClan = async () => {
+    if (!membership || !user) return;
+    
+    await leaveClan.mutateAsync({
+      memberId: membership.id,
+      userId: user.id,
+      clanId: membership.clan_id,
+    });
+    
+    setShowLeaveDialog(false);
   };
 
   // CRITICAL: Show loading FIRST - prevents mentor UI flash
@@ -98,6 +130,28 @@ export default function StudentDashboard() {
                 Join a clan to access classes, participate in battles, and learn from experienced mentors.
               </p>
               
+              {/* Cooldown Warning */}
+              {cooldown?.isInCooldown && (
+                <Card className="mb-8 border-status-warning/50 bg-status-warning/10">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <AlertTriangle className="h-5 w-5 text-status-warning flex-shrink-0" />
+                      <div className="text-left">
+                        <p className="font-heading font-semibold text-status-warning">
+                          Cooldown Active
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          You recently left a clan. You can join a new clan in{' '}
+                          <span className="font-semibold text-foreground">
+                            {cooldown.remainingDays} days {cooldown.remainingHours} hours
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              
               <div className="grid gap-4">
                 {mockClans.filter(c => c.isOpen).slice(0, 3).map(c => {
                   const m = getMentorById(c.mentorId);
@@ -112,7 +166,7 @@ export default function StudentDashboard() {
                             </p>
                           </div>
                           <Link to={`/clan/${c.id}`}>
-                            <Button size="sm">
+                            <Button size="sm" disabled={cooldown?.isInCooldown}>
                               View Clan
                               <ChevronRight className="h-4 w-4 ml-1" />
                             </Button>
@@ -444,6 +498,14 @@ export default function StudentDashboard() {
                         Leaderboard
                       </Button>
                     </Link>
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => setShowLeaveDialog(true)}
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Leave Clan
+                    </Button>
                   </CardContent>
                 </Card>
               </div>
@@ -451,6 +513,41 @@ export default function StudentDashboard() {
           </div>
         </div>
       </section>
+      
+      {/* Leave Clan Confirmation Dialog */}
+      <AlertDialog open={showLeaveDialog} onOpenChange={setShowLeaveDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Leave {clan?.name}?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>Are you sure you want to leave this clan?</p>
+              <p className="font-semibold text-foreground">
+                You will not be able to join any clan for 7 days after leaving.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleLeaveClan}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={leaveClan.isPending}
+            >
+              {leaveClan.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Leaving...
+                </>
+              ) : (
+                'Leave Clan'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

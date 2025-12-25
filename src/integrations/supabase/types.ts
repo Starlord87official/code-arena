@@ -199,6 +199,7 @@ export type Database = {
           division: string | null
           email: string | null
           id: string
+          left_clan_at: string | null
           streak: number | null
           updated_at: string
           username: string | null
@@ -211,6 +212,7 @@ export type Database = {
           division?: string | null
           email?: string | null
           id: string
+          left_clan_at?: string | null
           streak?: number | null
           updated_at?: string
           username?: string | null
@@ -223,6 +225,7 @@ export type Database = {
           division?: string | null
           email?: string | null
           id?: string
+          left_clan_at?: string | null
           streak?: number | null
           updated_at?: string
           username?: string | null

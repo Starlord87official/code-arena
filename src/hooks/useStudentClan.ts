@@ -14,6 +14,13 @@ export interface StudentClanMembership {
   last_active: string;
 }
 
+export interface CooldownInfo {
+  isInCooldown: boolean;
+  cooldownEndsAt: Date | null;
+  remainingDays: number;
+  remainingHours: number;
+}
+
 // Fetch student's clan membership
 export function useStudentClan(userId: string | undefined) {
   return useQuery({
@@ -34,6 +41,50 @@ export function useStudentClan(userId: string | undefined) {
   });
 }
 
+// Check cooldown status for a user
+export function useClanCooldown(userId: string | undefined) {
+  return useQuery({
+    queryKey: ['clan-cooldown', userId],
+    queryFn: async (): Promise<CooldownInfo> => {
+      if (!userId) {
+        return { isInCooldown: false, cooldownEndsAt: null, remainingDays: 0, remainingHours: 0 };
+      }
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('left_clan_at')
+        .eq('id', userId)
+        .single();
+
+      if (error) throw error;
+      
+      if (!data?.left_clan_at) {
+        return { isInCooldown: false, cooldownEndsAt: null, remainingDays: 0, remainingHours: 0 };
+      }
+      
+      const leftAt = new Date(data.left_clan_at);
+      const cooldownEndsAt = new Date(leftAt.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
+      const now = new Date();
+      
+      if (cooldownEndsAt <= now) {
+        return { isInCooldown: false, cooldownEndsAt: null, remainingDays: 0, remainingHours: 0 };
+      }
+      
+      const remainingMs = cooldownEndsAt.getTime() - now.getTime();
+      const remainingDays = Math.floor(remainingMs / (24 * 60 * 60 * 1000));
+      const remainingHours = Math.floor((remainingMs % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+      
+      return {
+        isInCooldown: true,
+        cooldownEndsAt,
+        remainingDays,
+        remainingHours,
+      };
+    },
+    enabled: !!userId,
+  });
+}
+
 // Join a clan as a student
 export function useJoinClan() {
   const queryClient = useQueryClient();
@@ -48,7 +99,7 @@ export function useJoinClan() {
       clanId: string;
       username: string;
     }) => {
-      // First, add as clan member (backend trigger enforces one-clan-per-student)
+      // First, add as clan member (backend trigger enforces one-clan-per-student and cooldown)
       const { data: member, error: memberError } = await supabase
         .from('clan_members')
         .insert({
@@ -65,6 +116,10 @@ export function useJoinClan() {
         // Check for the one-clan-per-student constraint
         if (memberError.message?.includes('Students can only join one clan')) {
           throw new Error('You can only be a member of one clan at a time');
+        }
+        // Check for cooldown constraint
+        if (memberError.message?.includes('You must wait until')) {
+          throw new Error(memberError.message);
         }
         throw memberError;
       }
@@ -86,12 +141,13 @@ export function useJoinClan() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['student-clan', variables.userId] });
+      queryClient.invalidateQueries({ queryKey: ['clan-cooldown', variables.userId] });
       queryClient.invalidateQueries({ queryKey: ['user-role', variables.userId, variables.clanId] });
       toast.success('Successfully joined the clan!');
     },
     onError: (error) => {
       console.error('Failed to join clan:', error);
-      toast.error('Failed to join clan');
+      toast.error(error instanceof Error ? error.message : 'Failed to join clan');
     },
   });
 }
@@ -110,7 +166,7 @@ export function useLeaveClan() {
       userId: string;
       clanId: string;
     }) => {
-      // Remove clan membership (role will be handled separately if needed)
+      // Remove clan membership (trigger will update left_clan_at)
       const { error } = await supabase
         .from('clan_members')
         .delete()
@@ -120,7 +176,8 @@ export function useLeaveClan() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['student-clan', variables.userId] });
-      toast.success('Left the clan');
+      queryClient.invalidateQueries({ queryKey: ['clan-cooldown', variables.userId] });
+      toast.success('You have left the clan. You can join a new clan in 7 days.');
     },
     onError: (error) => {
       console.error('Failed to leave clan:', error);
