@@ -18,7 +18,6 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSupabaseAuth } from '@/hooks/useAuth';
-import { useIsMentorAnywhere } from '@/hooks/useUserRole';
 import { toast } from 'sonner';
 
 // Validation schemas
@@ -28,8 +27,7 @@ const usernameSchema = z.string().min(3, 'Username must be at least 3 characters
 
 export default function Auth() {
   const navigate = useNavigate();
-  const { user, isAuthenticated, isLoading: authLoading, signIn, signUp } = useSupabaseAuth();
-  const { isMentor, isLoading: roleLoading } = useIsMentorAnywhere(user?.id);
+  const { profile, isAuthenticated, isLoading: authLoading, signIn, signUp } = useSupabaseAuth();
   
   const [tab, setTab] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
@@ -39,25 +37,18 @@ export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Redirect based on role after auth
+  // Redirect based on onboarding status after auth
   useEffect(() => {
-    if (!authLoading && !roleLoading && isAuthenticated) {
-      const pendingMentorInvite = sessionStorage.getItem('pending_mentor_invite');
-      const pendingClanJoin = sessionStorage.getItem('pending_clan_join');
-      
-      if (pendingMentorInvite) {
-        navigate(`/invite/mentor?token=${pendingMentorInvite}`);
-      } else if (pendingClanJoin) {
-        navigate(`/join-clan?clan=${pendingClanJoin}`);
-      } else if (isMentor) {
-        // Redirect mentors to mentor dashboard
-        navigate('/mentor-dashboard');
+    if (!authLoading && isAuthenticated && profile) {
+      if (!profile.onboarding_completed) {
+        // New user or incomplete onboarding - go to onboarding
+        navigate('/onboarding', { replace: true });
       } else {
-        // Redirect students to dashboard
-        navigate('/dashboard');
+        // Returning user - go to dashboard
+        navigate('/dashboard', { replace: true });
       }
     }
-  }, [isAuthenticated, authLoading, roleLoading, isMentor, navigate]);
+  }, [isAuthenticated, authLoading, profile, navigate]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -125,7 +116,7 @@ export default function Auth() {
     toast.success('Account created! Welcome to CodeLock!');
   };
 
-  if (authLoading || (isAuthenticated && roleLoading)) {
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

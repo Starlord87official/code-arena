@@ -195,41 +195,59 @@ export type Database = {
         Row: {
           avatar_url: string | null
           bio: string | null
+          college_name: string | null
+          college_year: string | null
           created_at: string
           division: string | null
           email: string | null
           id: string
           left_clan_at: string | null
+          occupation_type: string | null
+          onboarding_completed: boolean
+          primary_roadmap: string | null
           streak: number | null
           updated_at: string
           username: string | null
           xp: number | null
+          years_of_experience: number | null
         }
         Insert: {
           avatar_url?: string | null
           bio?: string | null
+          college_name?: string | null
+          college_year?: string | null
           created_at?: string
           division?: string | null
           email?: string | null
           id: string
           left_clan_at?: string | null
+          occupation_type?: string | null
+          onboarding_completed?: boolean
+          primary_roadmap?: string | null
           streak?: number | null
           updated_at?: string
           username?: string | null
           xp?: number | null
+          years_of_experience?: number | null
         }
         Update: {
           avatar_url?: string | null
           bio?: string | null
+          college_name?: string | null
+          college_year?: string | null
           created_at?: string
           division?: string | null
           email?: string | null
           id?: string
           left_clan_at?: string | null
+          occupation_type?: string | null
+          onboarding_completed?: boolean
+          primary_roadmap?: string | null
           streak?: number | null
           updated_at?: string
           username?: string | null
           xp?: number | null
+          years_of_experience?: number | null
         }
         Relationships: []
       }

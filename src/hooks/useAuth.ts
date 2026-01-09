@@ -13,6 +13,13 @@ export interface Profile {
   streak: number;
   created_at: string;
   updated_at: string;
+  // Onboarding fields
+  onboarding_completed: boolean;
+  primary_roadmap: string | null;
+  occupation_type: string | null;
+  college_name: string | null;
+  college_year: string | null;
+  years_of_experience: number | null;
 }
 
 export function useSupabaseAuth() {
