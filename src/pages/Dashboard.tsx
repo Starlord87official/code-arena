@@ -11,6 +11,7 @@ import { RoadmapCard } from '@/components/roadmap/RoadmapCard';
 import { RevisionSummaryCard } from '@/components/revision/RevisionSummaryCard';
 import { TargetCard } from '@/components/dashboard/TargetCard';
 import { ActivityHeatmap } from '@/components/dashboard/ActivityHeatmap';
+import { RevisionQueueCard } from '@/components/dashboard/RevisionQueueCard';
 import { mockChallenges, mockContests, mockLeaderboard, getXpProgress, User as MockUser } from '@/lib/mockData';
 import { ChevronRight, Flame, Target, Trophy, Zap, Clock, AlertTriangle, TrendingUp, Loader2, Swords, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -242,6 +243,9 @@ export default function Dashboard() {
 
             {/* Revision Summary */}
             <RevisionSummaryCard />
+
+            {/* Revision Queue */}
+            <RevisionQueueCard />
 
             {/* Division Progress */}
             <DivisionProgress user={userForComponents} />

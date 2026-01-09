@@ -251,6 +251,45 @@ export type Database = {
         }
         Relationships: []
       }
+      revision_queue: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          problem_id: string
+          problem_title: string
+          scheduled_date: string
+          status: string
+          topic: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          problem_id: string
+          problem_title: string
+          scheduled_date: string
+          status?: string
+          topic?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          problem_id?: string
+          problem_title?: string
+          scheduled_date?: string
+          status?: string
+          topic?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       roadmap_topics: {
         Row: {
           created_at: string
@@ -492,7 +531,17 @@ export type Database = {
     }
     Functions: {
       accept_mentor_invite: { Args: { invite_token: string }; Returns: Json }
+      add_to_revision_queue: {
+        Args: {
+          p_days_until_revision?: number
+          p_problem_id: string
+          p_problem_title: string
+          p_topic?: string
+        }
+        Returns: Json
+      }
       complete_revision: { Args: { p_topic_id: string }; Returns: Json }
+      complete_revision_item: { Args: { p_id: string }; Returns: Json }
       get_activity_summary: { Args: never; Returns: Json }
       get_or_create_user_targets: {
         Args: never
@@ -512,6 +561,7 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      get_revision_queue: { Args: never; Returns: Json }
       has_clan_role: {
         Args: {
           _clan_id: string

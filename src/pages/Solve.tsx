@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { mockChallenges, getDifficultyColor, Challenge } from '@/lib/mockData';
 import { useToast } from '@/hooks/use-toast';
+import { MarkForRevisionButton } from '@/components/revision/MarkForRevisionButton';
 
 const starterCode = {
   javascript: `function solve(input) {
@@ -201,6 +202,13 @@ export default function Solve() {
             <Zap className="h-4 w-4" />
             <span className="text-sm font-bold">+{challenge.xpReward} XP</span>
           </div>
+
+          {/* Mark for Revision */}
+          <MarkForRevisionButton
+            problemId={challenge.id}
+            problemTitle={challenge.title}
+            topic={challenge.tags[0]}
+          />
         </div>
       </div>
 

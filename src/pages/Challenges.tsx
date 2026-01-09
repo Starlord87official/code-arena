@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { mockChallenges, getDifficultyColor, Challenge } from '@/lib/mockData';
+import { MarkForRevisionButton } from '@/components/revision/MarkForRevisionButton';
 
 const difficultyOrder = { easy: 1, medium: 2, hard: 3, extreme: 4 };
 
@@ -366,6 +367,12 @@ export default function Challenges() {
                         </div>
                         <span className="text-[10px] text-muted-foreground">Limit</span>
                       </div>
+                      <MarkForRevisionButton
+                        problemId={challenge.id}
+                        problemTitle={challenge.title}
+                        topic={challenge.tags[0]}
+                        variant="compact"
+                      />
                       <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
                     </div>
                   </div>
