@@ -29,6 +29,11 @@ export default function Dashboard() {
     return <Navigate to="/auth" replace />;
   }
 
+  // Redirect to onboarding if not completed
+  if (profile && !profile.onboarding_completed) {
+    return <Navigate to="/onboarding" replace />;
+  }
+
   // Create a compatible user object from profile for existing components
   const userForComponents: MockUser = {
     uid: profile?.id || '',
