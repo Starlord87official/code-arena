@@ -18,20 +18,11 @@ import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 import Contests from "./pages/Contests";
 import ContestLive from "./pages/ContestLive";
-import Battle from "./pages/Battle";
-import Mentors from "./pages/Mentors";
-import MentorProfile from "./pages/MentorProfile";
-import ClanHome from "./pages/ClanHome";
-import MentorDashboard from "./pages/MentorDashboard";
-import StudentDashboard from "./pages/StudentDashboard";
-import JoinClan from "./pages/JoinClan";
-import ClanVsClanBattle from "./pages/ClanVsClanBattle";
-import BattleHistory from "./pages/BattleHistory";
-import AcceptMentorInvite from "./pages/AcceptMentorInvite";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+// Phase 1: Student-focused app - mentor/clan features disabled
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
@@ -54,16 +45,6 @@ const App = () => (
               <Route path="/settings" element={<Settings />} />
               <Route path="/contests" element={<Contests />} />
               <Route path="/contest/:id/live" element={<ContestLive />} />
-              <Route path="/battle" element={<Battle />} />
-              <Route path="/mentors" element={<Mentors />} />
-              <Route path="/mentor/:id" element={<MentorProfile />} />
-              <Route path="/clan/:id" element={<ClanHome />} />
-              <Route path="/mentor-dashboard" element={<MentorDashboard />} />
-              <Route path="/student/dashboard" element={<StudentDashboard />} />
-              <Route path="/join-clan" element={<JoinClan />} />
-              <Route path="/battle/clan-vs-clan" element={<ClanVsClanBattle />} />
-              <Route path="/battles" element={<BattleHistory />} />
-              <Route path="/invite/mentor" element={<AcceptMentorInvite />} />
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>
