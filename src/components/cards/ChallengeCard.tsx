@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Challenge, getDifficultyColor } from '@/lib/mockData';
 import { Check, ChevronRight, Users, Zap } from 'lucide-react';
 import { MarkForRevisionButton } from '@/components/revision/MarkForRevisionButton';
+import { CompanyBadge } from '@/components/company/CompanyBadge';
 
 interface ChallengeCardProps {
   challenge: Challenge;
@@ -30,13 +31,15 @@ export function ChallengeCard({ challenge, solved = false }: ChallengeCardProps)
           <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
             {challenge.description}
           </p>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 mb-2">
             {challenge.tags.map(tag => (
               <span key={tag} className="text-xs px-2 py-1 rounded bg-secondary text-muted-foreground">
                 {tag}
               </span>
             ))}
           </div>
+          {/* Company badges */}
+          <CompanyBadge challengeId={challenge.id} maxCompanies={2} />
         </Link>
         <div className="flex items-center gap-2 flex-shrink-0">
           <MarkForRevisionButton
