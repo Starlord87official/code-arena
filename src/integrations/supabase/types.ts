@@ -202,6 +202,48 @@ export type Database = {
           },
         ]
       }
+      friend_requests: {
+        Row: {
+          created_at: string
+          id: string
+          receiver_id: string
+          sender_id: string
+          status: Database["public"]["Enums"]["friend_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          receiver_id: string
+          sender_id: string
+          status?: Database["public"]["Enums"]["friend_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          receiver_id?: string
+          sender_id?: string
+          status?: Database["public"]["Enums"]["friend_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "friend_requests_receiver_id_fkey"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "friend_requests_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mentor_invites: {
         Row: {
           accepted_at: string | null
@@ -608,6 +650,12 @@ export type Database = {
       }
       get_activity_summary: { Args: never; Returns: Json }
       get_eligible_doubt_topics: { Args: never; Returns: Json }
+      get_friend_requests: { Args: never; Returns: Json }
+      get_friends: { Args: never; Returns: Json }
+      get_friendship_status: {
+        Args: { p_other_user_id: string }
+        Returns: Json
+      }
       get_or_create_user_targets: {
         Args: never
         Returns: {
@@ -626,6 +674,7 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      get_public_profile: { Args: { p_username: string }; Returns: Json }
       get_revision_queue: { Args: never; Returns: Json }
       get_visible_doubts: {
         Args: {
@@ -647,6 +696,11 @@ export type Database = {
       }
       mark_doubt_solved: { Args: { p_doubt_id: string }; Returns: Json }
       record_activity: { Args: { p_problems_solved?: number }; Returns: Json }
+      respond_friend_request: {
+        Args: { p_accept: boolean; p_request_id: string }
+        Returns: Json
+      }
+      send_friend_request: { Args: { p_receiver_id: string }; Returns: Json }
       start_roadmap: { Args: { p_roadmap_id: string }; Returns: Json }
       update_topic_state: {
         Args: {
@@ -664,6 +718,7 @@ export type Database = {
       app_role: "mentor" | "student"
       doubt_category: "study" | "job" | "internship" | "referral"
       doubt_difficulty: "beginner" | "intermediate" | "advanced"
+      friend_status: "pending" | "accepted" | "rejected"
       invite_status: "pending" | "accepted" | "expired"
       mentor_expertise: "dsa" | "cp" | "web" | "system_design"
       topic_state: "not_started" | "in_progress" | "completed"
@@ -797,6 +852,7 @@ export const Constants = {
       app_role: ["mentor", "student"],
       doubt_category: ["study", "job", "internship", "referral"],
       doubt_difficulty: ["beginner", "intermediate", "advanced"],
+      friend_status: ["pending", "accepted", "rejected"],
       invite_status: ["pending", "accepted", "expired"],
       mentor_expertise: ["dsa", "cp", "web", "system_design"],
       topic_state: ["not_started", "in_progress", "completed"],

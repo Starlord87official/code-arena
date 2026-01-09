@@ -24,6 +24,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { getDivisionColor } from '@/lib/mockData';
 import { formatDistanceToNow } from 'date-fns';
+import { FriendRequestsPanel } from '@/components/social/FriendRequestsPanel';
 
 // Priority-based notification data for navbar dropdown
 const navbarNotifications = [
@@ -256,6 +257,9 @@ export function Navbar() {
                   )}
                 </div>
 
+                {/* Friend Requests Panel */}
+                <FriendRequestsPanel />
+
                 {/* Profile */}
                 <div className="relative">
                   <button
@@ -278,7 +282,7 @@ export function Navbar() {
                   {profileOpen && (
                     <div className="absolute right-0 top-full mt-2 w-48 bg-card border border-border rounded-lg shadow-arena overflow-hidden animate-scale-in">
                       <Link
-                        to="/profile"
+                        to={profile?.username ? `/profile/${profile.username}` : '/profile'}
                         className="flex items-center gap-3 px-4 py-3 hover:bg-secondary transition-colors"
                         onClick={() => setProfileOpen(false)}
                       >

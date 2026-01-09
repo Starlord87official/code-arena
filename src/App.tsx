@@ -15,6 +15,7 @@ import Solve from "./pages/Solve";
 import Leaderboard from "./pages/Leaderboard";
 import Notifications from "./pages/Notifications";
 import Profile from "./pages/Profile";
+import PublicProfile from "./pages/PublicProfile";
 import Settings from "./pages/Settings";
 import Contests from "./pages/Contests";
 import ContestLive from "./pages/ContestLive";
@@ -50,6 +51,7 @@ const App = () => (
               <Route path="/leaderboard" element={<Leaderboard />} />
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/profile/:username" element={<PublicProfile />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/contests" element={<Contests />} />
               <Route path="/contest/:id/live" element={<ContestLive />} />
