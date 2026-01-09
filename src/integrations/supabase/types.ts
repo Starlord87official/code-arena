@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_settings: {
+        Row: {
+          ai_enabled: boolean
+          daily_limit_per_user: number
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          ai_enabled?: boolean
+          daily_limit_per_user?: number
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          ai_enabled?: boolean
+          daily_limit_per_user?: number
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ai_usage: {
+        Row: {
+          context: Json | null
+          created_at: string
+          id: string
+          insight_type: string
+          tokens_used: number | null
+          user_id: string
+        }
+        Insert: {
+          context?: Json | null
+          created_at?: string
+          id?: string
+          insight_type: string
+          tokens_used?: number | null
+          user_id: string
+        }
+        Update: {
+          context?: Json | null
+          created_at?: string
+          id?: string
+          insight_type?: string
+          tokens_used?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       battle_history: {
         Row: {
           battle_id: string
@@ -649,6 +697,7 @@ export type Database = {
         Returns: Json
       }
       get_activity_summary: { Args: never; Returns: Json }
+      get_ai_usage_today: { Args: never; Returns: Json }
       get_eligible_doubt_topics: { Args: never; Returns: Json }
       get_friend_requests: { Args: never; Returns: Json }
       get_friends: { Args: never; Returns: Json }
@@ -696,6 +745,14 @@ export type Database = {
       }
       mark_doubt_solved: { Args: { p_doubt_id: string }; Returns: Json }
       record_activity: { Args: { p_problems_solved?: number }; Returns: Json }
+      record_ai_usage: {
+        Args: {
+          p_context?: Json
+          p_insight_type: string
+          p_tokens_used?: number
+        }
+        Returns: Json
+      }
       respond_friend_request: {
         Args: { p_accept: boolean; p_request_id: string }
         Returns: Json

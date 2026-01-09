@@ -20,6 +20,8 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import { ScoreExplainButton } from '@/components/ai/ScoreExplainButton';
+import { AIUsageBadge } from '@/components/ai/AIUsageBadge';
 
 const trendConfig: Record<ScoreTrend, { icon: React.ElementType; label: string; className: string }> = {
   up: { icon: TrendingUp, label: 'Improving', className: 'text-green-500' },
@@ -175,9 +177,19 @@ export function InterviewReadinessCard() {
               {breakdown.map((item) => (
                 <BreakdownItem key={item.category} item={item} />
               ))}
+              
+              {/* AI Explain Score Button */}
+              <div className="pt-2 border-t">
+                <ScoreExplainButton score={score} breakdown={breakdown} />
+              </div>
             </div>
           </CollapsibleContent>
         </Collapsible>
+
+        {/* AI Usage Badge */}
+        <div className="flex justify-end pt-2">
+          <AIUsageBadge />
+        </div>
       </CardContent>
     </Card>
   );
