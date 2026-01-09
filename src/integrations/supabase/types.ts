@@ -251,6 +251,136 @@ export type Database = {
         }
         Relationships: []
       }
+      roadmap_topics: {
+        Row: {
+          created_at: string
+          id: string
+          roadmap_id: string
+          topic_name: string
+          topic_order: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          roadmap_id: string
+          topic_name: string
+          topic_order: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          roadmap_id?: string
+          topic_name?: string
+          topic_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roadmap_topics_roadmap_id_fkey"
+            columns: ["roadmap_id"]
+            isOneToOne: false
+            referencedRelation: "roadmaps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      roadmaps: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      user_active_roadmaps: {
+        Row: {
+          id: string
+          roadmap_id: string
+          started_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          roadmap_id: string
+          started_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          roadmap_id?: string
+          started_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_active_roadmaps_roadmap_id_fkey"
+            columns: ["roadmap_id"]
+            isOneToOne: false
+            referencedRelation: "roadmaps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roadmap_progress: {
+        Row: {
+          completed_at: string | null
+          id: string
+          roadmap_id: string
+          started_at: string | null
+          state: Database["public"]["Enums"]["topic_state"]
+          topic_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          id?: string
+          roadmap_id: string
+          started_at?: string | null
+          state?: Database["public"]["Enums"]["topic_state"]
+          topic_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          id?: string
+          roadmap_id?: string
+          started_at?: string | null
+          state?: Database["public"]["Enums"]["topic_state"]
+          topic_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roadmap_progress_roadmap_id_fkey"
+            columns: ["roadmap_id"]
+            isOneToOne: false
+            referencedRelation: "roadmaps"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_roadmap_progress_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "roadmap_topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           clan_id: string
@@ -297,11 +427,20 @@ export type Database = {
         }
         Returns: boolean
       }
+      start_roadmap: { Args: { p_roadmap_id: string }; Returns: Json }
+      update_topic_state: {
+        Args: {
+          p_state: Database["public"]["Enums"]["topic_state"]
+          p_topic_id: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "mentor" | "student"
       invite_status: "pending" | "accepted" | "expired"
       mentor_expertise: "dsa" | "cp" | "web" | "system_design"
+      topic_state: "not_started" | "in_progress" | "completed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -432,6 +571,7 @@ export const Constants = {
       app_role: ["mentor", "student"],
       invite_status: ["pending", "accepted", "expired"],
       mentor_expertise: ["dsa", "cp", "web", "system_design"],
+      topic_state: ["not_started", "in_progress", "completed"],
     },
   },
 } as const

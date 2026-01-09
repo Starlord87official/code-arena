@@ -52,7 +52,8 @@ export default function Onboarding() {
     setIsSubmitting(true);
 
     try {
-      const { error } = await supabase
+      // Update profile with onboarding data
+      const { error: profileError } = await supabase
         .from('profiles')
         .update({
           primary_roadmap: primaryRoadmap,
@@ -64,7 +65,17 @@ export default function Onboarding() {
         })
         .eq('id', user.id);
 
-      if (error) throw error;
+      if (profileError) throw profileError;
+
+      // Automatically start the DSA roadmap for the user
+      const { data: startResult, error: startError } = await supabase.rpc('start_roadmap', {
+        p_roadmap_id: primaryRoadmap,
+      });
+
+      if (startError) {
+        console.warn('Could not auto-start roadmap:', startError);
+        // Don't fail onboarding if roadmap start fails
+      }
 
       // Refresh the profile to get updated data
       await refreshProfile();
