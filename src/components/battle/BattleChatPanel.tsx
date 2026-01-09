@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MessageSquare, Radio, Command, Send, Flame, AlertTriangle, Eye, ChevronRight, ChevronLeft, Target, Zap, Hand } from 'lucide-react';
+import { MessageSquare, Radio, Send, ChevronRight, ChevronLeft } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -7,17 +7,18 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { BattleChatMessage, BattleFeedMessage, MentorCommand, mentorCommands } from '@/lib/battleData';
+import { BattleChatMessage, BattleFeedMessage } from '@/lib/battleData';
 import { toast } from '@/hooks/use-toast';
 
 interface BattleChatPanelProps {
   clanChat: BattleChatMessage[];
   battleFeed: BattleFeedMessage[];
-  isMentor?: boolean;
   battleEnded?: boolean;
 }
 
-export function BattleChatPanel({ clanChat, battleFeed, isMentor = false, battleEnded = false }: BattleChatPanelProps) {
+// Battle Chat Panel - Standalone battle feature, no role checks
+// Mentor commands are handled separately in MentorBattleControls component
+export function BattleChatPanel({ clanChat, battleFeed, battleEnded = false }: BattleChatPanelProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [message, setMessage] = useState('');
   const [activeTab, setActiveTab] = useState('clan');
@@ -37,24 +38,6 @@ export function BattleChatPanel({ clanChat, battleFeed, isMentor = false, battle
       title: "Reaction sent",
       description: emoji,
     });
-  };
-
-  const handleMentorCommand = (command: MentorCommand) => {
-    if (battleEnded) return;
-    toast({
-      title: "Command activated",
-      description: command.label,
-    });
-  };
-
-  const getCommandIcon = (iconName: string) => {
-    switch (iconName) {
-      case 'Target': return <Target className="w-4 h-4" />;
-      case 'Zap': return <Zap className="w-4 h-4" />;
-      case 'Hand': return <Hand className="w-4 h-4" />;
-      case 'Flame': return <Flame className="w-4 h-4" />;
-      default: return <Command className="w-4 h-4" />;
-    }
   };
 
   if (isCollapsed) {
@@ -100,7 +83,7 @@ export function BattleChatPanel({ clanChat, battleFeed, isMentor = false, battle
       
       <CardContent className="flex-1 flex flex-col min-h-0 p-3">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
-          <TabsList className="grid w-full grid-cols-3 mb-3 flex-shrink-0">
+          <TabsList className="grid w-full grid-cols-2 mb-3 flex-shrink-0">
             <TabsTrigger value="clan" className="text-xs">
               <MessageSquare className="w-3 h-3 mr-1" />
               Clan
@@ -109,12 +92,6 @@ export function BattleChatPanel({ clanChat, battleFeed, isMentor = false, battle
               <Radio className="w-3 h-3 mr-1" />
               Feed
             </TabsTrigger>
-            {isMentor && (
-              <TabsTrigger value="commands" className="text-xs">
-                <Command className="w-3 h-3 mr-1" />
-                Commands
-              </TabsTrigger>
-            )}
           </TabsList>
 
           {/* Clan Chat Tab */}
@@ -163,11 +140,6 @@ export function BattleChatPanel({ clanChat, battleFeed, isMentor = false, battle
                         
                         {msg.type === 'reaction' ? (
                           <span className="text-2xl">{msg.content}</span>
-                        ) : msg.type === 'command' ? (
-                          <div className="flex items-center gap-2 mt-1 text-primary font-semibold">
-                            <Zap className="w-4 h-4" />
-                            {msg.content}
-                          </div>
                         ) : (
                           <p className="text-sm text-foreground/90 break-words">
                             {msg.content}
@@ -251,36 +223,6 @@ export function BattleChatPanel({ clanChat, battleFeed, isMentor = false, battle
               </div>
             </ScrollArea>
           </TabsContent>
-
-          {/* Mentor Commands Tab */}
-          {isMentor && (
-            <TabsContent value="commands" className="flex-1 min-h-0 mt-0">
-              <ScrollArea className="h-full pr-2">
-                <div className="space-y-2">
-                  <p className="text-xs text-muted-foreground text-center mb-3">
-                    Commands appear as system messages in clan chat
-                  </p>
-                  {mentorCommands.map((cmd) => (
-                    <Button
-                      key={cmd.id}
-                      variant="outline"
-                      className="w-full justify-start gap-3 h-auto p-3 border-primary/30 hover:bg-primary/10 hover:border-primary/50"
-                      onClick={() => handleMentorCommand(cmd)}
-                      disabled={battleEnded}
-                    >
-                      <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary">
-                        {getCommandIcon(cmd.icon)}
-                      </div>
-                      <div className="text-left">
-                        <div className="font-semibold text-foreground">{cmd.label}</div>
-                        <div className="text-xs text-muted-foreground">{cmd.description}</div>
-                      </div>
-                    </Button>
-                  ))}
-                </div>
-              </ScrollArea>
-            </TabsContent>
-          )}
         </Tabs>
       </CardContent>
     </Card>
