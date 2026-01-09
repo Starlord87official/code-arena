@@ -292,6 +292,33 @@ export type Database = {
           },
         ]
       }
+      invite_codes: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          is_active: boolean
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: []
+      }
       mentor_invites: {
         Row: {
           accepted_at: string | null
@@ -683,6 +710,10 @@ export type Database = {
         }
         Returns: Json
       }
+      claim_invite_code: {
+        Args: { p_code: string; p_user_id: string }
+        Returns: Json
+      }
       complete_revision: { Args: { p_topic_id: string }; Returns: Json }
       complete_revision_item: { Args: { p_id: string }; Returns: Json }
       create_doubt: {
@@ -770,6 +801,7 @@ export type Database = {
         Args: { p_daily?: number; p_monthly?: number; p_weekly?: number }
         Returns: Json
       }
+      validate_invite_code: { Args: { p_code: string }; Returns: Json }
     }
     Enums: {
       app_role: "mentor" | "student"
