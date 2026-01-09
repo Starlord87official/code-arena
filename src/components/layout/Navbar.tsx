@@ -78,11 +78,12 @@ export function Navbar() {
   const unreadCount = navbarNotifications.filter(n => !n.read).length;
   const criticalCount = navbarNotifications.filter(n => n.priority === 'critical' && !n.read).length;
 
-  // Phase 1: Student-focused navigation - no mentor/clan links
+  // Phase 1: Student-focused navigation - Battle Mode always available
   const navLinks = isAuthenticated
     ? [
         { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { path: '/challenges', label: 'Challenges', icon: Swords },
+        { path: '/battle', label: 'Battle', icon: Target },
         { path: '/contests', label: 'Contests', icon: Trophy },
         { path: '/leaderboard', label: 'Leaderboard', icon: Trophy },
       ]

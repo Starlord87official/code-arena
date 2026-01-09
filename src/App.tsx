@@ -19,11 +19,15 @@ import Settings from "./pages/Settings";
 import Contests from "./pages/Contests";
 import ContestLive from "./pages/ContestLive";
 import Onboarding from "./pages/Onboarding";
+import Battle from "./pages/Battle";
+import ClanVsClanBattle from "./pages/ClanVsClanBattle";
+import BattleHistory from "./pages/BattleHistory";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
 // Phase 1: Student-focused app - mentor/clan features disabled
+// Battle Mode is always available to all authenticated users
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
@@ -47,6 +51,10 @@ const App = () => (
               <Route path="/settings" element={<Settings />} />
               <Route path="/contests" element={<Contests />} />
               <Route path="/contest/:id/live" element={<ContestLive />} />
+              {/* Battle Mode - Always available to all authenticated users */}
+              <Route path="/battle" element={<Battle />} />
+              <Route path="/battle/clan/:id" element={<ClanVsClanBattle />} />
+              <Route path="/battle/history" element={<BattleHistory />} />
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>

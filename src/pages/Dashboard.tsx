@@ -8,7 +8,7 @@ import { RivalsSection } from '@/components/dashboard/RivalsSection';
 import { LiveActivityFeed } from '@/components/dashboard/LiveActivityFeed';
 import { DivisionProgress } from '@/components/dashboard/DivisionProgress';
 import { mockChallenges, mockContests, mockLeaderboard, getXpProgress, User as MockUser } from '@/lib/mockData';
-import { ChevronRight, Flame, Target, Trophy, Zap, Clock, AlertTriangle, TrendingUp, Loader2 } from 'lucide-react';
+import { ChevronRight, Flame, Target, Trophy, Zap, Clock, AlertTriangle, TrendingUp, Loader2, Swords } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 // Phase 1: Student-focused dashboard - no mentor/clan features
@@ -230,10 +230,16 @@ export default function Dashboard() {
             
             {/* Quick Actions */}
             <div className="space-y-3">
-              <Link to="/challenges">
+              <Link to="/battle">
                 <Button variant="arena" className="w-full h-12">
-                  <Target className="h-5 w-5 mr-2" />
-                  SOLVE CHALLENGES
+                  <Swords className="h-5 w-5 mr-2" />
+                  ENTER BATTLE MODE
+                </Button>
+              </Link>
+              <Link to="/challenges">
+                <Button variant="outline" className="w-full">
+                  <Target className="h-4 w-4 mr-2" />
+                  Solve Challenges
                 </Button>
               </Link>
               <Link to="/contests">
