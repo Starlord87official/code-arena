@@ -25,8 +25,8 @@ export interface InterviewReadinessResult {
 }
 
 const BAND_CONFIG: Record<ScoreBand, { min: number; max: number; label: string; color: string }> = {
-  not_ready: { min: 0, max: 30, label: 'Not Ready', color: 'text-destructive' },
-  weak_foundation: { min: 31, max: 50, label: 'Weak Foundation', color: 'text-orange-500' },
+  not_ready: { min: 0, max: 30, label: 'Early Stage — Building Foundations', color: 'text-muted-foreground' },
+  weak_foundation: { min: 31, max: 50, label: 'Developing Skills', color: 'text-orange-500' },
   partially_ready: { min: 51, max: 70, label: 'Partially Ready', color: 'text-yellow-500' },
   interview_ready: { min: 71, max: 85, label: 'Interview Ready', color: 'text-green-500' },
   strong_candidate: { min: 86, max: 100, label: 'Strong Candidate', color: 'text-primary' },

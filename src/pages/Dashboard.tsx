@@ -156,6 +156,21 @@ export default function Dashboard() {
           ))}
         </div>
 
+        {/* First-Time Guidance Card */}
+        <div className="mb-8 p-4 rounded-xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-lg bg-primary/20 flex-shrink-0">
+              <BookOpen className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-display font-semibold text-sm mb-1">Recommended Next Step</h3>
+              <p className="text-sm text-muted-foreground">
+                Start with the first unlocked topic in your roadmap to begin building strong fundamentals.
+              </p>
+            </div>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
@@ -266,12 +281,17 @@ export default function Dashboard() {
             
             {/* Quick Actions */}
             <div className="space-y-3">
-              <Link to="/battle">
-                <Button variant="arena" className="w-full h-12">
-                  <Swords className="h-5 w-5 mr-2" />
-                  ENTER BATTLE MODE
-                </Button>
-              </Link>
+              <div>
+                <Link to="/battle">
+                  <Button variant="arena" className="w-full h-12">
+                    <Swords className="h-5 w-5 mr-2" />
+                    ENTER BATTLE MODE
+                  </Button>
+                </Link>
+                <p className="text-xs text-muted-foreground text-center mt-1.5">
+                  Practice under pressure — optional and for fun
+                </p>
+              </div>
               <Link to="/challenges">
                 <Button variant="outline" className="w-full">
                   <Target className="h-4 w-4 mr-2" />

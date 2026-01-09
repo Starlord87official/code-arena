@@ -175,9 +175,10 @@ export function RoadmapProgress({ topics, completedCount, totalCount, progressPe
                     </Badge>
                   </div>
                 </TooltipTrigger>
-                {isLocked && (
+              {isLocked && (
                   <TooltipContent>
-                    <p>Complete previous topics to unlock this one</p>
+                    <p>Complete the previous topic to unlock this.</p>
+                    <p className="text-xs text-muted-foreground mt-1">Master one topic at a time for stronger foundations.</p>
                   </TooltipContent>
                 )}
               </Tooltip>
