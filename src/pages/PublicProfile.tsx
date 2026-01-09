@@ -8,16 +8,20 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Progress } from '@/components/ui/progress';
 import { usePublicProfile } from '@/hooks/usePublicProfile';
 import { useAuth } from '@/contexts/AuthContext';
 import { getDivisionColor, getDivisionAura, getXpForNextLevel, getXpProgress } from '@/lib/mockData';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { useInterviewReadiness, getBandConfig } from '@/hooks/useInterviewReadiness';
+import { cn } from '@/lib/utils';
 
 export default function PublicProfile() {
   const { username } = useParams<{ username: string }>();
   const { profile, isLoading, error, friendshipStatus, sendFriendRequest, respondToRequest } = usePublicProfile(username);
   const { user, profile: currentUserProfile } = useAuth();
+  const { score: readinessScore, band: readinessBand, label: readinessLabel, isLoading: readinessLoading } = useInterviewReadiness();
 
   const handleSendFriendRequest = async () => {
     const result = await sendFriendRequest();
@@ -256,7 +260,43 @@ export default function PublicProfile() {
         </div>
 
         {/* Additional Info Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Interview Readiness */}
+          <div className="arena-card p-6">
+            <h2 className="font-display text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+              <Target className="h-5 w-5 text-primary" />
+              Interview Readiness
+            </h2>
+            {readinessLoading ? (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-baseline gap-2">
+                  <span className={cn("font-display text-4xl font-bold", getBandConfig(readinessBand).color)}>
+                    {readinessScore}
+                  </span>
+                  <span className="text-muted-foreground">/100</span>
+                </div>
+                <Progress value={readinessScore} className="h-2" />
+                <Badge 
+                  variant="outline" 
+                  className={cn(
+                    "text-xs",
+                    readinessBand === 'strong_candidate' && "bg-primary/10 text-primary border-primary/30",
+                    readinessBand === 'interview_ready' && "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+                    readinessBand === 'partially_ready' && "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
+                    readinessBand === 'weak_foundation' && "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
+                    readinessBand === 'not_ready' && "bg-destructive/10 text-destructive border-destructive/30"
+                  )}
+                >
+                  {readinessLabel}
+                </Badge>
+              </div>
+            )}
+          </div>
+
           {/* Level Progress */}
           <div className="arena-card p-6">
             <h2 className="font-display text-xl font-bold text-foreground mb-4 flex items-center gap-2">

@@ -13,6 +13,7 @@ import { TargetCard } from '@/components/dashboard/TargetCard';
 import { ActivityHeatmap } from '@/components/dashboard/ActivityHeatmap';
 import { RevisionQueueCard } from '@/components/dashboard/RevisionQueueCard';
 import { AreasToImproveCard } from '@/components/dashboard/AreasToImproveCard';
+import { InterviewReadinessCard } from '@/components/dashboard/InterviewReadinessCard';
 import { mockChallenges, mockContests, mockLeaderboard, getXpProgress, User as MockUser } from '@/lib/mockData';
 import { ChevronRight, Flame, Target, Trophy, Zap, Clock, AlertTriangle, TrendingUp, Loader2, Swords, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -236,6 +237,9 @@ export default function Dashboard() {
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* Interview Readiness Score */}
+            <InterviewReadinessCard />
+
             {/* Target & Streak Card */}
             <TargetCard />
 
