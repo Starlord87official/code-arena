@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Trophy, Crown, Medal, TrendingUp, TrendingDown, Zap, Flame, ChevronUp, ChevronDown, AlertTriangle, Target, Swords, ShieldAlert, ChevronsUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -179,7 +180,9 @@ export default function Leaderboard() {
                   #2
                 </div>
               </div>
-              <h3 className="font-display font-bold text-lg text-foreground mb-1">{mockLeaderboard[1].username}</h3>
+              <Link to={`/profile/${mockLeaderboard[1].username}`} className="hover:text-primary transition-colors">
+                <h3 className="font-display font-bold text-lg text-foreground mb-1">{mockLeaderboard[1].username}</h3>
+              </Link>
               <Badge className={`${getDivisionColor(mockLeaderboard[1].division)} border border-current/30 bg-current/10 uppercase mb-3`}>
                 {mockLeaderboard[1].division}
               </Badge>
@@ -207,7 +210,9 @@ export default function Leaderboard() {
                   #1
                 </div>
               </div>
-              <h3 className="font-display font-bold text-xl text-foreground mb-1">{mockLeaderboard[0].username}</h3>
+              <Link to={`/profile/${mockLeaderboard[0].username}`} className="hover:text-primary transition-colors">
+                <h3 className="font-display font-bold text-xl text-foreground mb-1">{mockLeaderboard[0].username}</h3>
+              </Link>
               <Badge className={`${getDivisionColor(mockLeaderboard[0].division)} border border-current/30 bg-current/10 uppercase mb-3`}>
                 {mockLeaderboard[0].division}
               </Badge>
@@ -234,7 +239,9 @@ export default function Leaderboard() {
                   #3
                 </div>
               </div>
-              <h3 className="font-display font-bold text-lg text-foreground mb-1">{mockLeaderboard[2].username}</h3>
+              <Link to={`/profile/${mockLeaderboard[2].username}`} className="hover:text-primary transition-colors">
+                <h3 className="font-display font-bold text-lg text-foreground mb-1">{mockLeaderboard[2].username}</h3>
+              </Link>
               <Badge className={`${getDivisionColor(mockLeaderboard[2].division)} border border-current/30 bg-current/10 uppercase mb-3`}>
                 {mockLeaderboard[2].division}
               </Badge>
@@ -324,7 +331,12 @@ export default function Leaderboard() {
                     </div>
                     <div>
                       <div className="font-semibold text-foreground flex items-center gap-2">
-                        {player.username}
+                        <Link 
+                          to={`/profile/${player.username}`}
+                          className="hover:text-primary transition-colors"
+                        >
+                          {player.username}
+                        </Link>
                         {isCurrentUser && <Badge className="bg-primary/20 text-primary text-[10px]">YOU</Badge>}
                         {isRival(player.rank) && <Badge className="bg-status-warning/20 text-status-warning text-[10px]">RIVAL</Badge>}
                       </div>
