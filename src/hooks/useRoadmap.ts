@@ -30,10 +30,14 @@ export interface UserTopicProgress {
   updated_at: string;
 }
 
+export type TopicLockStatus = 'locked' | 'available' | 'in_progress' | 'completed';
+
 export interface TopicWithProgress extends RoadmapTopic {
   state: TopicState;
   started_at: string | null;
   completed_at: string | null;
+  lockStatus: TopicLockStatus;
+  isCurrentTopic: boolean;
 }
 
 export interface RoadmapWithProgress {
@@ -171,13 +175,45 @@ export function useRoadmapWithProgress(roadmapId: string | undefined): {
         }, {} as Record<string, UserTopicProgress>);
       }
 
-      // Combine topics with progress
-      const topicsWithProgress: TopicWithProgress[] = (topics as RoadmapTopic[]).map(topic => ({
-        ...topic,
-        state: progressMap[topic.id]?.state || 'not_started',
-        started_at: progressMap[topic.id]?.started_at || null,
-        completed_at: progressMap[topic.id]?.completed_at || null,
-      }));
+      // Combine topics with progress and compute lock status
+      const sortedTopics = (topics as RoadmapTopic[]).sort((a, b) => a.topic_order - b.topic_order);
+      
+      // Find the first incomplete topic (this will be the "available" one)
+      let foundFirstIncomplete = false;
+      
+      const topicsWithProgress: TopicWithProgress[] = sortedTopics.map((topic, index) => {
+        const progress = progressMap[topic.id];
+        const state = progress?.state || 'not_started';
+        
+        // Determine lock status based on mastery-first learning
+        let lockStatus: TopicLockStatus;
+        let isCurrentTopic = false;
+        
+        if (state === 'completed') {
+          lockStatus = 'completed';
+        } else if (state === 'in_progress') {
+          lockStatus = 'in_progress';
+          isCurrentTopic = true;
+          foundFirstIncomplete = true;
+        } else if (!foundFirstIncomplete) {
+          // First incomplete topic is available
+          lockStatus = 'available';
+          isCurrentTopic = true;
+          foundFirstIncomplete = true;
+        } else {
+          // All topics after the first incomplete are locked
+          lockStatus = 'locked';
+        }
+        
+        return {
+          ...topic,
+          state,
+          started_at: progress?.started_at || null,
+          completed_at: progress?.completed_at || null,
+          lockStatus,
+          isCurrentTopic,
+        };
+      });
 
       const completedCount = topicsWithProgress.filter(t => t.state === 'completed').length;
       const totalCount = topicsWithProgress.length;
