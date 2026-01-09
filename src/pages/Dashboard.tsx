@@ -11,7 +11,10 @@ import { mockChallenges, mockContests, mockLeaderboard, getXpProgress, User as M
 import { ChevronRight, Flame, Target, Trophy, Zap, Clock, AlertTriangle, TrendingUp, Loader2, Swords } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-// Phase 1: Student-focused dashboard - no mentor/clan features
+// Dashboard: Navigation and data aggregation layer only
+// - No business logic (role checks, feature gating)
+// - All features handle their own access internally
+// - Battle Mode always visible to all authenticated users
 export default function Dashboard() {
   const { profile, user, isAuthenticated, isLoading } = useAuth();
   

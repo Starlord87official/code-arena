@@ -305,11 +305,11 @@ export default function ClanVsClanBattle() {
               />
               
               {/* Chat Panel - Below Clan B on desktop */}
+              {/* Battle chat is available to all authenticated users - no role checks */}
               <div className="flex-1 min-h-[400px]">
                 <BattleChatPanel 
                   clanChat={mockClanChat}
                   battleFeed={mockBattleFeed}
-                  isMentor={true}
                   battleEnded={battleStatus === 'ended'}
                 />
               </div>
