@@ -16,7 +16,8 @@ import {
   Target,
   TrendingDown,
   ChevronRight,
-  LayoutDashboard
+  LayoutDashboard,
+  MessageCircleQuestion
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -83,6 +84,7 @@ export function Navbar() {
     ? [
         { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { path: '/challenges', label: 'Challenges', icon: Swords },
+        { path: '/doubts', label: 'Doubts', icon: MessageCircleQuestion },
         { path: '/battle', label: 'Battle', icon: Target },
         { path: '/contests', label: 'Contests', icon: Trophy },
         { path: '/leaderboard', label: 'Leaderboard', icon: Trophy },

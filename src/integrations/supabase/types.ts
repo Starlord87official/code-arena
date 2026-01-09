@@ -149,6 +149,59 @@ export type Database = {
         }
         Relationships: []
       }
+      doubts: {
+        Row: {
+          category: Database["public"]["Enums"]["doubt_category"]
+          code_block: string | null
+          content: string
+          created_at: string
+          difficulty: Database["public"]["Enums"]["doubt_difficulty"]
+          id: string
+          is_solved: boolean
+          solved_at: string | null
+          title: string
+          topic_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["doubt_category"]
+          code_block?: string | null
+          content: string
+          created_at?: string
+          difficulty: Database["public"]["Enums"]["doubt_difficulty"]
+          id?: string
+          is_solved?: boolean
+          solved_at?: string | null
+          title: string
+          topic_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["doubt_category"]
+          code_block?: string | null
+          content?: string
+          created_at?: string
+          difficulty?: Database["public"]["Enums"]["doubt_difficulty"]
+          id?: string
+          is_solved?: boolean
+          solved_at?: string | null
+          title?: string
+          topic_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "doubts_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "roadmap_topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mentor_invites: {
         Row: {
           accepted_at: string | null
@@ -542,7 +595,19 @@ export type Database = {
       }
       complete_revision: { Args: { p_topic_id: string }; Returns: Json }
       complete_revision_item: { Args: { p_id: string }; Returns: Json }
+      create_doubt: {
+        Args: {
+          p_category: Database["public"]["Enums"]["doubt_category"]
+          p_code_block?: string
+          p_content: string
+          p_difficulty: Database["public"]["Enums"]["doubt_difficulty"]
+          p_title: string
+          p_topic_id: string
+        }
+        Returns: Json
+      }
       get_activity_summary: { Args: never; Returns: Json }
+      get_eligible_doubt_topics: { Args: never; Returns: Json }
       get_or_create_user_targets: {
         Args: never
         Returns: {
@@ -562,6 +627,16 @@ export type Database = {
         }
       }
       get_revision_queue: { Args: never; Returns: Json }
+      get_visible_doubts: {
+        Args: {
+          p_category?: Database["public"]["Enums"]["doubt_category"]
+          p_difficulty?: Database["public"]["Enums"]["doubt_difficulty"]
+          p_search?: string
+          p_show_solved?: boolean
+          p_topic_id?: string
+        }
+        Returns: Json
+      }
       has_clan_role: {
         Args: {
           _clan_id: string
@@ -570,6 +645,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      mark_doubt_solved: { Args: { p_doubt_id: string }; Returns: Json }
       record_activity: { Args: { p_problems_solved?: number }; Returns: Json }
       start_roadmap: { Args: { p_roadmap_id: string }; Returns: Json }
       update_topic_state: {
@@ -586,6 +662,8 @@ export type Database = {
     }
     Enums: {
       app_role: "mentor" | "student"
+      doubt_category: "study" | "job" | "internship" | "referral"
+      doubt_difficulty: "beginner" | "intermediate" | "advanced"
       invite_status: "pending" | "accepted" | "expired"
       mentor_expertise: "dsa" | "cp" | "web" | "system_design"
       topic_state: "not_started" | "in_progress" | "completed"
@@ -717,6 +795,8 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["mentor", "student"],
+      doubt_category: ["study", "job", "internship", "referral"],
+      doubt_difficulty: ["beginner", "intermediate", "advanced"],
       invite_status: ["pending", "accepted", "expired"],
       mentor_expertise: ["dsa", "cp", "web", "system_design"],
       topic_state: ["not_started", "in_progress", "completed"],
