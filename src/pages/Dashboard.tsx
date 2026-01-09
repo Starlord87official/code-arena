@@ -8,6 +8,7 @@ import { RivalsSection } from '@/components/dashboard/RivalsSection';
 import { LiveActivityFeed } from '@/components/dashboard/LiveActivityFeed';
 import { DivisionProgress } from '@/components/dashboard/DivisionProgress';
 import { RoadmapCard } from '@/components/roadmap/RoadmapCard';
+import { RevisionSummaryCard } from '@/components/revision/RevisionSummaryCard';
 import { mockChallenges, mockContests, mockLeaderboard, getXpProgress, User as MockUser } from '@/lib/mockData';
 import { ChevronRight, Flame, Target, Trophy, Zap, Clock, AlertTriangle, TrendingUp, Loader2, Swords, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -231,6 +232,9 @@ export default function Dashboard() {
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* Revision Summary */}
+            <RevisionSummaryCard />
+
             {/* Division Progress */}
             <DivisionProgress user={userForComponents} />
             

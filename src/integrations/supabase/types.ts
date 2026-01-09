@@ -419,6 +419,7 @@ export type Database = {
     }
     Functions: {
       accept_mentor_invite: { Args: { invite_token: string }; Returns: Json }
+      complete_revision: { Args: { p_topic_id: string }; Returns: Json }
       has_clan_role: {
         Args: {
           _clan_id: string

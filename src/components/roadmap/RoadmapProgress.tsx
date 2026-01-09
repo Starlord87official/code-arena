@@ -1,6 +1,7 @@
 import { Progress } from '@/components/ui/progress';
 import { CheckCircle2, Circle, PlayCircle } from 'lucide-react';
 import { TopicWithProgress, TopicState } from '@/hooks/useRoadmap';
+import { TopicRevisionStatus } from '@/components/revision/TopicRevisionStatus';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
@@ -64,7 +65,15 @@ export function RoadmapProgress({ topics, completedCount, totalCount, progressPe
                   {String(index + 1).padStart(2, '0')}
                 </span>
                 <Icon className={cn("h-5 w-5", config.className.split(' ')[0])} />
-                <span className="font-medium">{topic.topic_name}</span>
+                <div>
+                  <span className="font-medium">{topic.topic_name}</span>
+                  {/* Show revision status for completed topics */}
+                  {topic.state === 'completed' && (
+                    <div className="mt-1">
+                      <TopicRevisionStatus topicId={topic.id} compact />
+                    </div>
+                  )}
+                </div>
               </div>
               <Badge variant="secondary" className={cn("text-xs", config.className)}>
                 {config.label}
