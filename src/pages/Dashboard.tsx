@@ -7,10 +7,10 @@ import { Calendar } from '@/components/Calendar';
 import { RivalsSection } from '@/components/dashboard/RivalsSection';
 import { LiveActivityFeed } from '@/components/dashboard/LiveActivityFeed';
 import { DivisionProgress } from '@/components/dashboard/DivisionProgress';
+import { RoadmapCard } from '@/components/roadmap/RoadmapCard';
 import { mockChallenges, mockContests, mockLeaderboard, getXpProgress, User as MockUser } from '@/lib/mockData';
-import { ChevronRight, Flame, Target, Trophy, Zap, Clock, AlertTriangle, TrendingUp, Loader2, Swords } from 'lucide-react';
+import { ChevronRight, Flame, Target, Trophy, Zap, Clock, AlertTriangle, TrendingUp, Loader2, Swords, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-
 // Dashboard: Navigation and data aggregation layer only
 // - No business logic (role checks, feature gating)
 // - All features handle their own access internally
@@ -178,6 +178,15 @@ export default function Dashboard() {
                 <span>Current: {userForComponents.xp.toLocaleString()} XP</span>
                 <span>Next: {(userForComponents.level * 500).toLocaleString()} XP</span>
               </div>
+            </div>
+
+            {/* DSA Roadmap Progress */}
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <BookOpen className="h-5 w-5 text-primary" />
+                <h2 className="font-display text-xl font-bold">Your Learning Path</h2>
+              </div>
+              <RoadmapCard roadmapId="dsa" />
             </div>
 
             {/* Rivals Section */}

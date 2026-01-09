@@ -22,6 +22,7 @@ import Onboarding from "./pages/Onboarding";
 import Battle from "./pages/Battle";
 import ClanVsClanBattle from "./pages/ClanVsClanBattle";
 import BattleHistory from "./pages/BattleHistory";
+import Roadmap from "./pages/Roadmap";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -51,6 +52,8 @@ const App = () => (
               <Route path="/settings" element={<Settings />} />
               <Route path="/contests" element={<Contests />} />
               <Route path="/contest/:id/live" element={<ContestLive />} />
+              {/* Roadmap System - Independent feature */}
+              <Route path="/roadmap/:roadmapId" element={<Roadmap />} />
               {/* Battle Mode - Always available to all authenticated users */}
               <Route path="/battle" element={<Battle />} />
               <Route path="/battle/clan/:id" element={<ClanVsClanBattle />} />
