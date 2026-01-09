@@ -3,7 +3,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { PlayerCard } from '@/components/cards/PlayerCard';
 import { ChallengeCard } from '@/components/cards/ChallengeCard';
 import { ContestCard } from '@/components/cards/ContestCard';
-import { Calendar } from '@/components/Calendar';
 import { RivalsSection } from '@/components/dashboard/RivalsSection';
 import { LiveActivityFeed } from '@/components/dashboard/LiveActivityFeed';
 import { DivisionProgress } from '@/components/dashboard/DivisionProgress';
@@ -275,9 +274,6 @@ export default function Dashboard() {
             
             {/* Live Activity Feed */}
             <LiveActivityFeed />
-
-            {/* Calendar */}
-            <Calendar />
             
             {/* Quick Actions */}
             <div className="space-y-3">

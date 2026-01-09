@@ -24,6 +24,7 @@ import Battle from "./pages/Battle";
 import ClanVsClanBattle from "./pages/ClanVsClanBattle";
 import BattleHistory from "./pages/BattleHistory";
 import Roadmap from "./pages/Roadmap";
+import Planner from "./pages/Planner";
 import Doubts from "./pages/Doubts";
 import Companies from "./pages/Companies";
 import CompanyDetail from "./pages/CompanyDetail";
@@ -59,6 +60,8 @@ const App = () => (
               <Route path="/contest/:id/live" element={<ContestLive />} />
               {/* Roadmap System - Independent feature */}
               <Route path="/roadmap/:roadmapId" element={<Roadmap />} />
+              {/* Planner System */}
+              <Route path="/planner" element={<Planner />} />
               {/* Doubts System */}
               <Route path="/doubts" element={<Doubts />} />
               {/* Company-Wise Problems */}

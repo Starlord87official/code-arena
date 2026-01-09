@@ -361,6 +361,51 @@ export type Database = {
         }
         Relationships: []
       }
+      planner_events: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          end_date: string | null
+          event_date: string
+          id: string
+          is_system_event: boolean
+          reference_id: string | null
+          system_event_type: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          event_date: string
+          id?: string
+          is_system_event?: boolean
+          reference_id?: string | null
+          system_event_type?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          event_date?: string
+          id?: string
+          is_system_event?: boolean
+          reference_id?: string | null
+          system_event_type?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
