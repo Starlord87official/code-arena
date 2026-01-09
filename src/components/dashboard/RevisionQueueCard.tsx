@@ -1,10 +1,11 @@
 import { Link } from 'react-router-dom';
-import { BookOpen, Calendar, Check, ChevronRight, Clock, AlertTriangle, Loader2 } from 'lucide-react';
+import { BookOpen, Calendar, Check, ChevronRight, Clock, AlertTriangle, Loader2, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useRevisionQueue, useCompleteRevisionItem, RevisionQueueItem } from '@/hooks/useRevisionQueue';
 import { useToast } from '@/hooks/use-toast';
 import { format, parseISO } from 'date-fns';
+import { getCompaniesForChallenge } from '@/lib/companyData';
 
 function getStatusStyle(status: RevisionQueueItem['status']) {
   switch (status) {
@@ -113,6 +114,7 @@ export function RevisionQueueCard() {
               {[...overdueItems, ...dueItems, ...upcomingItems].slice(0, 5).map((item) => {
                 const style = getStatusStyle(item.status);
                 const StatusIcon = style.icon;
+                const companies = getCompaniesForChallenge(item.problem_id);
 
                 return (
                   <div
@@ -136,12 +138,24 @@ export function RevisionQueueCard() {
                             {item.problem_title}
                           </span>
                         </div>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
                           {item.topic && (
-                            <span className="truncate">{item.topic}</span>
+                            <>
+                              <span className="truncate">{item.topic}</span>
+                              <span>•</span>
+                            </>
                           )}
-                          <span>•</span>
                           <span>{format(parseISO(item.scheduled_date), 'MMM d')}</span>
+                          {companies.length > 0 && (
+                            <>
+                              <span>•</span>
+                              <span className="flex items-center gap-1">
+                                <Building2 className="h-2.5 w-2.5" />
+                                {companies[0].name}
+                                {companies.length > 1 && ` +${companies.length - 1}`}
+                              </span>
+                            </>
+                          )}
                         </div>
                       </div>
                       <div className="flex items-center gap-1 flex-shrink-0">

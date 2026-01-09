@@ -25,6 +25,8 @@ import ClanVsClanBattle from "./pages/ClanVsClanBattle";
 import BattleHistory from "./pages/BattleHistory";
 import Roadmap from "./pages/Roadmap";
 import Doubts from "./pages/Doubts";
+import Companies from "./pages/Companies";
+import CompanyDetail from "./pages/CompanyDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -59,6 +61,9 @@ const App = () => (
               <Route path="/roadmap/:roadmapId" element={<Roadmap />} />
               {/* Doubts System */}
               <Route path="/doubts" element={<Doubts />} />
+              {/* Company-Wise Problems */}
+              <Route path="/companies" element={<Companies />} />
+              <Route path="/companies/:slug" element={<CompanyDetail />} />
               {/* Battle Mode - Always available to all authenticated users */}
               <Route path="/battle" element={<Battle />} />
               <Route path="/battle/clan/:id" element={<ClanVsClanBattle />} />
