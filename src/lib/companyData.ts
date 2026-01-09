@@ -30,7 +30,7 @@ export const companies: Company[] = [
     tier: 1,
     description: 'World leader in search, cloud, and AI. Known for highly algorithmic interview questions focusing on optimization and scalability.',
     tags: ['DSA', 'System Design', 'Algorithms'],
-    challengeCount: 3,
+    challengeCount: 12,
   },
   {
     id: 'meta',
@@ -39,7 +39,7 @@ export const companies: Company[] = [
     tier: 1,
     description: 'Social media giant building the metaverse. Interviews focus on graphs, dynamic programming, and system design.',
     tags: ['DSA', 'Graphs', 'System Design'],
-    challengeCount: 2,
+    challengeCount: 8,
   },
   {
     id: 'amazon',
@@ -48,7 +48,7 @@ export const companies: Company[] = [
     tier: 1,
     description: 'E-commerce and cloud computing leader. Leadership principles matter. Heavy focus on arrays, trees, and optimization.',
     tags: ['DSA', 'Arrays', 'Trees', 'Leadership'],
-    challengeCount: 4,
+    challengeCount: 14,
   },
   {
     id: 'microsoft',
@@ -57,7 +57,7 @@ export const companies: Company[] = [
     tier: 1,
     description: 'Enterprise software and cloud powerhouse. Balanced interviews covering DSA, system design, and problem-solving.',
     tags: ['DSA', 'System Design', 'Arrays'],
-    challengeCount: 3,
+    challengeCount: 10,
   },
   {
     id: 'apple',
@@ -66,7 +66,7 @@ export const companies: Company[] = [
     tier: 1,
     description: 'Consumer electronics innovator. Focus on clean code, optimization, and user-centric problem solving.',
     tags: ['DSA', 'Optimization', 'Clean Code'],
-    challengeCount: 2,
+    challengeCount: 5,
   },
   // Tier 2
   {
@@ -116,74 +116,74 @@ export const companies: Company[] = [
   },
   // Tier 3
   {
+    id: 'flipkart',
+    name: 'Flipkart',
+    slug: 'flipkart',
+    tier: 3,
+    description: 'India\'s leading e-commerce platform. Strong focus on DSA, problem-solving, and scalable systems.',
+    tags: ['DSA', 'Arrays', 'System Design'],
+    challengeCount: 8,
+  },
+  {
     id: 'startups',
     name: 'Startups & Product Companies',
     slug: 'startups',
     tier: 3,
     description: 'Growing companies looking for versatile engineers. Practical problems with real-world applications.',
     tags: ['DSA', 'Full Stack', 'Problem Solving'],
-    challengeCount: 2,
+    challengeCount: 5,
   },
 ];
 
 // Mapping challenges to companies
 export const challengeCompanyMeta: CompanyChallengeMeta[] = [
-  // ch-001: Two Sum - Classic, asked everywhere
-  {
-    challengeId: 'ch-001',
-    companies: ['google', 'amazon', 'meta', 'microsoft', 'adobe', 'startups'],
-    frequency: 'frequent',
-    lastAskedYear: 2025,
-  },
-  // ch-002: Binary Tree - Tree problems
-  {
-    challengeId: 'ch-002',
-    companies: ['google', 'amazon', 'microsoft', 'apple'],
-    frequency: 'frequent',
-    lastAskedYear: 2025,
-  },
-  // ch-003: DP - Classic optimization
-  {
-    challengeId: 'ch-003',
-    companies: ['google', 'meta', 'amazon', 'uber'],
-    frequency: 'medium',
-    lastAskedYear: 2024,
-  },
-  // ch-004: Graph - Dijkstra
-  {
-    challengeId: 'ch-004',
-    companies: ['uber', 'amazon', 'google', 'netflix'],
-    frequency: 'medium',
-    lastAskedYear: 2024,
-  },
-  // ch-005: Word Break - Advanced
-  {
-    challengeId: 'ch-005',
-    companies: ['meta', 'google', 'amazon'],
-    frequency: 'rare',
-    lastAskedYear: 2023,
-  },
-  // ch-006: String Reverse - Basic
-  {
-    challengeId: 'ch-006',
-    companies: ['adobe', 'microsoft', 'startups', 'salesforce', 'atlassian'],
-    frequency: 'frequent',
-    lastAskedYear: 2025,
-  },
-  // ch-007: Linked List Reverse
-  {
-    challengeId: 'ch-007',
-    companies: ['amazon', 'microsoft', 'apple', 'meta'],
-    frequency: 'frequent',
-    lastAskedYear: 2025,
-  },
-  // ch-008: Heap/Priority Queue
-  {
-    challengeId: 'ch-008',
-    companies: ['google', 'amazon', 'uber'],
-    frequency: 'medium',
-    lastAskedYear: 2024,
-  },
+  { challengeId: 'ch-001', companies: ['google', 'amazon', 'meta', 'microsoft', 'adobe', 'flipkart', 'startups'], frequency: 'frequent', lastAskedYear: 2025 },
+  { challengeId: 'ch-002', companies: ['google', 'amazon', 'microsoft', 'apple'], frequency: 'frequent', lastAskedYear: 2025 },
+  { challengeId: 'ch-003', companies: ['google', 'meta', 'amazon', 'uber', 'flipkart'], frequency: 'medium', lastAskedYear: 2024 },
+  { challengeId: 'ch-004', companies: ['uber', 'amazon', 'google', 'netflix'], frequency: 'medium', lastAskedYear: 2024 },
+  { challengeId: 'ch-005', companies: ['meta', 'google', 'amazon'], frequency: 'rare', lastAskedYear: 2023 },
+  { challengeId: 'ch-006', companies: ['adobe', 'microsoft', 'startups', 'salesforce', 'atlassian'], frequency: 'frequent', lastAskedYear: 2025 },
+  { challengeId: 'ch-007', companies: ['amazon', 'microsoft', 'apple', 'meta', 'flipkart'], frequency: 'frequent', lastAskedYear: 2025 },
+  { challengeId: 'ch-008', companies: ['google', 'amazon', 'uber'], frequency: 'medium', lastAskedYear: 2024 },
+  // Arrays
+  { challengeId: 'ch-009', companies: ['amazon', 'microsoft', 'google', 'flipkart'], frequency: 'frequent', lastAskedYear: 2025 },
+  { challengeId: 'ch-010', companies: ['amazon', 'google', 'meta', 'microsoft'], frequency: 'frequent', lastAskedYear: 2025 },
+  { challengeId: 'ch-011', companies: ['amazon', 'google', 'flipkart'], frequency: 'medium', lastAskedYear: 2024 },
+  { challengeId: 'ch-012', companies: ['microsoft', 'amazon', 'startups'], frequency: 'frequent', lastAskedYear: 2025 },
+  { challengeId: 'ch-013', companies: ['amazon', 'microsoft', 'flipkart'], frequency: 'medium', lastAskedYear: 2024 },
+  { challengeId: 'ch-014', companies: ['google', 'amazon', 'meta', 'microsoft', 'flipkart'], frequency: 'frequent', lastAskedYear: 2025 },
+  // Strings
+  { challengeId: 'ch-015', companies: ['amazon', 'microsoft', 'startups', 'flipkart'], frequency: 'frequent', lastAskedYear: 2025 },
+  { challengeId: 'ch-016', companies: ['amazon', 'microsoft', 'google'], frequency: 'frequent', lastAskedYear: 2025 },
+  { challengeId: 'ch-017', companies: ['amazon', 'meta', 'microsoft'], frequency: 'frequent', lastAskedYear: 2025 },
+  { challengeId: 'ch-018', companies: ['amazon', 'google', 'meta', 'microsoft', 'flipkart'], frequency: 'frequent', lastAskedYear: 2025 },
+  { challengeId: 'ch-019', companies: ['amazon', 'microsoft', 'google', 'flipkart', 'startups'], frequency: 'frequent', lastAskedYear: 2025 },
+  { challengeId: 'ch-020', companies: ['microsoft', 'amazon', 'startups'], frequency: 'medium', lastAskedYear: 2024 },
+  // Linked List
+  { challengeId: 'ch-021', companies: ['amazon', 'microsoft', 'flipkart'], frequency: 'frequent', lastAskedYear: 2025 },
+  { challengeId: 'ch-022', companies: ['amazon', 'microsoft', 'google', 'flipkart'], frequency: 'frequent', lastAskedYear: 2025 },
+  { challengeId: 'ch-023', companies: ['amazon', 'meta', 'google'], frequency: 'medium', lastAskedYear: 2024 },
+  { challengeId: 'ch-024', companies: ['amazon', 'google', 'meta', 'microsoft'], frequency: 'medium', lastAskedYear: 2024 },
+  { challengeId: 'ch-025', companies: ['amazon', 'microsoft', 'flipkart'], frequency: 'medium', lastAskedYear: 2024 },
+  // Stack & Queue
+  { challengeId: 'ch-026', companies: ['amazon', 'microsoft', 'google'], frequency: 'frequent', lastAskedYear: 2025 },
+  { challengeId: 'ch-027', companies: ['amazon', 'google', 'flipkart'], frequency: 'medium', lastAskedYear: 2024 },
+  { challengeId: 'ch-028', companies: ['amazon', 'google', 'meta'], frequency: 'medium', lastAskedYear: 2024 },
+  { challengeId: 'ch-029', companies: ['amazon', 'microsoft', 'startups'], frequency: 'frequent', lastAskedYear: 2025 },
+  { challengeId: 'ch-030', companies: ['amazon', 'google', 'meta', 'microsoft'], frequency: 'rare', lastAskedYear: 2023 },
+  // Binary Search
+  { challengeId: 'ch-031', companies: ['amazon', 'microsoft', 'flipkart', 'startups'], frequency: 'frequent', lastAskedYear: 2025 },
+  { challengeId: 'ch-032', companies: ['amazon', 'google', 'meta', 'microsoft', 'flipkart'], frequency: 'frequent', lastAskedYear: 2025 },
+  { challengeId: 'ch-033', companies: ['amazon', 'google', 'meta'], frequency: 'medium', lastAskedYear: 2024 },
+  { challengeId: 'ch-034', companies: ['google', 'amazon', 'meta'], frequency: 'rare', lastAskedYear: 2023 },
+  { challengeId: 'ch-035', companies: ['google', 'amazon'], frequency: 'medium', lastAskedYear: 2024 },
+  // Trees
+  { challengeId: 'ch-036', companies: ['google', 'amazon', 'microsoft', 'flipkart'], frequency: 'frequent', lastAskedYear: 2025 },
+  { challengeId: 'ch-037', companies: ['amazon', 'microsoft', 'google', 'meta'], frequency: 'frequent', lastAskedYear: 2025 },
+  { challengeId: 'ch-038', companies: ['amazon', 'google', 'meta', 'microsoft'], frequency: 'frequent', lastAskedYear: 2025 },
+  { challengeId: 'ch-039', companies: ['amazon', 'microsoft', 'google', 'flipkart'], frequency: 'frequent', lastAskedYear: 2025 },
+  { challengeId: 'ch-040', companies: ['amazon', 'google', 'meta'], frequency: 'medium', lastAskedYear: 2024 },
+  { challengeId: 'ch-041', companies: ['amazon', 'google', 'meta', 'flipkart'], frequency: 'frequent', lastAskedYear: 2025 },
 ];
 
 // Helper functions
