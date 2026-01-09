@@ -8,18 +8,15 @@ import { RivalsSection } from '@/components/dashboard/RivalsSection';
 import { LiveActivityFeed } from '@/components/dashboard/LiveActivityFeed';
 import { DivisionProgress } from '@/components/dashboard/DivisionProgress';
 import { mockChallenges, mockContests, mockLeaderboard, getXpProgress, User as MockUser } from '@/lib/mockData';
-import { mockBattle } from '@/lib/battleData';
-import { ChevronRight, Flame, Target, Trophy, Zap, Clock, AlertTriangle, TrendingUp, Swords, Loader2, BookOpen, GraduationCap } from 'lucide-react';
+import { ChevronRight, Flame, Target, Trophy, Zap, Clock, AlertTriangle, TrendingUp, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { useUserRole } from '@/hooks/useUserRole';
 
+// Phase 1: Student-focused dashboard - no mentor/clan features
 export default function Dashboard() {
   const { profile, user, isAuthenticated, isLoading } = useAuth();
-  const { isMentor, isLoading: roleLoading, isValidated } = useUserRole(user?.id);
   
-  // Show loading while auth or role validation is in progress
-  if (isLoading || roleLoading || (isAuthenticated && !isValidated)) {
+  // Show loading while auth is in progress
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -30,11 +27,6 @@ export default function Dashboard() {
   // Redirect unauthenticated users
   if (!isAuthenticated) {
     return <Navigate to="/auth" replace />;
-  }
-
-  // Strictly redirect mentors to mentor dashboard - no exceptions
-  if (isMentor) {
-    return <Navigate to="/mentor-dashboard" replace />;
   }
 
   // Create a compatible user object from profile for existing components
@@ -56,11 +48,6 @@ export default function Dashboard() {
   const xpProgress = getXpProgress(userForComponents.xp, userForComponents.level);
   const xpToNextLevel = (userForComponents.level * 500) - userForComponents.xp;
   const streakAtRisk = new Date().getHours() >= 20; // After 8 PM
-  
-  // Check if user's clan is in battle (mock: assume user is in clan "Algorithm Elite")
-  const userClanId = 'clan-001'; // Mock user's clan
-  const isUserClanInBattle = mockBattle.clanA.id === userClanId || mockBattle.clanB.id === userClanId;
-  const isClanBattleLive = mockBattle.status === 'live';
 
   return (
     <div className="min-h-screen py-8">
@@ -97,33 +84,6 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
-
-        {/* Live Clan Battle Alert - NEW */}
-        {isUserClanInBattle && isClanBattleLive && (
-          <Link to="/battle/clan-vs-clan">
-            <div className="mb-8 p-5 rounded-xl bg-gradient-to-r from-neon-purple/20 via-primary/10 to-neon-purple/20 border border-neon-purple/50 flex items-center gap-5 hover:border-primary transition-colors group cursor-pointer animate-pulse-slow">
-              <div className="p-3 rounded-xl bg-neon-purple/30">
-                <Swords className="h-8 w-8 text-neon-purple animate-pulse" />
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <Badge className="bg-neon-purple text-white border-0 text-xs">
-                    ⚔️ LIVE CLAN BATTLE
-                  </Badge>
-                  <span className="text-xs text-muted-foreground">Started 12 minutes ago</span>
-                </div>
-                <p className="font-display font-bold text-lg text-foreground">
-                  {mockBattle.clanA.name} vs {mockBattle.clanB.name}
-                </p>
-                <p className="text-sm text-muted-foreground">Your clan is fighting! Join and contribute to victory.</p>
-              </div>
-              <Button variant="arena" className="bg-neon-purple hover:bg-neon-purple/80 font-bold group-hover:scale-105 transition-transform">
-                <Swords className="h-4 w-4 mr-2" />
-                JOIN BATTLE
-              </Button>
-            </div>
-          </Link>
-        )}
 
         {/* Pressure Stats Bar */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
@@ -265,22 +225,16 @@ export default function Dashboard() {
             
             {/* Quick Actions */}
             <div className="space-y-3">
-              <Link to="/battle">
-                <Button variant="arena" className="w-full h-12">
-                  <Zap className="h-5 w-5" />
-                  ENTER BATTLE MODE
-                </Button>
-              </Link>
-              <Link to="/student/dashboard">
-                <Button variant="outline" className="w-full">
-                  <BookOpen className="h-4 w-4 mr-2" />
-                  Student Dashboard
-                </Button>
-              </Link>
               <Link to="/challenges">
+                <Button variant="arena" className="w-full h-12">
+                  <Target className="h-5 w-5 mr-2" />
+                  SOLVE CHALLENGES
+                </Button>
+              </Link>
+              <Link to="/contests">
                 <Button variant="outline" className="w-full">
-                  <Target className="h-4 w-4 mr-2" />
-                  Browse Challenges
+                  <Trophy className="h-4 w-4 mr-2" />
+                  Join Contests
                 </Button>
               </Link>
             </div>
