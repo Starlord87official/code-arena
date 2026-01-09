@@ -121,9 +121,11 @@ export function RoadmapProgress({ topics, completedCount, totalCount, progressPe
         {/* Topic List */}
         <div className="space-y-2">
           {topics.map((topic, index) => {
-            const config = lockStatusConfig[topic.lockStatus];
+            // Fallback to 'locked' if lockStatus is undefined (data from old cache)
+            const lockStatus = topic.lockStatus || 'locked';
+            const config = lockStatusConfig[lockStatus];
             const Icon = config.icon;
-            const isLocked = topic.lockStatus === 'locked';
+            const isLocked = lockStatus === 'locked';
 
             return (
               <Tooltip key={topic.id}>
@@ -152,7 +154,7 @@ export function RoadmapProgress({ topics, completedCount, totalCount, progressPe
                           {topic.topic_name}
                         </span>
                         {/* Show revision status for completed topics */}
-                        {topic.lockStatus === 'completed' && (
+                        {lockStatus === 'completed' && (
                           <div className="mt-1">
                             <TopicRevisionStatus topicId={topic.id} compact />
                           </div>
@@ -163,10 +165,10 @@ export function RoadmapProgress({ topics, completedCount, totalCount, progressPe
                       variant="secondary" 
                       className={cn(
                         "text-xs",
-                        topic.lockStatus === 'completed' && "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-                        topic.lockStatus === 'in_progress' && "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
-                        topic.lockStatus === 'available' && "bg-primary/10 text-primary",
-                        topic.lockStatus === 'locked' && "bg-muted text-muted-foreground"
+                        lockStatus === 'completed' && "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+                        lockStatus === 'in_progress' && "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
+                        lockStatus === 'available' && "bg-primary/10 text-primary",
+                        lockStatus === 'locked' && "bg-muted text-muted-foreground"
                       )}
                     >
                       {config.label}
