@@ -11,13 +11,13 @@ function getStatusStyle(status: RevisionQueueItem['status']) {
   switch (status) {
     case 'overdue':
       return {
-        badge: 'bg-destructive/20 text-destructive border-destructive/50',
-        icon: AlertTriangle,
-        label: 'Overdue',
+        badge: 'bg-status-warning/20 text-status-warning border-status-warning/50',
+        icon: Clock,
+        label: 'Due — revising now strengthens memory',
       };
     case 'due':
       return {
-        badge: 'bg-status-warning/20 text-status-warning border-status-warning/50',
+        badge: 'bg-primary/20 text-primary border-primary/50',
         icon: Clock,
         label: 'Due Today',
       };
@@ -95,13 +95,13 @@ export function RevisionQueueCard() {
             {(overdueItems.length > 0 || dueItems.length > 0) && (
               <div className="flex gap-3 text-sm">
                 {overdueItems.length > 0 && (
-                  <div className="flex items-center gap-1 text-destructive">
-                    <AlertTriangle className="h-3.5 w-3.5" />
-                    <span className="font-semibold">{overdueItems.length} overdue</span>
+                  <div className="flex items-center gap-1 text-status-warning">
+                    <Clock className="h-3.5 w-3.5" />
+                    <span className="font-semibold">{overdueItems.length} ready to revise</span>
                   </div>
                 )}
                 {dueItems.length > 0 && (
-                  <div className="flex items-center gap-1 text-status-warning">
+                  <div className="flex items-center gap-1 text-primary">
                     <Clock className="h-3.5 w-3.5" />
                     <span className="font-semibold">{dueItems.length} due today</span>
                   </div>

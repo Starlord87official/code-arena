@@ -1,6 +1,13 @@
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sparkles, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface AIInsightButtonProps {
   onClick: () => void;
@@ -12,6 +19,8 @@ interface AIInsightButtonProps {
   className?: string;
 }
 
+const AI_TOOLTIP_SHOWN_KEY = 'codelock_ai_tooltip_shown';
+
 export function AIInsightButton({
   onClick,
   isLoading = false,
@@ -21,11 +30,30 @@ export function AIInsightButton({
   size = 'sm',
   className,
 }: AIInsightButtonProps) {
-  return (
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  useEffect(() => {
+    // Check if user has seen the AI trust tooltip before
+    const hasSeenTooltip = localStorage.getItem(AI_TOOLTIP_SHOWN_KEY);
+    if (!hasSeenTooltip) {
+      setShowTooltip(true);
+    }
+  }, []);
+
+  const handleClick = () => {
+    // Mark tooltip as shown on first click
+    if (showTooltip) {
+      localStorage.setItem(AI_TOOLTIP_SHOWN_KEY, 'true');
+      setShowTooltip(false);
+    }
+    onClick();
+  };
+
+  const button = (
     <Button
       variant={variant}
       size={size}
-      onClick={onClick}
+      onClick={handleClick}
       disabled={disabled || isLoading}
       className={cn(
         "gap-1.5 text-xs",
@@ -41,4 +69,22 @@ export function AIInsightButton({
       {label}
     </Button>
   );
+
+  if (showTooltip) {
+    return (
+      <TooltipProvider>
+        <Tooltip defaultOpen={true}>
+          <TooltipTrigger asChild>
+            {button}
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-[250px] text-center">
+            <p className="text-sm font-medium mb-1">AI helps you understand mistakes and improve thinking.</p>
+            <p className="text-xs text-muted-foreground">It will never give full solutions.</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
+  return button;
 }
