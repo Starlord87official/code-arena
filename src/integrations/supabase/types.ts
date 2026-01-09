@@ -333,6 +333,41 @@ export type Database = {
           },
         ]
       }
+      user_activity: {
+        Row: {
+          activity_date: string
+          created_at: string
+          id: string
+          problems_solved: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activity_date?: string
+          created_at?: string
+          id?: string
+          problems_solved?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activity_date?: string
+          created_at?: string
+          id?: string
+          problems_solved?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_activity_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roadmap_progress: {
         Row: {
           completed_at: string | null
@@ -413,6 +448,44 @@ export type Database = {
           },
         ]
       }
+      user_targets: {
+        Row: {
+          created_at: string
+          daily_target: number | null
+          id: string
+          monthly_target: number | null
+          updated_at: string
+          user_id: string
+          weekly_target: number | null
+        }
+        Insert: {
+          created_at?: string
+          daily_target?: number | null
+          id?: string
+          monthly_target?: number | null
+          updated_at?: string
+          user_id: string
+          weekly_target?: number | null
+        }
+        Update: {
+          created_at?: string
+          daily_target?: number | null
+          id?: string
+          monthly_target?: number | null
+          updated_at?: string
+          user_id?: string
+          weekly_target?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_targets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -420,6 +493,25 @@ export type Database = {
     Functions: {
       accept_mentor_invite: { Args: { invite_token: string }; Returns: Json }
       complete_revision: { Args: { p_topic_id: string }; Returns: Json }
+      get_activity_summary: { Args: never; Returns: Json }
+      get_or_create_user_targets: {
+        Args: never
+        Returns: {
+          created_at: string
+          daily_target: number | null
+          id: string
+          monthly_target: number | null
+          updated_at: string
+          user_id: string
+          weekly_target: number | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "user_targets"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       has_clan_role: {
         Args: {
           _clan_id: string
@@ -428,12 +520,17 @@ export type Database = {
         }
         Returns: boolean
       }
+      record_activity: { Args: { p_problems_solved?: number }; Returns: Json }
       start_roadmap: { Args: { p_roadmap_id: string }; Returns: Json }
       update_topic_state: {
         Args: {
           p_state: Database["public"]["Enums"]["topic_state"]
           p_topic_id: string
         }
+        Returns: Json
+      }
+      update_user_targets: {
+        Args: { p_daily?: number; p_monthly?: number; p_weekly?: number }
         Returns: Json
       }
     }
