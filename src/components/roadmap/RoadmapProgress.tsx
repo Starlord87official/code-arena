@@ -2,6 +2,8 @@ import { Progress } from '@/components/ui/progress';
 import { CheckCircle2, Circle, PlayCircle, Lock, Sparkles } from 'lucide-react';
 import { TopicWithProgress, TopicLockStatus, useUpdateTopicState } from '@/hooks/useRoadmap';
 import { TopicRevisionStatus } from '@/components/revision/TopicRevisionStatus';
+import { TopicProgressIndicator } from '@/components/roadmap/TopicProgressIndicator';
+import { useTopicProblems } from '@/hooks/useTopicProblems';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -49,6 +51,7 @@ const lockStatusConfig: Record<TopicLockStatus, { icon: React.ElementType; label
 
 export function RoadmapProgress({ topics, completedCount, totalCount, progressPercentage }: RoadmapProgressProps) {
   const updateTopicState = useUpdateTopicState();
+  const { topicStats } = useTopicProblems(topics);
   
   const currentTopic = topics.find(t => t.isCurrentTopic);
 
@@ -76,33 +79,39 @@ export function RoadmapProgress({ topics, completedCount, totalCount, progressPe
         {/* Current Topic Highlight */}
         {currentTopic && (
           <div className="p-4 rounded-lg bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20">
-            <div className="flex items-center justify-between">
-              <div>
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex-1">
                 <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
                   {currentTopic.lockStatus === 'in_progress' ? 'Currently Learning' : 'Up Next'}
                 </p>
                 <p className="font-display font-bold text-lg">{currentTopic.topic_name}</p>
+                {/* Show problem progress for current topic */}
+                {topicStats[currentTopic.id] && (
+                  <TopicProgressIndicator stats={topicStats[currentTopic.id]} />
+                )}
               </div>
-              {currentTopic.lockStatus === 'available' ? (
-                <Button 
-                  onClick={() => handleStartTopic(currentTopic.id)}
-                  disabled={updateTopicState.isPending}
-                  size="sm"
-                >
-                  <Sparkles className="h-4 w-4 mr-1" />
-                  Start Topic
-                </Button>
-              ) : currentTopic.lockStatus === 'in_progress' ? (
-                <Button 
-                  onClick={() => handleCompleteTopic(currentTopic.id)}
-                  disabled={updateTopicState.isPending}
-                  variant="outline"
-                  size="sm"
-                >
-                  <CheckCircle2 className="h-4 w-4 mr-1" />
-                  Mark Complete
-                </Button>
-              ) : null}
+              <div className="flex-shrink-0">
+                {currentTopic.lockStatus === 'available' ? (
+                  <Button 
+                    onClick={() => handleStartTopic(currentTopic.id)}
+                    disabled={updateTopicState.isPending}
+                    size="sm"
+                  >
+                    <Sparkles className="h-4 w-4 mr-1" />
+                    Start Topic
+                  </Button>
+                ) : currentTopic.lockStatus === 'in_progress' ? (
+                  <Button 
+                    onClick={() => handleCompleteTopic(currentTopic.id)}
+                    disabled={updateTopicState.isPending}
+                    variant="outline"
+                    size="sm"
+                  >
+                    <CheckCircle2 className="h-4 w-4 mr-1" />
+                    Mark Complete
+                  </Button>
+                ) : null}
+              </div>
             </div>
           </div>
         )}
@@ -126,6 +135,7 @@ export function RoadmapProgress({ topics, completedCount, totalCount, progressPe
             const config = lockStatusConfig[lockStatus];
             const Icon = config.icon;
             const isLocked = lockStatus === 'locked';
+            const stats = topicStats[topic.id];
 
             return (
               <Tooltip key={topic.id}>
@@ -138,21 +148,32 @@ export function RoadmapProgress({ topics, completedCount, totalCount, progressPe
                       topic.isCurrentTopic && "shadow-sm"
                     )}
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
                       <span className={cn(
-                        "text-sm font-mono w-6",
+                        "text-sm font-mono w-6 flex-shrink-0",
                         isLocked ? "text-muted-foreground/50" : "text-muted-foreground"
                       )}>
                         {String(index + 1).padStart(2, '0')}
                       </span>
-                      <Icon className={cn("h-5 w-5", config.className)} />
-                      <div>
+                      <Icon className={cn("h-5 w-5 flex-shrink-0", config.className)} />
+                      <div className="min-w-0 flex-1">
                         <span className={cn(
-                          "font-medium",
+                          "font-medium block",
                           isLocked && "text-muted-foreground"
                         )}>
                           {topic.topic_name}
                         </span>
+                        {/* Show problem progress for non-locked topics */}
+                        {!isLocked && stats && stats.totalProblems > 0 && (
+                          <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground">
+                            <span>{stats.solvedProblems}/{stats.totalProblems} solved</span>
+                            {stats.revisionCount > 0 && (
+                              <span className="text-amber-600 dark:text-amber-400">
+                                {stats.revisionCount} revision{stats.revisionCount !== 1 ? 's' : ''}
+                              </span>
+                            )}
+                          </div>
+                        )}
                         {/* Show revision status for completed topics */}
                         {lockStatus === 'completed' && (
                           <div className="mt-1">
@@ -164,7 +185,7 @@ export function RoadmapProgress({ topics, completedCount, totalCount, progressPe
                     <Badge 
                       variant="secondary" 
                       className={cn(
-                        "text-xs",
+                        "text-xs flex-shrink-0",
                         lockStatus === 'completed' && "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
                         lockStatus === 'in_progress' && "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
                         lockStatus === 'available' && "bg-primary/10 text-primary",
