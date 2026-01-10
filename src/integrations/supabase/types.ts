@@ -309,6 +309,7 @@ export type Database = {
       invite_codes: {
         Row: {
           code: string
+          code_hash: string | null
           created_at: string
           id: string
           is_active: boolean
@@ -317,6 +318,7 @@ export type Database = {
         }
         Insert: {
           code: string
+          code_hash?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
@@ -325,6 +327,7 @@ export type Database = {
         }
         Update: {
           code?: string
+          code_hash?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
@@ -884,6 +887,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      hash_invite_code: { Args: { p_code: string }; Returns: string }
       is_reading_public_fields: { Args: never; Returns: boolean }
       mark_doubt_solved: { Args: { p_doubt_id: string }; Returns: Json }
       record_activity: { Args: { p_problems_solved?: number }; Returns: Json }

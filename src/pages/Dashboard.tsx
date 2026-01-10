@@ -46,7 +46,7 @@ export default function Dashboard() {
   const userForComponents: MockUser = {
     uid: profile?.id || '',
     username: profile?.username || 'User',
-    email: profile?.email || '',
+    email: '', // Email is now only available via auth.users, not profiles
     avatar: profile?.avatar_url || profile?.username?.[0] || 'U',
     xp: profile?.xp || 0,
     level: Math.floor((profile?.xp || 0) / 500) + 1,
