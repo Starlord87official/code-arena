@@ -428,7 +428,6 @@ export type Database = {
           college_year: string | null
           created_at: string
           division: string | null
-          email: string | null
           id: string
           left_clan_at: string | null
           occupation_type: string | null
@@ -447,7 +446,6 @@ export type Database = {
           college_year?: string | null
           created_at?: string
           division?: string | null
-          email?: string | null
           id: string
           left_clan_at?: string | null
           occupation_type?: string | null
@@ -466,7 +464,6 @@ export type Database = {
           college_year?: string | null
           created_at?: string
           division?: string | null
-          email?: string | null
           id?: string
           left_clan_at?: string | null
           occupation_type?: string | null
