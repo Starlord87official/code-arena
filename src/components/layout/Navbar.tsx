@@ -114,7 +114,7 @@ export function Navbar() {
               <div className="absolute inset-0 bg-primary/20 blur-lg opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
             <span className="font-display text-xl font-bold text-gradient-electric">
-              CodeLock
+              CodeTrackX <span className="text-xs text-muted-foreground">(Private Beta)</span>
             </span>
           </Link>
 
