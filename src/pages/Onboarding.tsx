@@ -80,7 +80,7 @@ export default function Onboarding() {
       // Refresh the profile to get updated data
       await refreshProfile();
 
-      toast.success('Welcome to CodeLock! 🚀');
+      toast.success('Welcome to CodeTrackX! 🚀');
       navigate('/dashboard', { replace: true });
     } catch (error: any) {
       console.error('Onboarding error:', error);
@@ -98,7 +98,7 @@ export default function Onboarding() {
           <div className="flex items-center justify-center gap-2 mb-4">
             <Code2 className="h-10 w-10 text-primary" />
             <span className="font-display text-3xl font-bold text-gradient-electric">
-              CodeLock
+              CodeTrackX <span className="text-lg text-muted-foreground">(Private Beta)</span>
             </span>
           </div>
           <h1 className="font-display text-2xl font-bold mb-2">
