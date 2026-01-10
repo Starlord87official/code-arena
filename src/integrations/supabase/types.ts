@@ -845,6 +845,7 @@ export type Database = {
         Args: { p_other_user_id: string }
         Returns: Json
       }
+      get_invite_info: { Args: { invite_token: string }; Returns: Json }
       get_or_create_user_targets: {
         Args: never
         Returns: {
