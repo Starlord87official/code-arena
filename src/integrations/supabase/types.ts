@@ -887,6 +887,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_reading_public_fields: { Args: never; Returns: boolean }
       mark_doubt_solved: { Args: { p_doubt_id: string }; Returns: Json }
       record_activity: { Args: { p_problems_solved?: number }; Returns: Json }
       record_ai_usage: {
