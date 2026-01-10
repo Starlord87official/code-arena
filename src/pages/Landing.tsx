@@ -17,7 +17,8 @@ export default function Landing() {
             {/* Logo */}
             <div className="flex items-center justify-center gap-3 mb-8 animate-fade-in">
               <Code2 className="h-12 w-12 text-primary" />
-              <span className="font-display text-4xl font-bold text-gradient-electric">CodeLock</span>
+              <span className="font-display text-4xl font-bold text-gradient-electric">CodeTrackX</span>
+              <span className="text-sm text-muted-foreground">(Private Beta)</span>
             </div>
 
             {/* Tagline */}
@@ -128,7 +129,7 @@ export default function Landing() {
       {/* Footer */}
       <footer className="py-8 border-t border-border">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>© 2024 CodeLock. There is only one #1.</p>
+          <p>© 2024 CodeTrackX. There is only one #1.</p>
         </div>
       </footer>
     </div>

@@ -56,7 +56,7 @@ export default function Settings() {
             SETTINGS
           </h1>
           <p className="text-muted-foreground">
-            Configure your CodeLock experience
+            Configure your CodeTrackX experience
           </p>
         </div>
 
