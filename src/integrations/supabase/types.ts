@@ -909,6 +909,27 @@ export type Database = {
         }
         Returns: Json
       }
+      record_battle_result: {
+        Args: {
+          p_battle_id: string
+          p_clan_a_id: string
+          p_clan_a_name: string
+          p_clan_a_score: number
+          p_clan_b_id: string
+          p_clan_b_name: string
+          p_clan_b_score: number
+          p_elo_change?: number
+          p_ended_at: string
+          p_mvp_username?: string
+          p_mvp_xp?: number
+          p_problems_solved_a: number
+          p_problems_solved_b: number
+          p_started_at: string
+          p_total_problems: number
+          p_xp_change?: number
+        }
+        Returns: Json
+      }
       respond_friend_request: {
         Args: { p_accept: boolean; p_request_id: string }
         Returns: Json
