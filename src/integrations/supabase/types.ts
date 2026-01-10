@@ -284,10 +284,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "friend_requests_receiver_id_fkey"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "friend_requests_sender_id_fkey"
             columns: ["sender_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "friend_requests_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -620,6 +634,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "user_activity_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       user_roadmap_progress: {
@@ -700,6 +721,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_user_roles_profile"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       user_targets: {
@@ -738,11 +766,47 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "user_targets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
     Views: {
-      [_ in never]: never
+      public_profiles: {
+        Row: {
+          avatar_url: string | null
+          division: string | null
+          id: string | null
+          joined_at: string | null
+          streak: number | null
+          username: string | null
+          xp: number | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          division?: string | null
+          id?: string | null
+          joined_at?: string | null
+          streak?: number | null
+          username?: string | null
+          xp?: number | null
+        }
+        Update: {
+          avatar_url?: string | null
+          division?: string | null
+          id?: string | null
+          joined_at?: string | null
+          streak?: number | null
+          username?: string | null
+          xp?: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       accept_mentor_invite: { Args: { invite_token: string }; Returns: Json }
@@ -800,6 +864,10 @@ export type Database = {
         }
       }
       get_public_profile: { Args: { p_username: string }; Returns: Json }
+      get_public_profile_fields: {
+        Args: { profile_row: Database["public"]["Tables"]["profiles"]["Row"] }
+        Returns: Json
+      }
       get_revision_queue: { Args: never; Returns: Json }
       get_visible_doubts: {
         Args: {
