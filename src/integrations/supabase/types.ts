@@ -888,7 +888,16 @@ export type Database = {
         Returns: boolean
       }
       hash_invite_code: { Args: { p_code: string }; Returns: string }
+      is_clan_admin: {
+        Args: { _clan_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_clan_member: {
+        Args: { _clan_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_reading_public_fields: { Args: never; Returns: boolean }
+      join_clan: { Args: { p_clan_id: string }; Returns: Json }
       mark_doubt_solved: { Args: { p_doubt_id: string }; Returns: Json }
       record_activity: { Args: { p_problems_solved?: number }; Returns: Json }
       record_ai_usage: {
@@ -905,6 +914,10 @@ export type Database = {
       }
       send_friend_request: { Args: { p_receiver_id: string }; Returns: Json }
       start_roadmap: { Args: { p_roadmap_id: string }; Returns: Json }
+      update_clan_member_stats: {
+        Args: { p_streak?: number; p_user_id: string; p_xp_delta?: number }
+        Returns: Json
+      }
       update_topic_state: {
         Args: {
           p_state: Database["public"]["Enums"]["topic_state"]

@@ -85,7 +85,7 @@ export function useClanCooldown(userId: string | undefined) {
   });
 }
 
-// Join a clan as a student
+// Join a clan as a student (uses secure RPC)
 export function useJoinClan() {
   const queryClient = useQueryClient();
 
@@ -93,35 +93,22 @@ export function useJoinClan() {
     mutationFn: async ({
       userId,
       clanId,
-      username,
     }: {
       userId: string;
       clanId: string;
-      username: string;
+      username?: string; // No longer needed, RPC fetches from profile
     }) => {
-      // First, add as clan member (backend trigger enforces one-clan-per-student and cooldown)
-      const { data: member, error: memberError } = await supabase
-        .from('clan_members')
-        .insert({
-          clan_id: clanId,
-          user_id: userId,
-          username,
-          xp: 0,
-          streak: 0,
-        })
-        .select()
-        .single();
+      // Use secure RPC for clan joining (enforces all business rules server-side)
+      const { data, error } = await supabase.rpc('join_clan', {
+        p_clan_id: clanId,
+      });
 
-      if (memberError) {
-        // Check for the one-clan-per-student constraint
-        if (memberError.message?.includes('Students can only join one clan')) {
-          throw new Error('You can only be a member of one clan at a time');
-        }
-        // Check for cooldown constraint
-        if (memberError.message?.includes('You must wait until')) {
-          throw new Error(memberError.message);
-        }
-        throw memberError;
+      if (error) throw error;
+
+      const result = data as { success: boolean; error?: string; message?: string };
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to join clan');
       }
 
       // Then, assign student role
@@ -137,7 +124,7 @@ export function useJoinClan() {
 
       if (roleError) throw roleError;
 
-      return member;
+      return result;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['student-clan', variables.userId] });
