@@ -129,7 +129,7 @@ export default function Landing() {
       {/* Footer */}
       <footer className="py-8 border-t border-border">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>© 2024 CodeTrackX. There is only one #1.</p>
+          <p>© 2026 CodeTrackX. There is only one #1.</p>
         </div>
       </footer>
     </div>
