@@ -954,8 +954,10 @@ export type Database = {
       get_challenge_stats: {
         Args: never
         Returns: {
+          attempt_count: number
           challenge_id: string
           solve_count: number
+          success_rate: number
         }[]
       }
       get_eligible_doubt_topics: { Args: never; Returns: Json }

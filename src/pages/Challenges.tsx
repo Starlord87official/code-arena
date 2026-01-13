@@ -2,13 +2,15 @@ import { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { 
   Search, Zap, Users, ChevronRight, 
-  ChevronsUp, Swords, BookOpen, Sparkles, Check, Loader2
+  ChevronsUp, Swords, BookOpen, Sparkles, Check, Loader2, 
+  Clock, Shield, AlertTriangle, Flame, Crown
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/contexts/AuthContext';
-import { useChallenges, ChallengeWithStats } from '@/hooks/useChallenges';
+import { useChallenges, ChallengeWithStats, getRiskLevel, getRiskLabel, getRiskColor } from '@/hooks/useChallenges';
 import { MarkForRevisionButton } from '@/components/revision/MarkForRevisionButton';
 
 function getDifficultyColor(difficulty: string) {
@@ -31,27 +33,54 @@ function getDifficultyBg(difficulty: string) {
   }
 }
 
+function getRiskIcon(risk: 'safe' | 'moderate' | 'high' | 'legendary') {
+  switch (risk) {
+    case 'safe': return <Shield className="h-3 w-3" />;
+    case 'moderate': return <AlertTriangle className="h-3 w-3" />;
+    case 'high': return <Flame className="h-3 w-3" />;
+    case 'legendary': return <Crown className="h-3 w-3" />;
+  }
+}
+
 function ChallengeCard({ challenge }: { challenge: ChallengeWithStats }) {
+  const riskLevel = getRiskLevel(challenge.rank_impact_loss);
+  const riskLabel = getRiskLabel(riskLevel);
+  const riskColorClass = getRiskColor(riskLevel);
+
   return (
     <div className="arena-card p-5 rounded-xl group">
       <div className="flex items-start justify-between">
         <Link to={`/solve/${challenge.slug}`} className="flex-1">
-          <div className="flex items-center gap-3 mb-2">
+          {/* Badges Row */}
+          <div className="flex items-center gap-2 flex-wrap mb-2">
+            {/* Difficulty Badge */}
             <span className={`text-xs font-heading uppercase font-semibold px-2 py-1 rounded ${getDifficultyColor(challenge.difficulty)} ${getDifficultyBg(challenge.difficulty)}`}>
               {challenge.difficulty}
             </span>
+            
+            {/* Risk Badge */}
+            <span className={`text-xs font-heading uppercase font-semibold px-2 py-1 rounded flex items-center gap-1 ${riskColorClass}`}>
+              {getRiskIcon(riskLevel)}
+              {riskLabel}
+            </span>
+            
+            {/* Solved Badge */}
             {challenge.isSolved && (
-              <span className="flex items-center gap-1 text-xs text-status-success">
+              <span className="flex items-center gap-1 text-xs text-status-success bg-status-success/10 px-2 py-1 rounded">
                 <Check className="h-3 w-3" />
                 Solved
               </span>
             )}
+            
+            {/* Daily Badge */}
             {challenge.is_daily && (
-              <Badge variant="outline" className="text-xs border-primary/30 text-primary">
+              <Badge variant="outline" className="text-xs border-primary/30 text-primary bg-primary/5">
+                <Clock className="h-3 w-3 mr-1" />
                 Daily
               </Badge>
             )}
           </div>
+          
           <h3 className="font-heading font-bold text-lg mb-2 group-hover:text-primary transition-colors">
             {challenge.title}
           </h3>
@@ -78,6 +107,8 @@ function ChallengeCard({ challenge }: { challenge: ChallengeWithStats }) {
           </Link>
         </div>
       </div>
+      
+      {/* Stats Footer */}
       <div className="flex items-center gap-4 mt-4 pt-4 border-t border-border">
         <div className="flex items-center gap-1 text-sm text-muted-foreground">
           <Zap className="h-4 w-4 text-primary" />
@@ -85,9 +116,27 @@ function ChallengeCard({ challenge }: { challenge: ChallengeWithStats }) {
         </div>
         <div className="flex items-center gap-1 text-sm text-muted-foreground">
           <Users className="h-4 w-4" />
-          {challenge.solvedBy.toLocaleString()} solved
+          {challenge.solvedBy === 0 ? (
+            <span className="text-muted-foreground/70">No solves yet</span>
+          ) : (
+            <span>{challenge.solvedBy.toLocaleString()} solved</span>
+          )}
         </div>
-        <div className="text-sm text-muted-foreground ml-auto">
+        
+        {/* Success Rate */}
+        <div className="flex items-center gap-2 ml-auto text-sm">
+          {challenge.successRate !== null && challenge.attemptCount > 0 ? (
+            <>
+              <span className="text-muted-foreground">{challenge.successRate}% success</span>
+              <Progress value={challenge.successRate} className="w-16 h-1.5" />
+            </>
+          ) : (
+            <span className="text-muted-foreground/60 text-xs">No data yet</span>
+          )}
+        </div>
+        
+        <div className="flex items-center gap-1 text-sm text-muted-foreground">
+          <Clock className="h-4 w-4" />
           {challenge.time_limit} min
         </div>
       </div>
