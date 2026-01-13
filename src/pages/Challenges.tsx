@@ -11,7 +11,9 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/contexts/AuthContext';
 import { useChallenges, ChallengeWithStats, getRiskLevel, getRiskLabel, getRiskColor } from '@/hooks/useChallenges';
+import { useDailyChallenge, useDailyStreak } from '@/hooks/useDailyChallenge';
 import { MarkForRevisionButton } from '@/components/revision/MarkForRevisionButton';
+import { DailyChallengeBanner } from '@/components/challenge/DailyChallengeBanner';
 
 function getDifficultyColor(difficulty: string) {
   switch (difficulty) {
@@ -147,6 +149,8 @@ function ChallengeCard({ challenge }: { challenge: ChallengeWithStats }) {
 export default function Challenges() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { challenges, allTags, isLoading, error } = useChallenges();
+  const { dailyChallenge, isLoading: dailyLoading } = useDailyChallenge();
+  const { streak } = useDailyStreak();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null);
@@ -157,8 +161,11 @@ export default function Challenges() {
     return <Navigate to="/auth" replace />;
   }
 
-  // Filter challenges
+  // Filter challenges (exclude the daily challenge from regular list to avoid duplication)
   const filteredChallenges = challenges.filter(challenge => {
+    // Don't show daily challenge in the regular grid - it's in the banner
+    if (dailyChallenge.challenge?.id === challenge.id) return false;
+    
     const matchesSearch = !searchQuery || 
       challenge.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       challenge.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -263,8 +270,13 @@ export default function Challenges() {
           </div>
         </div>
 
+        {/* Daily Challenge Banner */}
+        {!isLoading && !authLoading && dailyChallenge.challenge && (
+          <DailyChallengeBanner dailyChallenge={dailyChallenge} streak={streak} />
+        )}
+
         {/* Loading State */}
-        {(isLoading || authLoading) && (
+        {(isLoading || authLoading || dailyLoading) && (
           <div className="arena-card p-12 text-center">
             <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
             <p className="text-muted-foreground">Loading challenges...</p>
