@@ -128,6 +128,110 @@ export type Database = {
         }
         Relationships: []
       }
+      challenge_completions: {
+        Row: {
+          challenge_id: string
+          completed_at: string
+          id: string
+          language: string | null
+          memory_kb: number | null
+          runtime_ms: number | null
+          user_id: string
+          xp_earned: number
+        }
+        Insert: {
+          challenge_id: string
+          completed_at?: string
+          id?: string
+          language?: string | null
+          memory_kb?: number | null
+          runtime_ms?: number | null
+          user_id: string
+          xp_earned?: number
+        }
+        Update: {
+          challenge_id?: string
+          completed_at?: string
+          id?: string
+          language?: string | null
+          memory_kb?: number | null
+          runtime_ms?: number | null
+          user_id?: string
+          xp_earned?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_completions_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      challenges: {
+        Row: {
+          constraints: string[]
+          created_at: string
+          description: string
+          difficulty: string
+          examples: Json
+          hints: string[] | null
+          id: string
+          is_active: boolean
+          is_daily: boolean
+          problem_statement: string
+          rank_impact_loss: number
+          rank_impact_win: number
+          slug: string
+          tags: string[]
+          time_limit: number
+          title: string
+          updated_at: string
+          xp_reward: number
+        }
+        Insert: {
+          constraints?: string[]
+          created_at?: string
+          description: string
+          difficulty: string
+          examples?: Json
+          hints?: string[] | null
+          id?: string
+          is_active?: boolean
+          is_daily?: boolean
+          problem_statement: string
+          rank_impact_loss?: number
+          rank_impact_win?: number
+          slug: string
+          tags?: string[]
+          time_limit?: number
+          title: string
+          updated_at?: string
+          xp_reward?: number
+        }
+        Update: {
+          constraints?: string[]
+          created_at?: string
+          description?: string
+          difficulty?: string
+          examples?: Json
+          hints?: string[] | null
+          id?: string
+          is_active?: boolean
+          is_daily?: boolean
+          problem_statement?: string
+          rank_impact_loss?: number
+          rank_impact_win?: number
+          slug?: string
+          tags?: string[]
+          time_limit?: number
+          title?: string
+          updated_at?: string
+          xp_reward?: number
+        }
+        Relationships: []
+      }
       clan_announcements: {
         Row: {
           clan_id: string
@@ -823,6 +927,15 @@ export type Database = {
         Args: { p_code: string; p_user_id: string }
         Returns: Json
       }
+      complete_challenge: {
+        Args: {
+          p_challenge_id: string
+          p_language?: string
+          p_memory_kb?: number
+          p_runtime_ms?: number
+        }
+        Returns: Json
+      }
       complete_revision: { Args: { p_topic_id: string }; Returns: Json }
       complete_revision_item: { Args: { p_id: string }; Returns: Json }
       create_doubt: {
@@ -838,6 +951,13 @@ export type Database = {
       }
       get_activity_summary: { Args: never; Returns: Json }
       get_ai_usage_today: { Args: never; Returns: Json }
+      get_challenge_stats: {
+        Args: never
+        Returns: {
+          challenge_id: string
+          solve_count: number
+        }[]
+      }
       get_eligible_doubt_topics: { Args: never; Returns: Json }
       get_friend_requests: { Args: never; Returns: Json }
       get_friends: { Args: never; Returns: Json }

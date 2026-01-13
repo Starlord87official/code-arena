@@ -1,29 +1,130 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { 
-  Search, Filter, Zap, Trophy, Users, TrendingUp, ChevronRight, 
-  Target, AlertTriangle, Clock, ChevronsUp, Flame, ShieldAlert,
-  TrendingDown, Crown, Swords, BookOpen, Sparkles
+  Search, Zap, Users, ChevronRight, 
+  ChevronsUp, Swords, BookOpen, Sparkles, Check, Loader2
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { getDifficultyColor, Challenge } from '@/lib/mockData';
+import { useAuth } from '@/contexts/AuthContext';
+import { useChallenges, ChallengeWithStats } from '@/hooks/useChallenges';
+import { MarkForRevisionButton } from '@/components/revision/MarkForRevisionButton';
+
+function getDifficultyColor(difficulty: string) {
+  switch (difficulty) {
+    case 'easy': return 'text-status-success';
+    case 'medium': return 'text-status-warning';
+    case 'hard': return 'text-destructive';
+    case 'extreme': return 'text-rank-legend';
+    default: return 'text-muted-foreground';
+  }
+}
+
+function getDifficultyBg(difficulty: string) {
+  switch (difficulty) {
+    case 'easy': return 'bg-status-success/10';
+    case 'medium': return 'bg-status-warning/10';
+    case 'hard': return 'bg-destructive/10';
+    case 'extreme': return 'bg-rank-legend/10';
+    default: return 'bg-muted';
+  }
+}
+
+function ChallengeCard({ challenge }: { challenge: ChallengeWithStats }) {
+  return (
+    <div className="arena-card p-5 rounded-xl group">
+      <div className="flex items-start justify-between">
+        <Link to={`/solve/${challenge.slug}`} className="flex-1">
+          <div className="flex items-center gap-3 mb-2">
+            <span className={`text-xs font-heading uppercase font-semibold px-2 py-1 rounded ${getDifficultyColor(challenge.difficulty)} ${getDifficultyBg(challenge.difficulty)}`}>
+              {challenge.difficulty}
+            </span>
+            {challenge.isSolved && (
+              <span className="flex items-center gap-1 text-xs text-status-success">
+                <Check className="h-3 w-3" />
+                Solved
+              </span>
+            )}
+            {challenge.is_daily && (
+              <Badge variant="outline" className="text-xs border-primary/30 text-primary">
+                Daily
+              </Badge>
+            )}
+          </div>
+          <h3 className="font-heading font-bold text-lg mb-2 group-hover:text-primary transition-colors">
+            {challenge.title}
+          </h3>
+          <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+            {challenge.description}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {challenge.tags.map(tag => (
+              <span key={tag} className="text-xs px-2 py-1 rounded bg-secondary text-muted-foreground">
+                {tag}
+              </span>
+            ))}
+          </div>
+        </Link>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <MarkForRevisionButton
+            problemId={challenge.id}
+            problemTitle={challenge.title}
+            topic={challenge.tags[0]}
+            variant="compact"
+          />
+          <Link to={`/solve/${challenge.slug}`}>
+            <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+          </Link>
+        </div>
+      </div>
+      <div className="flex items-center gap-4 mt-4 pt-4 border-t border-border">
+        <div className="flex items-center gap-1 text-sm text-muted-foreground">
+          <Zap className="h-4 w-4 text-primary" />
+          <span className="font-semibold text-primary">+{challenge.xp_reward}</span> XP
+        </div>
+        <div className="flex items-center gap-1 text-sm text-muted-foreground">
+          <Users className="h-4 w-4" />
+          {challenge.solvedBy.toLocaleString()} solved
+        </div>
+        <div className="text-sm text-muted-foreground ml-auto">
+          {challenge.time_limit} min
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function Challenges() {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { challenges, allTags, isLoading, error } = useChallenges();
+  
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
 
-  // In private beta, challenges will come from real data sources
-  const challenges: Challenge[] = [];
-  const allTags: string[] = [];
+  // Redirect to login if not authenticated
+  if (!authLoading && !isAuthenticated) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  // Filter challenges
+  const filteredChallenges = challenges.filter(challenge => {
+    const matchesSearch = !searchQuery || 
+      challenge.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      challenge.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      challenge.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+    
+    const matchesDifficulty = !selectedDifficulty || challenge.difficulty === selectedDifficulty;
+    const matchesTag = !selectedTag || challenge.tags.includes(selectedTag);
+    
+    return matchesSearch && matchesDifficulty && matchesTag;
+  });
 
   return (
     <div className="min-h-screen bg-background py-8 px-4">
       <div className="max-w-6xl mx-auto">
-        {/* Intense Header */}
+        {/* Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-4 mb-4">
             <div className="flex items-center gap-1">
@@ -74,6 +175,23 @@ export default function Challenges() {
               ))}
             </div>
           </div>
+
+          {/* Tag Filter */}
+          {allTags.length > 0 && (
+            <div className="flex gap-2 flex-wrap mt-4 pt-4 border-t border-border">
+              {allTags.map((tag) => (
+                <Button
+                  key={tag}
+                  variant={selectedTag === tag ? 'arena' : 'ghost'}
+                  size="sm"
+                  onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
+                  className="text-xs"
+                >
+                  {tag}
+                </Button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Risk Legend */}
@@ -96,44 +214,97 @@ export default function Challenges() {
           </div>
         </div>
 
-        {/* Private Beta Empty State */}
-        <div className="arena-card p-12 text-center">
-          <div className="max-w-md mx-auto">
-            <div className="relative mb-6">
-              <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-accent/20 to-primary/20 blur-3xl rounded-full" />
-              <div className="relative inline-flex items-center justify-center p-6 rounded-full bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20">
-                <Sparkles className="h-12 w-12 text-primary" />
-              </div>
-            </div>
-            
-            <Badge className="mb-4 bg-primary/10 text-primary border-primary/30">
-              PRIVATE BETA
-            </Badge>
-            
-            <h2 className="font-display text-2xl font-bold mb-3">
-              Challenges Coming Soon
-            </h2>
-            
-            <p className="text-muted-foreground mb-6">
-              Our challenge library is being curated. In the meantime, follow your roadmap to build a strong foundation.
-            </p>
+        {/* Loading State */}
+        {(isLoading || authLoading) && (
+          <div className="arena-card p-12 text-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading challenges...</p>
+          </div>
+        )}
 
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link to="/roadmap">
-                <Button variant="arena">
-                  <BookOpen className="h-4 w-4 mr-2" />
-                  Follow Your Roadmap
-                </Button>
-              </Link>
-              <Link to="/dashboard">
-                <Button variant="outline">
-                  <Target className="h-4 w-4 mr-2" />
-                  Back to Dashboard
-                </Button>
-              </Link>
+        {/* Error State */}
+        {error && (
+          <div className="arena-card p-12 text-center">
+            <p className="text-destructive mb-4">Failed to load challenges</p>
+            <Button variant="outline" onClick={() => window.location.reload()}>
+              Try Again
+            </Button>
+          </div>
+        )}
+
+        {/* Challenges Grid */}
+        {!isLoading && !authLoading && !error && filteredChallenges.length > 0 && (
+          <div className="grid gap-4 md:grid-cols-2">
+            {filteredChallenges.map((challenge) => (
+              <ChallengeCard key={challenge.id} challenge={challenge} />
+            ))}
+          </div>
+        )}
+
+        {/* Empty State - No challenges match filters */}
+        {!isLoading && !authLoading && !error && filteredChallenges.length === 0 && challenges.length > 0 && (
+          <div className="arena-card p-12 text-center">
+            <div className="max-w-md mx-auto">
+              <Search className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h2 className="font-display text-xl font-bold mb-3">
+                No Matching Challenges
+              </h2>
+              <p className="text-muted-foreground mb-6">
+                Try adjusting your filters or search query.
+              </p>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setSearchQuery('');
+                  setSelectedDifficulty(null);
+                  setSelectedTag(null);
+                }}
+              >
+                Clear Filters
+              </Button>
             </div>
           </div>
-        </div>
+        )}
+
+        {/* Empty State - No challenges exist yet */}
+        {!isLoading && !authLoading && !error && challenges.length === 0 && (
+          <div className="arena-card p-12 text-center">
+            <div className="max-w-md mx-auto">
+              <div className="relative mb-6">
+                <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-accent/20 to-primary/20 blur-3xl rounded-full" />
+                <div className="relative inline-flex items-center justify-center p-6 rounded-full bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20">
+                  <Sparkles className="h-12 w-12 text-primary" />
+                </div>
+              </div>
+              
+              <Badge className="mb-4 bg-primary/10 text-primary border-primary/30">
+                PRIVATE BETA
+              </Badge>
+              
+              <h2 className="font-display text-2xl font-bold mb-3">
+                You're Among the First
+              </h2>
+              
+              <p className="text-muted-foreground mb-6">
+                Challenges are being added. In the meantime, follow your roadmap to build a strong foundation.
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Link to="/roadmap">
+                  <Button variant="arena">
+                    <BookOpen className="h-4 w-4 mr-2" />
+                    Follow Your Roadmap
+                  </Button>
+                </Link>
+                <Link to="/dashboard">
+                  <Button variant="outline">
+                    Back to Dashboard
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
