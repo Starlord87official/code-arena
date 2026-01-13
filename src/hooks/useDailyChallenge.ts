@@ -178,23 +178,55 @@ export function useDailyStreak() {
   const streakQuery = useQuery({
     queryKey: ['user-streak', user?.id],
     queryFn: async () => {
-      if (!user?.id) return { streak: 0, lastCompletedDate: null };
+      if (!user?.id) return { streak: 0, streakBroken: false };
 
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('streak')
-        .eq('id', user.id)
-        .single();
+      // Check and update streak status (this will reset if missed)
+      const { data: streakCheck, error: checkError } = await supabase
+        .rpc('check_daily_streak');
+      
+      if (checkError) {
+        console.error('Streak check error:', checkError);
+        // Fallback to just reading profile
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('streak')
+          .eq('id', user.id)
+          .single();
+        return { streak: profile?.streak || 0, streakBroken: false };
+      }
 
-      if (error) throw error;
-      return { streak: profile?.streak || 0 };
+      return { 
+        streak: (streakCheck as any)?.streak || 0,
+        streakBroken: (streakCheck as any)?.streak_broken || false
+      };
     },
     enabled: isAuthenticated && !!user?.id,
   });
 
   return {
     streak: streakQuery.data?.streak || 0,
+    streakBroken: streakQuery.data?.streakBroken || false,
     isLoading: streakQuery.isLoading,
     refetch: streakQuery.refetch,
   };
+}
+
+// Hook to complete daily challenge
+export function useCompleteDailyChallenge() {
+  const completeDailyChallenge = async (challengeId: string) => {
+    const { data, error } = await supabase.rpc('complete_daily_challenge', {
+      p_challenge_id: challengeId,
+    });
+
+    if (error) throw error;
+    return data as { 
+      success: boolean; 
+      streak?: number; 
+      xp_earned?: number; 
+      streak_continued?: boolean;
+      error?: string 
+    };
+  };
+
+  return { completeDailyChallenge };
 }

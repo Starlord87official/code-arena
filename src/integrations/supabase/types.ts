@@ -301,6 +301,38 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_challenge_completions: {
+        Row: {
+          challenge_id: string
+          completed_at: string
+          completion_date: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          challenge_id: string
+          completed_at?: string
+          completion_date?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          challenge_id?: string
+          completed_at?: string
+          completion_date?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_challenge_completions_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       doubts: {
         Row: {
           category: Database["public"]["Enums"]["doubt_category"]
@@ -923,6 +955,7 @@ export type Database = {
         }
         Returns: Json
       }
+      check_daily_streak: { Args: never; Returns: Json }
       claim_invite_code: {
         Args: { p_code: string; p_user_id: string }
         Returns: Json
@@ -934,6 +967,10 @@ export type Database = {
           p_memory_kb?: number
           p_runtime_ms?: number
         }
+        Returns: Json
+      }
+      complete_daily_challenge: {
+        Args: { p_challenge_id: string }
         Returns: Json
       }
       complete_revision: { Args: { p_topic_id: string }; Returns: Json }
