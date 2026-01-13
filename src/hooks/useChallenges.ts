@@ -31,12 +31,42 @@ export interface ChallengeFromDB {
 
 export interface ChallengeWithStats extends ChallengeFromDB {
   solvedBy: number;
+  attemptCount: number;
+  successRate: number | null;
   isSolved: boolean;
 }
 
 interface ChallengeStat {
   challenge_id: string;
   solve_count: number;
+  attempt_count: number;
+  success_rate: number | null;
+}
+
+// Get risk level based on rank_impact_loss
+export function getRiskLevel(rankImpactLoss: number): 'safe' | 'moderate' | 'high' | 'legendary' {
+  if (rankImpactLoss === 0) return 'safe';
+  if (rankImpactLoss <= 2) return 'moderate';
+  if (rankImpactLoss <= 4) return 'high';
+  return 'legendary';
+}
+
+export function getRiskLabel(risk: 'safe' | 'moderate' | 'high' | 'legendary'): string {
+  switch (risk) {
+    case 'safe': return 'Safe Zone';
+    case 'moderate': return 'Moderate Risk';
+    case 'high': return 'High Risk';
+    case 'legendary': return 'Legendary';
+  }
+}
+
+export function getRiskColor(risk: 'safe' | 'moderate' | 'high' | 'legendary'): string {
+  switch (risk) {
+    case 'safe': return 'text-status-success bg-status-success/10';
+    case 'moderate': return 'text-status-warning bg-status-warning/10';
+    case 'high': return 'text-destructive bg-destructive/10';
+    case 'legendary': return 'text-rank-legend bg-rank-legend/10';
+  }
 }
 
 function parseExamples(examples: Json): ChallengeExample[] {
@@ -108,6 +138,8 @@ export function useChallenges() {
     return {
       ...challenge,
       solvedBy: stat?.solve_count || 0,
+      attemptCount: stat?.attempt_count || 0,
+      successRate: stat?.success_rate ?? null,
       isSolved,
     };
   });
