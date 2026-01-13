@@ -1,8 +1,6 @@
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { PlayerCard } from '@/components/cards/PlayerCard';
-import { ChallengeCard } from '@/components/cards/ChallengeCard';
-import { ContestCard } from '@/components/cards/ContestCard';
 import { RivalsSection } from '@/components/dashboard/RivalsSection';
 import { LiveActivityFeed } from '@/components/dashboard/LiveActivityFeed';
 import { DivisionProgress } from '@/components/dashboard/DivisionProgress';
@@ -13,9 +11,11 @@ import { ActivityHeatmap } from '@/components/dashboard/ActivityHeatmap';
 import { RevisionQueueCard } from '@/components/dashboard/RevisionQueueCard';
 import { AreasToImproveCard } from '@/components/dashboard/AreasToImproveCard';
 import { InterviewReadinessCard } from '@/components/dashboard/InterviewReadinessCard';
-import { mockChallenges, mockContests, mockLeaderboard, getXpProgress, User as MockUser } from '@/lib/mockData';
-import { ChevronRight, Flame, Target, Trophy, Zap, Clock, AlertTriangle, TrendingUp, Loader2, Swords, BookOpen } from 'lucide-react';
+import { getXpProgress, User as MockUser } from '@/lib/mockData';
+import { ChevronRight, Flame, Target, Trophy, Zap, Clock, AlertTriangle, TrendingUp, Loader2, Swords, BookOpen, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+
 // Dashboard: Navigation and data aggregation layer only
 // - No business logic (role checks, feature gating)
 // - All features handle their own access internally
@@ -46,12 +46,12 @@ export default function Dashboard() {
   const userForComponents: MockUser = {
     uid: profile?.id || '',
     username: profile?.username || 'User',
-    email: '', // Email is now only available via auth.users, not profiles
+    email: '',
     avatar: profile?.avatar_url || profile?.username?.[0] || 'U',
     xp: profile?.xp || 0,
     level: Math.floor((profile?.xp || 0) / 500) + 1,
     streak: profile?.streak || 0,
-    rank: 42, // Mock rank for now
+    rank: 0, // Real rank not yet implemented
     division: (profile?.division as any) || 'bronze',
     elo: 1200,
     joinedAt: new Date(profile?.created_at || Date.now()),
@@ -74,38 +74,34 @@ export default function Dashboard() {
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <h1 className="font-display text-3xl font-bold">
-                  Return to the arena, <span className="text-gradient-electric">{profile?.username || 'Warrior'}</span>
+                  Welcome to the arena, <span className="text-gradient-electric">{profile?.username || 'Warrior'}</span>
                 </h1>
-                <span className="relative flex h-3 w-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-status-success opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-status-success"></span>
-                </span>
+                <Badge className="bg-primary/10 text-primary border-primary/30">
+                  <Sparkles className="h-3 w-3 mr-1" />
+                  EARLY ADOPTER
+                </Badge>
               </div>
-              <p className="text-muted-foreground">There is only one #1. Prove your ego.</p>
+              <p className="text-muted-foreground">You're among the first warriors. Build your foundation and rise.</p>
             </div>
             <div className="flex items-center gap-4">
-              {streakAtRisk && (
+              {streakAtRisk && userForComponents.streak > 0 && (
                 <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-destructive/10 border border-destructive/30 animate-pulse">
                   <AlertTriangle className="h-4 w-4 text-destructive" />
                   <span className="text-sm font-semibold text-destructive">Streak expires soon!</span>
                 </div>
               )}
-              <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-semibold">Next contest in 2h 45m</span>
-              </div>
             </div>
           </div>
         </div>
 
-        {/* Pressure Stats Bar */}
+        {/* Stats Bar - Real data from profile */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {[
             { 
               icon: Zap, 
-              label: 'XP Today', 
-              value: '+150', 
-              subtext: `${xpToNextLevel} to level ${userForComponents.level + 1}`,
+              label: 'Total XP', 
+              value: userForComponents.xp.toLocaleString(), 
+              subtext: xpToNextLevel > 0 ? `${xpToNextLevel} to level ${userForComponents.level + 1}` : 'Keep going!',
               color: 'text-primary',
               urgent: false 
             },
@@ -113,15 +109,15 @@ export default function Dashboard() {
               icon: Flame, 
               label: 'Streak', 
               value: userForComponents.streak, 
-              subtext: streakAtRisk ? 'Complete 1 challenge!' : 'Keep it burning',
+              subtext: userForComponents.streak === 0 ? 'Complete a challenge to start' : (streakAtRisk ? 'Complete 1 challenge!' : 'Keep it burning'),
               color: 'text-status-warning',
-              urgent: streakAtRisk
+              urgent: streakAtRisk && userForComponents.streak > 0
             },
             { 
               icon: Trophy, 
-              label: 'Global Rank', 
-              value: `#${userForComponents.rank}`, 
-              subtext: '3 players within reach',
+              label: 'Level', 
+              value: userForComponents.level, 
+              subtext: 'Keep solving to level up',
               color: 'text-rank-diamond',
               urgent: false
             },
@@ -129,7 +125,7 @@ export default function Dashboard() {
               icon: TrendingUp, 
               label: 'Division', 
               value: userForComponents.division.toUpperCase(), 
-              subtext: '153 ELO to Master',
+              subtext: 'Climb with consistent practice',
               color: 'text-rank-master',
               urgent: false
             },
@@ -173,7 +169,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
-            {/* XP Progress - Intense Design */}
+            {/* XP Progress - Real data */}
             <div className="arena-card p-6 rounded-xl relative overflow-hidden">
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-accent to-primary" />
               <div className="flex items-center justify-between mb-4">
@@ -209,42 +205,56 @@ export default function Dashboard() {
               <RoadmapCard roadmapId="dsa" />
             </div>
 
-            {/* Rivals Section */}
-            <RivalsSection currentUser={userForComponents} rivals={mockLeaderboard} />
+            {/* Rivals Section - Shows empty state in beta */}
+            <RivalsSection currentUser={userForComponents} rivals={[]} />
 
-            {/* Recommended Challenges */}
+            {/* Challenges CTA - No mock data */}
             <div>
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <Target className="h-5 w-5 text-primary" />
-                  <h2 className="font-display text-xl font-bold">Recommended Challenges</h2>
+                  <h2 className="font-display text-xl font-bold">Start Solving</h2>
                 </div>
                 <Link to="/challenges" className="text-sm text-primary hover:underline flex items-center gap-1">
-                  View All <ChevronRight className="h-4 w-4" />
+                  Browse All <ChevronRight className="h-4 w-4" />
                 </Link>
               </div>
-              <div className="space-y-4">
-                {mockChallenges.slice(0, 3).map(challenge => (
-                  <ChallengeCard key={challenge.id} challenge={challenge} />
-                ))}
+              <div className="arena-card p-6 text-center">
+                <div className="inline-flex items-center justify-center p-3 rounded-full bg-primary/10 border border-primary/20 mb-3">
+                  <Target className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="font-display font-semibold mb-2">Ready to Practice?</h3>
+                <p className="text-muted-foreground text-sm mb-4">
+                  Follow your roadmap and solve challenges to earn XP and build your skills.
+                </p>
+                <Link to="/roadmap">
+                  <Button variant="arena">
+                    <BookOpen className="h-4 w-4 mr-2" />
+                    Continue Learning Path
+                  </Button>
+                </Link>
               </div>
             </div>
 
-            {/* Upcoming Contests */}
+            {/* Contests CTA - No mock data */}
             <div>
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <Trophy className="h-5 w-5 text-status-warning" />
-                  <h2 className="font-display text-xl font-bold">Upcoming Contests</h2>
+                  <h2 className="font-display text-xl font-bold">Contests</h2>
                 </div>
                 <Link to="/contests" className="text-sm text-primary hover:underline flex items-center gap-1">
                   View All <ChevronRight className="h-4 w-4" />
                 </Link>
               </div>
-              <div className="grid md:grid-cols-2 gap-4">
-                {mockContests.slice(0, 2).map(contest => (
-                  <ContestCard key={contest.id} contest={contest} />
-                ))}
+              <div className="arena-card p-6 text-center">
+                <Badge className="mb-3 bg-status-warning/10 text-status-warning border-status-warning/30">
+                  COMING SOON
+                </Badge>
+                <h3 className="font-display font-semibold mb-2">Contests Are Brewing</h3>
+                <p className="text-muted-foreground text-sm">
+                  Weekly contests will be announced soon. Focus on your roadmap for now!
+                </p>
               </div>
             </div>
           </div>
@@ -288,16 +298,16 @@ export default function Dashboard() {
                   Practice under pressure — optional and for fun
                 </p>
               </div>
-              <Link to="/challenges">
+              <Link to="/roadmap">
                 <Button variant="outline" className="w-full">
-                  <Target className="h-4 w-4 mr-2" />
-                  Solve Challenges
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  Continue Roadmap
                 </Button>
               </Link>
-              <Link to="/contests">
+              <Link to="/leaderboard">
                 <Button variant="outline" className="w-full">
                   <Trophy className="h-4 w-4 mr-2" />
-                  Join Contests
+                  View Leaderboard
                 </Button>
               </Link>
             </div>
