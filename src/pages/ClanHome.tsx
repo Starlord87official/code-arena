@@ -422,7 +422,7 @@ export default function ClanHome() {
               </TabsContent>
 
               <TabsContent value="battles">
-                <BattleHistoryList clanId={clan.id} battles={battleHistory} />
+                <BattleHistoryList clanId={clan.id} />
               </TabsContent>
             </Tabs>
           </div>
