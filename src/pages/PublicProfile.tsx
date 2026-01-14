@@ -16,6 +16,7 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { useInterviewReadiness, getBandConfig } from '@/hooks/useInterviewReadiness';
 import { cn } from '@/lib/utils';
+import { FriendsList } from '@/components/social/FriendsList';
 
 export default function PublicProfile() {
   const { username } = useParams<{ username: string }>();
@@ -344,6 +345,11 @@ export default function PublicProfile() {
             </div>
           </div>
         </div>
+
+        {/* Friends List - Only show on own profile */}
+        {isOwnProfile && (
+          <FriendsList />
+        )}
       </div>
     </div>
   );

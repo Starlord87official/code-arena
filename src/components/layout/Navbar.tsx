@@ -26,7 +26,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { getDivisionColor } from '@/lib/mockData';
 import { formatDistanceToNow } from 'date-fns';
-import { FriendRequestsPanel } from '@/components/social/FriendRequestsPanel';
+import { useFriendRequests } from '@/hooks/useFriendRequests';
 
 // Priority-based notification data for navbar dropdown
 const navbarNotifications = [
@@ -74,12 +74,14 @@ const navbarNotifications = [
 
 export function Navbar() {
   const { profile, user, isAuthenticated, logout } = useAuth();
+  const { incoming: friendRequests } = useFriendRequests();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
 
-  const unreadCount = navbarNotifications.filter(n => !n.read).length;
+  // Combine notification counts with friend requests
+  const unreadCount = navbarNotifications.filter(n => !n.read).length + friendRequests.length;
   const criticalCount = navbarNotifications.filter(n => n.priority === 'critical' && !n.read).length;
 
   // Phase 1: Student-focused navigation - Battle Mode always available
@@ -259,9 +261,8 @@ export function Navbar() {
                     </div>
                   )}
                 </div>
-
-                {/* Friend Requests Panel */}
-                <FriendRequestsPanel />
+                
+                {/* Friend Requests Panel removed - now in Notifications */}
 
                 {/* Profile */}
                 <div className="relative">

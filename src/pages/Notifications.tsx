@@ -1,20 +1,25 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { 
   Bell, Trophy, Flame, Zap, Star, AlertCircle, Users, 
   Check, CheckCheck, Trash2, Filter, AlertTriangle, Target,
   TrendingDown, TrendingUp, ChevronsUp, Swords, ShieldAlert,
-  Clock, Crown
+  Clock, Crown, X, Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { formatDistanceToNow } from 'date-fns';
+import { useFriendRequests, FriendRequest } from '@/hooks/useFriendRequests';
+import { getDivisionColor } from '@/lib/mockData';
+import { toast } from 'sonner';
 
 // Priority levels for psychological impact
 type Priority = 'critical' | 'important' | 'info';
 
 interface CompetitiveNotification {
   id: string;
-  type: 'rival' | 'rank' | 'streak' | 'contest' | 'challenge' | 'system';
+  type: 'rival' | 'rank' | 'streak' | 'contest' | 'challenge' | 'system' | 'friend_request';
   priority: Priority;
   title: string;
   message: string;
@@ -23,6 +28,7 @@ interface CompetitiveNotification {
   createdAt: Date;
   actionLabel?: string;
   actionPath?: string;
+  friendRequest?: FriendRequest;
 }
 
 // Psychological notification data
@@ -150,11 +156,32 @@ const competitiveNotifications: CompetitiveNotification[] = [
   },
 ];
 
-const notificationTypes = ['all', 'critical', 'rival', 'rank', 'streak', 'contest'] as const;
+const notificationTypes = ['all', 'critical', 'friend_request', 'rival', 'rank', 'streak', 'contest'] as const;
 
 export default function Notifications() {
-  const [notifications, setNotifications] = useState(competitiveNotifications);
+  const [baseNotifications, setBaseNotifications] = useState(competitiveNotifications);
   const [selectedType, setSelectedType] = useState<string>('all');
+  const [respondingTo, setRespondingTo] = useState<string | null>(null);
+  
+  const { incoming: friendRequests, respondToRequest, refetch } = useFriendRequests();
+  
+  // Convert friend requests to notification format
+  const friendRequestNotifications: CompetitiveNotification[] = friendRequests.map((req) => ({
+    id: `fr-${req.id}`,
+    type: 'friend_request' as const,
+    priority: 'important' as const,
+    title: 'FRIEND REQUEST',
+    message: `${req.username} wants to be your friend`,
+    subtext: req.division ? `Division: ${req.division}` : undefined,
+    read: false,
+    createdAt: new Date(req.created_at),
+    friendRequest: req,
+  }));
+  
+  // Combine all notifications
+  const notifications = [...friendRequestNotifications, ...baseNotifications].sort(
+    (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+  );
 
   const filteredNotifications = selectedType === 'all' 
     ? notifications 
@@ -164,6 +191,7 @@ export default function Notifications() {
 
   const unreadCount = notifications.filter(n => !n.read).length;
   const criticalCount = notifications.filter(n => n.priority === 'critical' && !n.read).length;
+  const friendRequestCount = friendRequests.length;
 
   const getTypeIcon = (type: CompetitiveNotification['type'], priority: Priority) => {
     const iconClass = priority === 'critical' ? 'animate-pulse' : '';
@@ -174,6 +202,7 @@ export default function Notifications() {
       case 'contest': return <Swords className={`h-5 w-5 text-primary ${iconClass}`} />;
       case 'challenge': return <Zap className={`h-5 w-5 text-status-success`} />;
       case 'system': return <AlertCircle className="h-5 w-5 text-muted-foreground" />;
+      case 'friend_request': return <Users className={`h-5 w-5 text-primary ${iconClass}`} />;
     }
   };
 
@@ -201,22 +230,36 @@ export default function Notifications() {
       contest: 'bg-primary/20 text-primary border-primary/30',
       challenge: 'bg-status-success/20 text-status-success border-status-success/30',
       system: 'bg-muted text-muted-foreground border-border',
+      friend_request: 'bg-primary/20 text-primary border-primary/30',
     };
     return colors[type];
   };
 
   const markAsRead = (id: string) => {
-    setNotifications(notifications.map(n => 
+    setBaseNotifications(baseNotifications.map(n => 
       n.id === id ? { ...n, read: true } : n
     ));
   };
 
   const markAllAsRead = () => {
-    setNotifications(notifications.map(n => ({ ...n, read: true })));
+    setBaseNotifications(baseNotifications.map(n => ({ ...n, read: true })));
   };
 
   const deleteNotification = (id: string) => {
-    setNotifications(notifications.filter(n => n.id !== id));
+    setBaseNotifications(baseNotifications.filter(n => n.id !== id));
+  };
+
+  const handleRespondToFriendRequest = async (requestId: string, accept: boolean) => {
+    setRespondingTo(requestId);
+    const result = await respondToRequest(requestId, accept);
+    setRespondingTo(null);
+    
+    if (result.success) {
+      toast.success(accept ? 'Friend request accepted!' : 'Friend request declined');
+      refetch();
+    } else {
+      toast.error(result.error || 'Failed to respond to request');
+    }
   };
 
   return (
@@ -271,13 +314,20 @@ export default function Notifications() {
         )}
 
         {/* Stats Row */}
-        <div className="grid grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-5 gap-4 mb-8">
           <div className="arena-card p-4 text-center border-destructive/30">
             <div className="flex items-center justify-center gap-2 mb-1">
               <AlertTriangle className="h-4 w-4 text-destructive" />
             </div>
             <div className="text-2xl font-bold text-destructive">{criticalCount}</div>
             <div className="text-xs text-muted-foreground uppercase">Critical</div>
+          </div>
+          <div className="arena-card p-4 text-center border-primary/30">
+            <div className="flex items-center justify-center gap-2 mb-1">
+              <Users className="h-4 w-4 text-primary" />
+            </div>
+            <div className="text-2xl font-bold text-primary">{friendRequestCount}</div>
+            <div className="text-xs text-muted-foreground uppercase">Requests</div>
           </div>
           <div className="arena-card p-4 text-center border-status-warning/30">
             <div className="flex items-center justify-center gap-2 mb-1">
@@ -315,12 +365,17 @@ export default function Notifications() {
                 variant={selectedType === type ? 'arena' : 'outline'}
                 size="sm"
                 onClick={() => setSelectedType(type)}
-                className={`capitalize ${type === 'critical' ? 'border-destructive/50' : ''}`}
+                className={`capitalize ${type === 'critical' ? 'border-destructive/50' : ''} ${type === 'friend_request' ? 'border-primary/50' : ''}`}
               >
-                {type}
+                {type === 'friend_request' ? 'Friends' : type}
                 {type === 'critical' && criticalCount > 0 && (
                   <span className="ml-1 bg-destructive text-destructive-foreground text-[10px] rounded-full h-4 w-4 flex items-center justify-center">
                     {criticalCount}
+                  </span>
+                )}
+                {type === 'friend_request' && friendRequestCount > 0 && (
+                  <span className="ml-1 bg-primary text-primary-foreground text-[10px] rounded-full h-4 w-4 flex items-center justify-center">
+                    {friendRequestCount}
                   </span>
                 )}
               </Button>
@@ -352,13 +407,27 @@ export default function Notifications() {
               }`}
             >
               <div className="flex items-start gap-4">
-                <div className={`p-3 rounded-lg ${
-                  notification.priority === 'critical' ? 'bg-destructive/20' :
-                  notification.priority === 'important' ? 'bg-status-warning/20' :
-                  'bg-muted'
-                }`}>
-                  {getTypeIcon(notification.type, notification.priority)}
-                </div>
+                {/* Avatar for friend requests, icon for others */}
+                {notification.type === 'friend_request' && notification.friendRequest ? (
+                  <Link to={`/profile/${notification.friendRequest.username}`}>
+                    <Avatar className="h-12 w-12">
+                      {notification.friendRequest.avatar_url && (
+                        <AvatarImage src={notification.friendRequest.avatar_url} />
+                      )}
+                      <AvatarFallback className="bg-card text-sm font-bold">
+                        {notification.friendRequest.username?.slice(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Link>
+                ) : (
+                  <div className={`p-3 rounded-lg ${
+                    notification.priority === 'critical' ? 'bg-destructive/20' :
+                    notification.priority === 'important' ? 'bg-status-warning/20' :
+                    'bg-muted'
+                  }`}>
+                    {getTypeIcon(notification.type, notification.priority)}
+                  </div>
+                )}
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -375,16 +444,41 @@ export default function Notifications() {
                       } animate-pulse`} />
                     )}
                   </div>
-                  <p className="text-foreground text-sm mb-1">{notification.message}</p>
-                  {notification.subtext && (
-                    <p className="text-muted-foreground text-xs italic mb-2">{notification.subtext}</p>
+                  
+                  {/* Friend request shows username as link */}
+                  {notification.type === 'friend_request' && notification.friendRequest ? (
+                    <div className="mb-2">
+                      <Link 
+                        to={`/profile/${notification.friendRequest.username}`}
+                        className="text-primary hover:underline font-medium"
+                      >
+                        {notification.friendRequest.username}
+                      </Link>
+                      <span className="text-foreground text-sm"> wants to be your friend</span>
+                      {notification.friendRequest.division && (
+                        <Badge 
+                          variant="outline" 
+                          className={`ml-2 text-xs ${getDivisionColor(notification.friendRequest.division as any)}`}
+                        >
+                          {notification.friendRequest.division}
+                        </Badge>
+                      )}
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-foreground text-sm mb-1">{notification.message}</p>
+                      {notification.subtext && (
+                        <p className="text-muted-foreground text-xs italic mb-2">{notification.subtext}</p>
+                      )}
+                    </>
                   )}
+                  
                   <div className="flex items-center gap-3 flex-wrap">
                     <Badge className={`${getPriorityBadge(notification.priority)} border text-[10px] uppercase`}>
                       {notification.priority}
                     </Badge>
                     <Badge className={`${getTypeBadge(notification.type)} border text-[10px] uppercase`}>
-                      {notification.type}
+                      {notification.type === 'friend_request' ? 'friend' : notification.type}
                     </Badge>
                     <span className="text-xs text-muted-foreground">
                       {formatDistanceToNow(notification.createdAt, { addSuffix: true })}
@@ -393,34 +487,68 @@ export default function Notifications() {
                 </div>
 
                 <div className="flex flex-col items-end gap-2">
-                  <div className="flex items-center gap-1">
-                    {!notification.read && (
-                      <Button 
-                        variant="ghost" 
+                  {/* Friend request action buttons */}
+                  {notification.type === 'friend_request' && notification.friendRequest ? (
+                    <div className="flex items-center gap-2">
+                      <Button
                         size="sm"
-                        onClick={() => markAsRead(notification.id)}
-                        className="text-muted-foreground hover:text-foreground"
+                        variant="arena"
+                        className="text-xs"
+                        onClick={() => handleRespondToFriendRequest(notification.friendRequest!.id, true)}
+                        disabled={respondingTo === notification.friendRequest.id}
                       >
-                        <Check className="h-4 w-4" />
+                        {respondingTo === notification.friendRequest.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <>
+                            <Check className="h-4 w-4 mr-1" />
+                            Accept
+                          </>
+                        )}
                       </Button>
-                    )}
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => deleteNotification(notification.id)}
-                      className="text-muted-foreground hover:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  {notification.actionLabel && (
-                    <Button 
-                      variant={notification.priority === 'critical' ? 'arena' : 'outline'} 
-                      size="sm"
-                      className={notification.priority === 'critical' ? 'bg-destructive hover:bg-destructive/80 text-xs' : 'text-xs'}
-                    >
-                      {notification.actionLabel}
-                    </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-xs"
+                        onClick={() => handleRespondToFriendRequest(notification.friendRequest!.id, false)}
+                        disabled={respondingTo === notification.friendRequest.id}
+                      >
+                        <X className="h-4 w-4 mr-1" />
+                        Decline
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-1">
+                        {!notification.read && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => markAsRead(notification.id)}
+                            className="text-muted-foreground hover:text-foreground"
+                          >
+                            <Check className="h-4 w-4" />
+                          </Button>
+                        )}
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => deleteNotification(notification.id)}
+                          className="text-muted-foreground hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      {notification.actionLabel && (
+                        <Button 
+                          variant={notification.priority === 'critical' ? 'arena' : 'outline'} 
+                          size="sm"
+                          className={notification.priority === 'critical' ? 'bg-destructive hover:bg-destructive/80 text-xs' : 'text-xs'}
+                        >
+                          {notification.actionLabel}
+                        </Button>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
