@@ -13,6 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useTheme } from 'next-themes';
 
 export default function Settings() {
   const { toast } = useToast();
@@ -37,8 +38,8 @@ export default function Settings() {
     email: false,
   });
 
-  // Appearance settings
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  // Appearance settings - use next-themes
+  const { theme, setTheme, resolvedTheme } = useTheme();
   const [sounds, setSounds] = useState(true);
 
   // Editor settings
@@ -317,7 +318,7 @@ export default function Settings() {
                   <button
                     onClick={() => setTheme('dark')}
                     className={`p-4 rounded-lg border-2 transition-all ${
-                      theme === 'dark' ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'
+                      resolvedTheme === 'dark' ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'
                     }`}
                   >
                     <Moon className="h-8 w-8 mx-auto mb-2 text-primary" />
@@ -327,7 +328,7 @@ export default function Settings() {
                   <button
                     onClick={() => setTheme('light')}
                     className={`p-4 rounded-lg border-2 transition-all ${
-                      theme === 'light' ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'
+                      resolvedTheme === 'light' ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'
                     }`}
                   >
                     <Sun className="h-8 w-8 mx-auto mb-2 text-status-warning" />
