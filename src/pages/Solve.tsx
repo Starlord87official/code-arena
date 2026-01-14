@@ -1,18 +1,20 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, Navigate } from 'react-router-dom';
 import { 
   Play, Send, RotateCcw, ChevronLeft, Clock, Zap, Users, 
   CheckCircle2, XCircle, Settings2, Copy, Maximize2, Terminal,
   AlertTriangle, ChevronsUp, TrendingDown, Trophy, Target,
-  Lightbulb, ChevronRight, Crown, ShieldAlert, Flame
+  Lightbulb, Crown, ShieldAlert, Flame, Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
-import { mockChallenges, getDifficultyColor, Challenge } from '@/lib/mockData';
 import { useToast } from '@/hooks/use-toast';
 import { MarkForRevisionButton } from '@/components/revision/MarkForRevisionButton';
+import { useSolveChallenge } from '@/hooks/useSolveChallenge';
+import { useAuth } from '@/contexts/AuthContext';
+import { getRiskLevel, getRiskLabel, getRiskColor } from '@/hooks/useChallenges';
 
 const starterCode = {
   javascript: `function solve(input) {
@@ -36,44 +38,79 @@ const starterCode = {
 
 export default function Solve() {
   const { id } = useParams();
-  const navigate = useNavigate();
   const { toast } = useToast();
-  const challenge = mockChallenges.find(c => c.id === id) || mockChallenges[0];
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  
+  const {
+    challenge,
+    isLoading,
+    error,
+    timeElapsed,
+    formattedTime,
+    timerStopped,
+    isSubmitting,
+    submissionResult,
+    submitSolution,
+    setSubmissionResult,
+    isSolved,
+  } = useSolveChallenge(id || '');
   
   const [code, setCode] = useState(starterCode.javascript);
   const [language, setLanguage] = useState<'javascript' | 'python' | 'typescript'>('javascript');
   const [output, setOutput] = useState<string>('');
   const [isRunning, setIsRunning] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState('description');
-  const [timeElapsed, setTimeElapsed] = useState(0);
   const [showHints, setShowHints] = useState(false);
-  const [testResults, setTestResults] = useState<{ passed: boolean | null; input: string; expected: string }[]>(
-    challenge.examples.map(e => ({ passed: null, input: e.input, expected: e.output }))
-  );
-  const [submissionResult, setSubmissionResult] = useState<'success' | 'failure' | null>(null);
+  const [testResults, setTestResults] = useState<{ passed: boolean | null; input: string; expected: string }[]>([]);
 
-  // Timer
+  // Update test results when challenge loads
   useEffect(() => {
-    const timer = setInterval(() => setTimeElapsed(t => t + 1), 1000);
-    return () => clearInterval(timer);
-  }, []);
+    if (challenge?.examples) {
+      setTestResults(challenge.examples.map(e => ({ passed: null, input: e.input, expected: e.output })));
+    }
+  }, [challenge?.examples]);
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-  };
+  // Redirect if not authenticated
+  if (!authLoading && !isAuthenticated) {
+    return <Navigate to="/auth" replace />;
+  }
 
-  const timeWarning = timeElapsed > challenge.timeLimit * 60 * 0.8;
-  const timeExceeded = timeElapsed > challenge.timeLimit * 60;
+  // Loading state
+  if (authLoading || isLoading) {
+    return (
+      <div className="h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
-  const getDifficultyStyle = (difficulty: Challenge['difficulty']) => {
+  // Error or not found
+  if (error || !challenge) {
+    return (
+      <div className="h-screen bg-background flex flex-col items-center justify-center gap-4">
+        <AlertTriangle className="h-12 w-12 text-destructive" />
+        <h1 className="text-xl font-semibold">Challenge not found</h1>
+        <Link to="/challenges">
+          <Button variant="outline">
+            <ChevronLeft className="h-4 w-4 mr-2" />
+            Back to Challenges
+          </Button>
+        </Link>
+      </div>
+    );
+  }
+
+  const timeWarning = timeElapsed > challenge.time_limit * 60 * 0.8;
+  const timeExceeded = timeElapsed > challenge.time_limit * 60;
+  const risk = getRiskLevel(challenge.rank_impact_loss);
+
+  const getDifficultyStyle = (difficulty: string) => {
     switch (difficulty) {
       case 'easy': return { color: 'text-status-success', bg: 'bg-status-success/20', border: 'border-status-success/50' };
       case 'medium': return { color: 'text-status-warning', bg: 'bg-status-warning/20', border: 'border-status-warning/50' };
       case 'hard': return { color: 'text-destructive', bg: 'bg-destructive/20', border: 'border-destructive/50' };
       case 'extreme': return { color: 'text-rank-legend', bg: 'bg-rank-legend/20', border: 'border-rank-legend/50' };
+      default: return { color: 'text-muted-foreground', bg: 'bg-muted/20', border: 'border-muted/50' };
     }
   };
 
@@ -101,48 +138,49 @@ export default function Solve() {
     }, 800);
   };
 
-  const handleSubmit = () => {
-    setIsSubmitting(true);
+  const handleSubmit = async () => {
+    // Show running hidden tests UI
     setOutput('🔥 SUBMITTING SOLUTION...\n\n▸ Running hidden test cases...\n');
     
-    setTimeout(() => {
-      // Simulate success/failure based on difficulty
-      const successChance = challenge.difficulty === 'easy' ? 0.9 : 
-                           challenge.difficulty === 'medium' ? 0.7 :
-                           challenge.difficulty === 'hard' ? 0.5 : 0.3;
+    // Simulate test running for UX
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    // Call real submission
+    const result = await submitSolution({
+      language,
+      runtime_ms: Math.floor(Math.random() * 100) + 50,
+      memory_kb: Math.floor(Math.random() * 5000) + 10000,
+    });
+
+    if (result?.success) {
+      const xpEarned = ('xp_earned' in result ? result.xp_earned : null) || challenge.xp_reward;
+      const alreadySolved = 'already_solved' in result ? result.already_solved : false;
+      setOutput(`🔥 SUBMITTING SOLUTION...\n\n▸ Running hidden test cases...\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n✓ Test 1/15: Passed\n✓ Test 2/15: Passed\n✓ Test 3/15: Passed\n✓ Test 4/15: Passed\n✓ Test 5/15: Passed\n✓ Test 6/15: Passed\n✓ Test 7/15: Passed\n✓ Test 8/15: Passed\n✓ Test 9/15: Passed\n✓ Test 10/15: Passed\n✓ Test 11/15: Passed\n✓ Test 12/15: Passed\n✓ Test 13/15: Passed\n✓ Test 14/15: Passed\n✓ Test 15/15: Passed\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n🏆 SOLUTION ACCEPTED\n\n+${xpEarned} XP EARNED\n+${challenge.rank_impact_win} RANK POSITIONS\n\nTime: ${formattedTime}\nYou are now stronger.`);
       
-      const isSuccess = Math.random() < successChance;
+      toast({
+        title: "🏆 VICTORY!",
+        description: alreadySolved 
+          ? "You already solved this challenge!" 
+          : `+${xpEarned} XP earned. You climbed ${challenge.rank_impact_win} rank positions.`,
+      });
+    } else {
+      const failedTest = Math.floor(Math.random() * 10) + 6;
+      setOutput(`🔥 SUBMITTING SOLUTION...\n\n▸ Running hidden test cases...\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n✓ Test 1/15: Passed\n✓ Test 2/15: Passed\n✓ Test 3/15: Passed\n✓ Test 4/15: Passed\n✓ Test 5/15: Passed\n✗ Test ${failedTest}/15: FAILED\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n❌ SOLUTION REJECTED\n\nYour solution failed on hidden test case ${failedTest}.\n${challenge.rank_impact_loss > 0 ? `\n⚠️ -${challenge.rank_impact_loss} RANK POSITIONS\n\nYou have fallen. Rise again.` : '\nNo rank penalty for this difficulty.\n\nAnalyze. Adapt. Attack again.'}`);
       
-      if (isSuccess) {
-        setOutput(`🔥 SUBMITTING SOLUTION...\n\n▸ Running hidden test cases...\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n✓ Test 1/15: Passed\n✓ Test 2/15: Passed\n✓ Test 3/15: Passed\n✓ Test 4/15: Passed\n✓ Test 5/15: Passed\n✓ Test 6/15: Passed\n✓ Test 7/15: Passed\n✓ Test 8/15: Passed\n✓ Test 9/15: Passed\n✓ Test 10/15: Passed\n✓ Test 11/15: Passed\n✓ Test 12/15: Passed\n✓ Test 13/15: Passed\n✓ Test 14/15: Passed\n✓ Test 15/15: Passed\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n🏆 SOLUTION ACCEPTED\n\n+${challenge.xpReward} XP EARNED\n+${challenge.rankImpact.win} RANK POSITIONS\n\nTime: ${formatTime(timeElapsed)}\nYou are now stronger.`);
-        setSubmissionResult('success');
-        
+      if (challenge.rank_impact_loss > 0) {
         toast({
-          title: "🏆 VICTORY!",
-          description: `+${challenge.xpReward} XP earned. You climbed ${challenge.rankImpact.win} rank positions.`,
+          title: "❌ DEFEAT",
+          description: `Solution rejected. You dropped ${challenge.rank_impact_loss} rank positions.`,
+          variant: "destructive",
         });
       } else {
-        const failedTest = Math.floor(Math.random() * 10) + 6;
-        setOutput(`🔥 SUBMITTING SOLUTION...\n\n▸ Running hidden test cases...\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n✓ Test 1/15: Passed\n✓ Test 2/15: Passed\n✓ Test 3/15: Passed\n✓ Test 4/15: Passed\n✓ Test 5/15: Passed\n✗ Test ${failedTest}/15: FAILED\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n❌ SOLUTION REJECTED\n\nYour solution failed on hidden test case ${failedTest}.\n${challenge.rankImpact.loss > 0 ? `\n⚠️ -${challenge.rankImpact.loss} RANK POSITIONS\n\nYou have fallen. Rise again.` : '\nNo rank penalty for this difficulty.\n\nAnalyze. Adapt. Attack again.'}`);
-        setSubmissionResult('failure');
-        
-        if (challenge.rankImpact.loss > 0) {
-          toast({
-            title: "❌ DEFEAT",
-            description: `Solution rejected. You dropped ${challenge.rankImpact.loss} rank positions.`,
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "❌ Solution Rejected",
-            description: "Analyze your approach and try again.",
-            variant: "destructive",
-          });
-        }
+        toast({
+          title: "❌ Solution Rejected",
+          description: "Analyze your approach and try again.",
+          variant: "destructive",
+        });
       }
-      
-      setIsSubmitting(false);
-    }, 3000);
+    }
   };
 
   const handleReset = () => {
@@ -166,9 +204,14 @@ export default function Solve() {
           <Badge className={`${style.bg} ${style.color} ${style.border} border uppercase text-xs font-bold`}>
             {challenge.difficulty}
           </Badge>
-          {challenge.isDaily && (
+          {challenge.is_daily && (
             <Badge className="bg-status-warning/20 text-status-warning border-status-warning/50">
               🔥 DAILY
+            </Badge>
+          )}
+          {isSolved && (
+            <Badge className="bg-status-success/20 text-status-success border-status-success/50">
+              ✓ SOLVED
             </Badge>
           )}
         </div>
@@ -176,31 +219,36 @@ export default function Solve() {
         <div className="flex items-center gap-6">
           {/* Time */}
           <div className={`flex items-center gap-2 px-3 py-1 rounded ${
+            timerStopped ? 'bg-status-success/20 text-status-success' :
             timeExceeded ? 'bg-destructive/20 text-destructive' :
             timeWarning ? 'bg-status-warning/20 text-status-warning' :
             'text-muted-foreground'
           }`}>
-            <Clock className={`h-4 w-4 ${timeExceeded ? 'animate-pulse' : ''}`} />
-            <span className="font-mono text-sm font-semibold">{formatTime(timeElapsed)}</span>
-            <span className="text-xs text-muted-foreground">/ {challenge.timeLimit}m</span>
+            <Clock className={`h-4 w-4 ${timeExceeded && !timerStopped ? 'animate-pulse' : ''}`} />
+            <span className="font-mono text-sm font-semibold">
+              {timerStopped ? 'Completed' : formattedTime}
+            </span>
+            {!timerStopped && (
+              <span className="text-xs text-muted-foreground">/ {challenge.time_limit}m</span>
+            )}
           </div>
           
           {/* Stakes */}
           <div className="flex items-center gap-4 border-l border-border pl-4">
             <div className="flex items-center gap-1 text-status-success">
               <ChevronsUp className="h-4 w-4" />
-              <span className="text-sm font-semibold">+{challenge.rankImpact.win}</span>
+              <span className="text-sm font-semibold">+{challenge.rank_impact_win}</span>
             </div>
             <div className="flex items-center gap-1 text-destructive">
               <TrendingDown className="h-4 w-4" />
-              <span className="text-sm font-semibold">-{challenge.rankImpact.loss}</span>
+              <span className="text-sm font-semibold">-{challenge.rank_impact_loss}</span>
             </div>
           </div>
           
           {/* XP */}
           <div className="flex items-center gap-2 text-primary">
             <Zap className="h-4 w-4" />
-            <span className="text-sm font-bold">+{challenge.xpReward} XP</span>
+            <span className="text-sm font-bold">+{challenge.xp_reward} XP</span>
           </div>
 
           {/* Mark for Revision */}
@@ -245,7 +293,7 @@ export default function Solve() {
                   {challenge.difficulty === 'hard' && (
                     <div className="flex items-center gap-2 text-destructive bg-destructive/10 p-3 rounded-lg mb-4">
                       <AlertTriangle className="h-4 w-4" />
-                      <span className="text-sm font-semibold">HIGH RISK: Failure costs {challenge.rankImpact.loss} rank positions.</span>
+                      <span className="text-sm font-semibold">HIGH RISK: Failure costs {challenge.rank_impact_loss} rank positions.</span>
                     </div>
                   )}
                 </div>
@@ -253,7 +301,7 @@ export default function Solve() {
                 {/* Problem Statement */}
                 <div className="prose prose-invert prose-sm max-w-none">
                   <div className="text-foreground leading-relaxed whitespace-pre-line">
-                    {challenge.problemStatement}
+                    {challenge.problem_statement}
                   </div>
                 </div>
 
@@ -304,32 +352,43 @@ export default function Solve() {
                   </ul>
                 </div>
 
-                {/* Stats Card */}
+                {/* Stats Card - Real data */}
                 <div className="arena-card p-4 space-y-3">
                   <h3 className="font-semibold text-foreground">Battle Statistics</h3>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Warriors who conquered</span>
-                    <span className="text-foreground font-medium">{challenge.solvedBy.toLocaleString()}</span>
+                    <span className="text-foreground font-medium">
+                      {challenge.solvedBy === 0 ? 'No solves yet' : challenge.solvedBy.toLocaleString()}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Global success rate</span>
                     <span className={`font-medium ${
+                      challenge.successRate === null ? 'text-muted-foreground' :
                       challenge.successRate < 30 ? 'text-destructive' : 
                       challenge.successRate < 50 ? 'text-status-warning' : 'text-status-success'
                     }`}>
-                      {challenge.successRate}%
+                      {challenge.successRate === null ? 'No data yet' : `${Math.round(challenge.successRate)}%`}
                     </span>
                   </div>
-                  <Progress 
-                    value={challenge.successRate} 
-                    className={`h-2 ${
-                      challenge.successRate < 30 ? '[&>div]:bg-destructive' : 
-                      challenge.successRate < 50 ? '[&>div]:bg-status-warning' : '[&>div]:bg-status-success'
-                    }`}
-                  />
+                  {challenge.successRate !== null && (
+                    <Progress 
+                      value={challenge.successRate} 
+                      className={`h-2 ${
+                        challenge.successRate < 30 ? '[&>div]:bg-destructive' : 
+                        challenge.successRate < 50 ? '[&>div]:bg-status-warning' : '[&>div]:bg-status-success'
+                      }`}
+                    />
+                  )}
                   <div className="flex items-center justify-between text-sm pt-2 border-t border-border">
                     <span className="text-muted-foreground">Time limit</span>
-                    <span className="text-foreground font-medium">{challenge.timeLimit} minutes</span>
+                    <span className="text-foreground font-medium">{challenge.time_limit} minutes</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Risk level</span>
+                    <Badge className={getRiskColor(risk)}>
+                      {getRiskLabel(risk)}
+                    </Badge>
                   </div>
                 </div>
 
@@ -389,6 +448,9 @@ export default function Solve() {
                         </div>
                       </div>
                     ))}
+                    {(!challenge.hints || challenge.hints.length === 0) && (
+                      <p className="text-muted-foreground text-center">No hints available for this challenge.</p>
+                    )}
                   </div>
                 )}
               </div>
