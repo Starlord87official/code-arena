@@ -19,6 +19,32 @@ export interface Friend {
   division: string | null;
   xp: number;
   streak: number;
+  last_active: string | null;
+}
+
+// Helper function to determine if a user is online (active within last 5 minutes)
+export function isUserOnline(lastActive: string | null): boolean {
+  if (!lastActive) return false;
+  const lastActiveDate = new Date(lastActive);
+  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+  return lastActiveDate > fiveMinutesAgo;
+}
+
+// Helper function to format last seen time
+export function formatLastSeen(lastActive: string | null): string {
+  if (!lastActive) return 'Offline';
+  const lastActiveDate = new Date(lastActive);
+  const now = new Date();
+  const diffMs = now.getTime() - lastActiveDate.getTime();
+  const diffMins = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  
+  if (diffMins < 5) return 'Online';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return 'Long time ago';
 }
 
 export function useFriendRequests() {
