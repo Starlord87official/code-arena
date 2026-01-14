@@ -913,6 +913,48 @@ export type Database = {
       }
     }
     Views: {
+      mentor_invites_safe: {
+        Row: {
+          accepted_at: string | null
+          accepted_by: string | null
+          clan_id: string | null
+          created_at: string | null
+          email_masked: string | null
+          expertise: Database["public"]["Enums"]["mentor_expertise"] | null
+          id: string | null
+          invited_by: string | null
+          name: string | null
+          status: Database["public"]["Enums"]["invite_status"] | null
+          token: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          clan_id?: string | null
+          created_at?: string | null
+          email_masked?: never
+          expertise?: Database["public"]["Enums"]["mentor_expertise"] | null
+          id?: string | null
+          invited_by?: string | null
+          name?: string | null
+          status?: Database["public"]["Enums"]["invite_status"] | null
+          token?: never
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          clan_id?: string | null
+          created_at?: string | null
+          email_masked?: never
+          expertise?: Database["public"]["Enums"]["mentor_expertise"] | null
+          id?: string | null
+          invited_by?: string | null
+          name?: string | null
+          status?: Database["public"]["Enums"]["invite_status"] | null
+          token?: never
+        }
+        Relationships: []
+      }
       public_profiles: {
         Row: {
           avatar_url: string | null
@@ -1005,6 +1047,7 @@ export type Database = {
         Returns: Json
       }
       get_invite_info: { Args: { invite_token: string }; Returns: Json }
+      get_invite_status_by_token: { Args: { p_token: string }; Returns: Json }
       get_or_create_user_targets: {
         Args: never
         Returns: {

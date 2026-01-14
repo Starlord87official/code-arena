@@ -226,16 +226,18 @@ export default function AcceptMentorInvite() {
                   <span className="font-medium">{invite.name}</span>
                 </div>
               )}
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Email:</span>
-                <span className="font-medium">{invite.email}</span>
-              </div>
               {invite.expertise && (
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Expertise:</span>
                   <span className="font-medium capitalize">
                     {invite.expertise.replace('_', ' ')}
                   </span>
+                </div>
+              )}
+              {invite.clan_id && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Clan:</span>
+                  <span className="font-medium">{invite.clan_id}</span>
                 </div>
               )}
             </div>
@@ -319,16 +321,18 @@ export default function AcceptMentorInvite() {
                 <span className="font-medium">{invite.name}</span>
               </div>
             )}
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Email:</span>
-              <span className="font-medium">{invite.email}</span>
-            </div>
             {invite.expertise && (
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Expertise:</span>
                 <span className="font-medium capitalize">
                   {invite.expertise.replace('_', ' ')}
                 </span>
+              </div>
+            )}
+            {invite.clan_id && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Clan:</span>
+                <span className="font-medium">{invite.clan_id}</span>
               </div>
             )}
           </div>

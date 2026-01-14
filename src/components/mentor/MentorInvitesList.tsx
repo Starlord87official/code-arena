@@ -2,7 +2,7 @@ import { Mail, Clock, CheckCircle, XCircle, User, BookOpen, Users } from 'lucide
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useMentorInvites, MentorInvite } from '@/hooks/useMentorInvites';
+import { useMentorInvites, MentorInviteSafe, InviteStatus } from '@/hooks/useMentorInvites';
 import { formatDistanceToNow } from 'date-fns';
 
 const expertiseLabels: Record<string, string> = {
@@ -12,7 +12,7 @@ const expertiseLabels: Record<string, string> = {
   system_design: 'System Design',
 };
 
-function InviteStatusBadge({ status }: { status: MentorInvite['status'] }) {
+function InviteStatusBadge({ status }: { status: InviteStatus }) {
   switch (status) {
     case 'pending':
       return (
@@ -40,7 +40,7 @@ function InviteStatusBadge({ status }: { status: MentorInvite['status'] }) {
   }
 }
 
-function InviteCard({ invite }: { invite: MentorInvite }) {
+function InviteCard({ invite }: { invite: MentorInviteSafe }) {
   return (
     <Card>
       <CardContent className="p-4">
@@ -48,7 +48,7 @@ function InviteCard({ invite }: { invite: MentorInvite }) {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              <span className="font-medium truncate">{invite.email}</span>
+              <span className="font-medium truncate">{invite.email_masked || 'Hidden'}</span>
             </div>
             
             {invite.name && (

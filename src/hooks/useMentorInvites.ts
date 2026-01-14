@@ -5,18 +5,41 @@ import { toast } from 'sonner';
 export type MentorExpertise = 'dsa' | 'cp' | 'web' | 'system_design';
 export type InviteStatus = 'pending' | 'accepted' | 'expired';
 
-export interface MentorInvite {
+// Safe interface - no raw email or token exposed
+export interface MentorInviteSafe {
   id: string;
-  email: string;
+  email_masked: string | null; // Only first 3 chars + domain hint
   name: string | null;
   expertise: MentorExpertise | null;
-  token: string;
   invited_by: string;
   clan_id: string | null;
   status: InviteStatus;
   accepted_by: string | null;
   created_at: string;
   accepted_at: string | null;
+}
+
+// For invite acceptance via token (used by RPC)
+export interface InviteInfo {
+  id: string;
+  status: InviteStatus;
+  clan_id: string | null;
+  expertise: MentorExpertise | null;
+  name: string | null;
+  created_at: string;
+}
+
+// Response from creating an invite (includes token for sharing)
+// This is safe because only the creator sees this
+export interface CreateInviteResponse {
+  id: string;
+  token: string;
+  email: string;
+  name: string | null;
+  expertise: MentorExpertise | null;
+  clan_id: string | null;
+  status: InviteStatus;
+  created_at: string;
 }
 
 // Generate a secure random token
@@ -26,37 +49,42 @@ function generateSecureToken(): string {
   return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
 }
 
-// Fetch invites created by the current user
+// Fetch invites created by the current user (using safe view)
 export function useMentorInvites() {
   return useQuery({
     queryKey: ['mentor-invites'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('mentor_invites')
+        .from('mentor_invites_safe')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as MentorInvite[];
+      return data as MentorInviteSafe[];
     },
   });
 }
 
-// Fetch a single invite by token
+// Fetch invite status by token using secure RPC (no email/token exposure)
 export function useInviteByToken(token: string | null) {
   return useQuery({
     queryKey: ['mentor-invite', token],
     queryFn: async () => {
       if (!token) return null;
       
+      // Use secure RPC instead of direct table access
       const { data, error } = await supabase
-        .from('mentor_invites')
-        .select('*')
-        .eq('token', token)
-        .maybeSingle();
+        .rpc('get_invite_status_by_token', { p_token: token });
 
       if (error) throw error;
-      return data as MentorInvite | null;
+      
+      const result = data as unknown as { success: boolean; error?: string; invite?: InviteInfo };
+      
+      if (!result.success) {
+        return null;
+      }
+      
+      return result.invite as InviteInfo | null;
     },
     enabled: !!token,
   });
@@ -101,7 +129,8 @@ export function useCreateMentorInvite() {
         .single();
 
       if (error) throw error;
-      return data as MentorInvite;
+      // Return type includes token for sharing (safe - only creator sees this)
+      return data as unknown as CreateInviteResponse;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['mentor-invites'] });
