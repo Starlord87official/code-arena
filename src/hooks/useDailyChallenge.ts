@@ -54,12 +54,37 @@ export interface DailyChallengeInfo {
   hoursRemaining: number;
   isCompleted: boolean;
   isExpired: boolean;
+  // Global stats
+  solvedBy: number;
+  attemptCount: number;
+  successRate: number | null;
 }
 
 export function useDailyChallenge() {
   const { user, isAuthenticated } = useAuth();
-  const [timeRemaining, setTimeRemaining] = useState<string>('');
-  const [hoursRemaining, setHoursRemaining] = useState<number>(24);
+  
+  // Initialize with actual calculated values to avoid flash of "expired"
+  const initialTimeInfo = useMemo(() => {
+    const now = new Date();
+    const expiresAt = getDailyResetTime();
+    const diff = expiresAt.getTime() - now.getTime();
+    const hours = Math.max(0, Math.floor(diff / (1000 * 60 * 60)));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    
+    let timeStr = '';
+    if (diff <= 0) {
+      timeStr = 'Expired';
+    } else if (hours > 0) {
+      timeStr = `${hours}h ${minutes}m`;
+    } else {
+      timeStr = `${minutes}m`;
+    }
+    
+    return { timeRemaining: timeStr, hoursRemaining: hours };
+  }, []);
+
+  const [timeRemaining, setTimeRemaining] = useState<string>(initialTimeInfo.timeRemaining);
+  const [hoursRemaining, setHoursRemaining] = useState<number>(initialTimeInfo.hoursRemaining);
 
   // Fetch all active challenges
   const challengesQuery = useQuery({
@@ -118,6 +143,21 @@ export function useDailyChallenge() {
     enabled: isAuthenticated && !!user?.id && !!dailyChallenge?.id,
   });
 
+  // Fetch stats for the daily challenge
+  const statsQuery = useQuery({
+    queryKey: ['daily-challenge-stats', dailyChallenge?.id],
+    queryFn: async () => {
+      if (!dailyChallenge?.id) return null;
+      
+      const { data, error } = await supabase.rpc('get_challenge_stats');
+      if (error) throw error;
+      
+      const stats = (data || []).find((s: any) => s.challenge_id === dailyChallenge.id);
+      return stats || { solve_count: 0, attempt_count: 0, success_rate: null };
+    },
+    enabled: isAuthenticated && !!dailyChallenge?.id,
+  });
+
   // Update countdown timer
   useEffect(() => {
     const updateTimer = () => {
@@ -151,13 +191,20 @@ export function useDailyChallenge() {
     return () => clearInterval(interval);
   }, []);
 
+  // Determine if expired - only true when timer reaches 0
+  const isExpired = hoursRemaining <= 0 && timeRemaining === 'Expired';
+
   const dailyChallengeInfo: DailyChallengeInfo = {
     challenge: dailyChallenge,
     expiresAt: getDailyResetTime(),
     timeRemaining,
     hoursRemaining,
     isCompleted: completionQuery.data || false,
-    isExpired: hoursRemaining <= 0,
+    isExpired,
+    // Add stats
+    solvedBy: statsQuery.data?.solve_count || 0,
+    attemptCount: statsQuery.data?.attempt_count || 0,
+    successRate: statsQuery.data?.success_rate ?? null,
   };
 
   return {
@@ -167,6 +214,7 @@ export function useDailyChallenge() {
     refetch: () => {
       challengesQuery.refetch();
       completionQuery.refetch();
+      statsQuery.refetch();
     },
   };
 }

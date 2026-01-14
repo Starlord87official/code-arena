@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Flame, Clock, Zap, Trophy, ChevronRight, Check, Sparkles, Shield, AlertTriangle, Crown } from 'lucide-react';
+import { Flame, Clock, Zap, Trophy, ChevronRight, Check, Sparkles, Shield, AlertTriangle, Crown, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -21,7 +21,16 @@ function getRiskIcon(risk: 'safe' | 'moderate' | 'high' | 'legendary') {
 }
 
 export function DailyChallengeBanner({ dailyChallenge, streak }: DailyChallengeBannerProps) {
-  const { challenge, timeRemaining, hoursRemaining, isCompleted, isExpired } = dailyChallenge;
+  const { 
+    challenge, 
+    timeRemaining, 
+    hoursRemaining, 
+    isCompleted, 
+    isExpired,
+    solvedBy,
+    attemptCount,
+    successRate 
+  } = dailyChallenge;
 
   if (!challenge) return null;
 
@@ -99,7 +108,7 @@ export function DailyChallengeBanner({ dailyChallenge, streak }: DailyChallengeB
             </Link>
 
             {/* Metadata Badges */}
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 mb-4">
               {/* Difficulty Badge */}
               <Badge variant="outline" className={`text-xs font-semibold uppercase ${
                 challenge.difficulty === 'easy' ? 'border-status-success/50 text-status-success bg-status-success/10' :
@@ -116,12 +125,42 @@ export function DailyChallengeBanner({ dailyChallenge, streak }: DailyChallengeB
                 {riskLabel}
               </Badge>
               
+              {/* Time Limit Badge */}
+              <Badge variant="secondary" className="text-xs flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                {challenge.time_limit} min
+              </Badge>
+              
               {/* Topic Tags */}
               {challenge.tags.slice(0, 3).map(tag => (
                 <Badge key={tag} variant="secondary" className="text-xs">
                   {tag}
                 </Badge>
               ))}
+            </div>
+
+            {/* Global Stats Row */}
+            <div className="flex items-center gap-4 text-sm">
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <Users className="h-4 w-4" />
+                {solvedBy === 0 ? (
+                  <span className="text-muted-foreground/70">No solves yet</span>
+                ) : (
+                  <span>{solvedBy.toLocaleString()} solved</span>
+                )}
+              </div>
+              
+              {/* Success Rate */}
+              <div className="flex items-center gap-2">
+                {successRate !== null && attemptCount > 0 ? (
+                  <>
+                    <span className="text-muted-foreground">{successRate}% success</span>
+                    <Progress value={successRate} className="w-16 h-1.5" />
+                  </>
+                ) : (
+                  <span className="text-muted-foreground/60 text-xs">No data yet</span>
+                )}
+              </div>
             </div>
           </div>
 
