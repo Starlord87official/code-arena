@@ -1,0 +1,221 @@
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { ChallengeFromDB, ChallengeExample, useCompleteChallenge } from './useChallenges';
+import type { Json } from '@/integrations/supabase/types';
+
+function parseExamples(examples: Json): ChallengeExample[] {
+  if (Array.isArray(examples)) {
+    return examples.map((ex) => ({
+      input: String((ex as Record<string, unknown>)?.input || ''),
+      output: String((ex as Record<string, unknown>)?.output || ''),
+      explanation: (ex as Record<string, unknown>)?.explanation 
+        ? String((ex as Record<string, unknown>).explanation) 
+        : undefined,
+    }));
+  }
+  return [];
+}
+
+export interface ChallengeWithStats extends ChallengeFromDB {
+  solvedBy: number;
+  attemptCount: number;
+  successRate: number | null;
+  isSolved: boolean;
+}
+
+interface ChallengeStat {
+  challenge_id: string;
+  solve_count: number;
+  attempt_count: number;
+  success_rate: number | null;
+}
+
+export function useSolveChallenge(challengeId: string) {
+  const { user, isAuthenticated, refreshProfile } = useAuth();
+  const queryClient = useQueryClient();
+  const { completeChallenge } = useCompleteChallenge();
+
+  // Timer state
+  const [timeElapsed, setTimeElapsed] = useState(0);
+  const [timerStopped, setTimerStopped] = useState(false);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Submission state
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionResult, setSubmissionResult] = useState<'success' | 'failure' | null>(null);
+
+  // Fetch single challenge
+  const challengeQuery = useQuery({
+    queryKey: ['challenge', challengeId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('challenges')
+        .select('*')
+        .eq('id', challengeId)
+        .eq('is_active', true)
+        .single();
+
+      if (error) throw error;
+      
+      return {
+        ...data,
+        difficulty: data.difficulty as ChallengeFromDB['difficulty'],
+        examples: parseExamples(data.examples),
+      } as ChallengeFromDB;
+    },
+    enabled: !!challengeId,
+  });
+
+  // Fetch stats for this challenge
+  const statsQuery = useQuery({
+    queryKey: ['challenge-stats-single', challengeId],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_challenge_stats');
+      if (error) throw error;
+      const stats = (data || []) as ChallengeStat[];
+      return stats.find(s => s.challenge_id === challengeId) || null;
+    },
+    enabled: !!challengeId,
+  });
+
+  // Check if user already solved this challenge
+  const completionQuery = useQuery({
+    queryKey: ['challenge-completion', user?.id, challengeId],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data, error } = await supabase
+        .from('challenge_completions')
+        .select('id, completed_at')
+        .eq('user_id', user.id)
+        .eq('challenge_id', challengeId)
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: isAuthenticated && !!user?.id && !!challengeId,
+  });
+
+  // Combined challenge data
+  const challenge: ChallengeWithStats | null = challengeQuery.data ? {
+    ...challengeQuery.data,
+    solvedBy: statsQuery.data?.solve_count || 0,
+    attemptCount: statsQuery.data?.attempt_count || 0,
+    successRate: statsQuery.data?.success_rate ?? null,
+    isSolved: !!completionQuery.data,
+  } : null;
+
+  // Timer management
+  useEffect(() => {
+    // Don't start timer if already solved
+    if (completionQuery.data || timerStopped) {
+      return;
+    }
+
+    timerRef.current = setInterval(() => {
+      setTimeElapsed(t => t + 1);
+    }, 1000);
+
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, [completionQuery.data, timerStopped]);
+
+  // Stop timer function
+  const stopTimer = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    setTimerStopped(true);
+  }, []);
+
+  // Submit solution
+  const submitSolution = useCallback(async (options?: { language?: string; runtime_ms?: number; memory_kb?: number }) => {
+    if (!challenge || isSubmitting) return null;
+
+    setIsSubmitting(true);
+    setSubmissionResult(null);
+
+    try {
+      // Check if already solved
+      if (completionQuery.data) {
+        setSubmissionResult('success');
+        stopTimer();
+        setIsSubmitting(false);
+        return { success: true, already_solved: true };
+      }
+
+      // Call the complete_challenge RPC
+      const result = await completeChallenge(challengeId, options);
+
+      if (result.success) {
+        // Stop timer immediately on success
+        stopTimer();
+        setSubmissionResult('success');
+
+        // Invalidate queries to refresh data
+        queryClient.invalidateQueries({ queryKey: ['challenge-stats-single', challengeId] });
+        queryClient.invalidateQueries({ queryKey: ['challenge-stats'] });
+        queryClient.invalidateQueries({ queryKey: ['challenge-completion', user?.id, challengeId] });
+        queryClient.invalidateQueries({ queryKey: ['my-completions', user?.id] });
+        queryClient.invalidateQueries({ queryKey: ['challenges'] });
+
+        // Refresh user profile to update XP on dashboard
+        refreshProfile();
+
+        return result;
+      } else {
+        setSubmissionResult('failure');
+        return result;
+      }
+    } catch (error) {
+      console.error('Submit error:', error);
+      setSubmissionResult('failure');
+      return { success: false, error: String(error) };
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [challenge, challengeId, isSubmitting, completeChallenge, completionQuery.data, stopTimer, queryClient, user?.id, refreshProfile]);
+
+  // Format time helper
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  };
+
+  return {
+    challenge,
+    isLoading: challengeQuery.isLoading,
+    error: challengeQuery.error,
+    
+    // Timer
+    timeElapsed,
+    formattedTime: formatTime(timeElapsed),
+    timerStopped,
+    stopTimer,
+    
+    // Submission
+    isSubmitting,
+    submissionResult,
+    submitSolution,
+    setSubmissionResult,
+    
+    // Completion status
+    isSolved: !!completionQuery.data,
+    completedAt: completionQuery.data?.completed_at,
+    
+    // Refetch
+    refetch: () => {
+      challengeQuery.refetch();
+      statsQuery.refetch();
+      completionQuery.refetch();
+    },
+  };
+}
