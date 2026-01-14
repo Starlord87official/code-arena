@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   User, Bell, Shield, Palette, Code2, Globe, 
   Moon, Sun, Volume2, VolumeX, Save, Camera
@@ -9,13 +9,23 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { mockUser } from '@/lib/mockData';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function Settings() {
   const { toast } = useToast();
-  const [username, setUsername] = useState(mockUser.username);
-  const [email, setEmail] = useState(mockUser.email);
+  const { user, profile, refreshProfile } = useAuth();
+  
+  // Profile form state - initialized from real user data
+  const [username, setUsername] = useState('');
+  const [bio, setBio] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  
+  // Get email from auth user (read-only from auth provider)
+  const email = user?.email || '';
   
   // Notification settings
   const [notifications, setNotifications] = useState({
@@ -40,11 +50,78 @@ export default function Settings() {
     wordWrap: false,
   });
 
-  const handleSave = () => {
+  // Load real user data when profile is available
+  useEffect(() => {
+    if (profile) {
+      setUsername(profile.username || '');
+      setBio(profile.bio || '');
+      setIsLoading(false);
+    } else if (user) {
+      // Profile not loaded yet, but user exists
+      setIsLoading(true);
+    } else {
+      setIsLoading(false);
+    }
+  }, [profile, user]);
+
+  const handleSaveProfile = async () => {
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to save changes.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          username: username.trim() || null,
+          bio: bio.trim() || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      // Refresh profile to sync state
+      await refreshProfile();
+
+      toast({
+        title: "Profile saved",
+        description: "Your profile has been updated.",
+      });
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save profile. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveSettings = () => {
     toast({
       title: "Settings saved",
       description: "Your preferences have been updated.",
     });
+  };
+
+  // Get avatar initials from username or email
+  const getInitials = () => {
+    if (username && username.length >= 2) {
+      return username.slice(0, 2).toUpperCase();
+    }
+    if (email && email.length >= 2) {
+      return email.slice(0, 2).toUpperCase();
+    }
+    return 'U';
   };
 
   return (
@@ -92,19 +169,34 @@ export default function Settings() {
               {/* Avatar */}
               <div className="flex items-center gap-6">
                 <div className="relative">
-                  <Avatar className="h-24 w-24 border-2 border-primary">
-                    <AvatarFallback className="bg-card text-2xl font-display font-bold text-foreground">
-                      {username.slice(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
+                  {isLoading ? (
+                    <Skeleton className="h-24 w-24 rounded-full" />
+                  ) : (
+                    <Avatar className="h-24 w-24 border-2 border-primary">
+                      <AvatarFallback className="bg-card text-2xl font-display font-bold text-foreground">
+                        {getInitials()}
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
                   <button className="absolute bottom-0 right-0 p-2 bg-primary rounded-full hover:bg-primary/80 transition-colors">
                     <Camera className="h-4 w-4 text-primary-foreground" />
                   </button>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-foreground">{username}</h3>
-                  <p className="text-sm text-muted-foreground">Upload a new avatar</p>
-                  <p className="text-xs text-muted-foreground mt-1">JPG, PNG. Max 2MB.</p>
+                  {isLoading ? (
+                    <>
+                      <Skeleton className="h-5 w-32 mb-2" />
+                      <Skeleton className="h-4 w-40" />
+                    </>
+                  ) : (
+                    <>
+                      <h3 className="font-semibold text-foreground">
+                        {username || 'Set your username'}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">Upload a new avatar</p>
+                      <p className="text-xs text-muted-foreground mt-1">JPG, PNG. Max 2MB.</p>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -112,33 +204,48 @@ export default function Settings() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="username">Username</Label>
-                  <Input
-                    id="username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="bg-background"
-                  />
+                  {isLoading ? (
+                    <Skeleton className="h-10 w-full" />
+                  ) : (
+                    <Input
+                      id="username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      placeholder="Enter your username"
+                      className="bg-background"
+                    />
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="bg-background"
-                  />
+                  {isLoading ? (
+                    <Skeleton className="h-10 w-full" />
+                  ) : (
+                    <Input
+                      id="email"
+                      type="email"
+                      value={email}
+                      disabled
+                      className="bg-background opacity-60"
+                    />
+                  )}
+                  <p className="text-xs text-muted-foreground">Email cannot be changed here</p>
                 </div>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="bio">Bio</Label>
-                <textarea
-                  id="bio"
-                  className="w-full h-24 px-3 py-2 bg-background border border-border rounded-md text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="Tell other warriors about yourself..."
-                  defaultValue="Climbing the ranks. There is only one #1."
-                />
+                {isLoading ? (
+                  <Skeleton className="h-24 w-full" />
+                ) : (
+                  <textarea
+                    id="bio"
+                    className="w-full h-24 px-3 py-2 bg-background border border-border rounded-md text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+                    placeholder="Tell other warriors about yourself..."
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value)}
+                  />
+                )}
               </div>
 
               <div className="space-y-2">
@@ -155,9 +262,9 @@ export default function Settings() {
                 </div>
               </div>
 
-              <Button variant="arena" onClick={handleSave}>
+              <Button variant="arena" onClick={handleSaveProfile} disabled={isSaving || isLoading}>
                 <Save className="h-4 w-4 mr-2" />
-                Save Changes
+                {isSaving ? 'Saving...' : 'Save Changes'}
               </Button>
             </div>
           </TabsContent>
@@ -191,7 +298,7 @@ export default function Settings() {
                 ))}
               </div>
 
-              <Button variant="arena" onClick={handleSave}>
+              <Button variant="arena" onClick={handleSaveSettings}>
                 <Save className="h-4 w-4 mr-2" />
                 Save Preferences
               </Button>
@@ -242,7 +349,7 @@ export default function Settings() {
                 <Switch checked={sounds} onCheckedChange={setSounds} />
               </div>
 
-              <Button variant="arena" onClick={handleSave}>
+              <Button variant="arena" onClick={handleSaveSettings}>
                 <Save className="h-4 w-4 mr-2" />
                 Save Preferences
               </Button>
@@ -300,7 +407,7 @@ export default function Settings() {
                 ))}
               </div>
 
-              <Button variant="arena" onClick={handleSave}>
+              <Button variant="arena" onClick={handleSaveSettings}>
                 <Save className="h-4 w-4 mr-2" />
                 Save Settings
               </Button>
