@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -32,7 +32,18 @@ interface ChallengeStat {
   success_rate: number | null;
 }
 
-export function useSolveChallenge(challengeId: string) {
+// Helper to check if string is a valid UUID
+function isUUID(str: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
+}
+
+/**
+ * Hook to fetch and manage a single challenge for the solve page.
+ * Accepts either a slug (e.g., "two-sum") or a UUID id.
+ * Queries by slug first, falls back to id for backward compatibility.
+ */
+export function useSolveChallenge(slugOrId: string) {
   const { user, isAuthenticated, refreshProfile } = useAuth();
   const queryClient = useQueryClient();
   const { completeChallenge } = useCompleteChallenge();
@@ -46,32 +57,66 @@ export function useSolveChallenge(challengeId: string) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionResult, setSubmissionResult] = useState<'success' | 'failure' | null>(null);
 
-  // Fetch single challenge
+  // Determine if we're looking up by UUID or slug
+  const lookupType = useMemo(() => {
+    if (!slugOrId) return null;
+    return isUUID(slugOrId) ? 'id' : 'slug';
+  }, [slugOrId]);
+
+  // Fetch single challenge - query by slug OR id
   const challengeQuery = useQuery({
-    queryKey: ['challenge', challengeId],
+    queryKey: ['challenge', slugOrId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      if (!slugOrId) return null;
+
+      // First try by slug (most common case from URL)
+      const { data: bySlug, error: slugError } = await supabase
         .from('challenges')
         .select('*')
-        .eq('id', challengeId)
+        .eq('slug', slugOrId)
         .eq('is_active', true)
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
-      
-      return {
-        ...data,
-        difficulty: data.difficulty as ChallengeFromDB['difficulty'],
-        examples: parseExamples(data.examples),
-      } as ChallengeFromDB;
+      if (bySlug) {
+        return {
+          ...bySlug,
+          difficulty: bySlug.difficulty as ChallengeFromDB['difficulty'],
+          examples: parseExamples(bySlug.examples),
+        } as ChallengeFromDB;
+      }
+
+      // If not found by slug and it looks like a UUID, try by id (backward compatibility)
+      if (lookupType === 'id') {
+        const { data: byId, error: idError } = await supabase
+          .from('challenges')
+          .select('*')
+          .eq('id', slugOrId)
+          .eq('is_active', true)
+          .maybeSingle();
+
+        if (byId) {
+          return {
+            ...byId,
+            difficulty: byId.difficulty as ChallengeFromDB['difficulty'],
+            examples: parseExamples(byId.examples),
+          } as ChallengeFromDB;
+        }
+      }
+
+      // Not found
+      return null;
     },
-    enabled: !!challengeId,
+    enabled: !!slugOrId,
   });
+
+  // Get the challenge ID for subsequent queries (stats, completion)
+  const challengeId = challengeQuery.data?.id;
 
   // Fetch stats for this challenge
   const statsQuery = useQuery({
     queryKey: ['challenge-stats-single', challengeId],
     queryFn: async () => {
+      if (!challengeId) return null;
       const { data, error } = await supabase.rpc('get_challenge_stats');
       if (error) throw error;
       const stats = (data || []) as ChallengeStat[];
@@ -84,7 +129,7 @@ export function useSolveChallenge(challengeId: string) {
   const completionQuery = useQuery({
     queryKey: ['challenge-completion', user?.id, challengeId],
     queryFn: async () => {
-      if (!user?.id) return null;
+      if (!user?.id || !challengeId) return null;
       const { data, error } = await supabase
         .from('challenge_completions')
         .select('id, completed_at')
@@ -110,7 +155,7 @@ export function useSolveChallenge(challengeId: string) {
 
   // Timer management
   useEffect(() => {
-    // Don't start timer if already solved
+    // Don't start timer if already solved or timer already stopped
     if (completionQuery.data || timerStopped) {
       return;
     }
@@ -137,7 +182,7 @@ export function useSolveChallenge(challengeId: string) {
 
   // Submit solution
   const submitSolution = useCallback(async (options?: { language?: string; runtime_ms?: number; memory_kb?: number }) => {
-    if (!challenge || isSubmitting) return null;
+    if (!challenge || !challengeId || isSubmitting) return null;
 
     setIsSubmitting(true);
     setSubmissionResult(null);
@@ -151,7 +196,7 @@ export function useSolveChallenge(challengeId: string) {
         return { success: true, already_solved: true };
       }
 
-      // Call the complete_challenge RPC
+      // Call the complete_challenge RPC with the actual challenge ID
       const result = await completeChallenge(challengeId, options);
 
       if (result.success) {
@@ -165,6 +210,7 @@ export function useSolveChallenge(challengeId: string) {
         queryClient.invalidateQueries({ queryKey: ['challenge-completion', user?.id, challengeId] });
         queryClient.invalidateQueries({ queryKey: ['my-completions', user?.id] });
         queryClient.invalidateQueries({ queryKey: ['challenges'] });
+        queryClient.invalidateQueries({ queryKey: ['challenge', slugOrId] });
 
         // Refresh user profile to update XP on dashboard
         refreshProfile();
@@ -181,7 +227,7 @@ export function useSolveChallenge(challengeId: string) {
     } finally {
       setIsSubmitting(false);
     }
-  }, [challenge, challengeId, isSubmitting, completeChallenge, completionQuery.data, stopTimer, queryClient, user?.id, refreshProfile]);
+  }, [challenge, challengeId, slugOrId, isSubmitting, completeChallenge, completionQuery.data, stopTimer, queryClient, user?.id, refreshProfile]);
 
   // Format time helper
   const formatTime = (seconds: number) => {
