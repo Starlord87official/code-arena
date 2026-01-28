@@ -271,17 +271,75 @@ export type Database = {
           },
         ]
       }
+      challenge_packs: {
+        Row: {
+          category: string
+          created_at: string | null
+          description: string | null
+          difficulty_range: string[] | null
+          estimated_hours: number | null
+          icon: string | null
+          id: string
+          is_featured: boolean | null
+          is_new: boolean | null
+          order_index: number | null
+          slug: string
+          title: string
+          unlock_level: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          difficulty_range?: string[] | null
+          estimated_hours?: number | null
+          icon?: string | null
+          id?: string
+          is_featured?: boolean | null
+          is_new?: boolean | null
+          order_index?: number | null
+          slug: string
+          title: string
+          unlock_level?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          difficulty_range?: string[] | null
+          estimated_hours?: number | null
+          icon?: string | null
+          id?: string
+          is_featured?: boolean | null
+          is_new?: boolean | null
+          order_index?: number | null
+          slug?: string
+          title?: string
+          unlock_level?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       challenges: {
         Row: {
+          company_tags: string[] | null
           constraints: string[]
           created_at: string
           description: string
           difficulty: string
+          estimated_time_minutes: number | null
           examples: Json
           hints: string[] | null
           id: string
           is_active: boolean
+          is_beta: boolean | null
           is_daily: boolean
+          is_new: boolean | null
+          pack_id: string | null
+          pattern_type: string | null
+          prerequisite_challenge_id: string | null
           problem_statement: string
           rank_impact_loss: number
           rank_impact_win: number
@@ -289,19 +347,27 @@ export type Database = {
           tags: string[]
           time_limit: number
           title: string
+          unlock_level: number | null
           updated_at: string
           xp_reward: number
         }
         Insert: {
+          company_tags?: string[] | null
           constraints?: string[]
           created_at?: string
           description: string
           difficulty: string
+          estimated_time_minutes?: number | null
           examples?: Json
           hints?: string[] | null
           id?: string
           is_active?: boolean
+          is_beta?: boolean | null
           is_daily?: boolean
+          is_new?: boolean | null
+          pack_id?: string | null
+          pattern_type?: string | null
+          prerequisite_challenge_id?: string | null
           problem_statement: string
           rank_impact_loss?: number
           rank_impact_win?: number
@@ -309,19 +375,27 @@ export type Database = {
           tags?: string[]
           time_limit?: number
           title: string
+          unlock_level?: number | null
           updated_at?: string
           xp_reward?: number
         }
         Update: {
+          company_tags?: string[] | null
           constraints?: string[]
           created_at?: string
           description?: string
           difficulty?: string
+          estimated_time_minutes?: number | null
           examples?: Json
           hints?: string[] | null
           id?: string
           is_active?: boolean
+          is_beta?: boolean | null
           is_daily?: boolean
+          is_new?: boolean | null
+          pack_id?: string | null
+          pattern_type?: string | null
+          prerequisite_challenge_id?: string | null
           problem_statement?: string
           rank_impact_loss?: number
           rank_impact_win?: number
@@ -329,10 +403,26 @@ export type Database = {
           tags?: string[]
           time_limit?: number
           title?: string
+          unlock_level?: number | null
           updated_at?: string
           xp_reward?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "challenges_pack_id_fkey"
+            columns: ["pack_id"]
+            isOneToOne: false
+            referencedRelation: "challenge_packs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenges_prerequisite_challenge_id_fkey"
+            columns: ["prerequisite_challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       clan_announcements: {
         Row: {
@@ -964,6 +1054,38 @@ export type Database = {
         }
         Relationships: []
       }
+      user_pack_progress: {
+        Row: {
+          completed_at: string | null
+          id: string
+          pack_id: string
+          started_at: string | null
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          id?: string
+          pack_id: string
+          started_at?: string | null
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          id?: string
+          pack_id?: string
+          started_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_pack_progress_pack_id_fkey"
+            columns: ["pack_id"]
+            isOneToOne: false
+            referencedRelation: "challenge_packs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roadmap_progress: {
         Row: {
           completed_at: string | null
@@ -1268,6 +1390,7 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      get_pack_stats: { Args: { p_pack_id: string }; Returns: Json }
       get_public_profile: { Args: { p_username: string }; Returns: Json }
       get_public_profile_fields: {
         Args: { profile_row: Database["public"]["Tables"]["profiles"]["Row"] }
@@ -1275,6 +1398,11 @@ export type Database = {
       }
       get_revision_queue: { Args: never; Returns: Json }
       get_user_battle_stats: { Args: never; Returns: Json }
+      get_user_level: { Args: { p_user_id: string }; Returns: number }
+      get_user_pack_progress: {
+        Args: { p_pack_id: string; p_user_id: string }
+        Returns: Json
+      }
       get_visible_doubts: {
         Args: {
           p_category?: Database["public"]["Enums"]["doubt_category"]
@@ -1294,6 +1422,10 @@ export type Database = {
         Returns: boolean
       }
       hash_invite_code: { Args: { p_code: string }; Returns: string }
+      is_challenge_unlocked: {
+        Args: { p_challenge_id: string; p_user_id: string }
+        Returns: boolean
+      }
       is_clan_admin: {
         Args: { _clan_id: string; _user_id: string }
         Returns: boolean
