@@ -435,6 +435,41 @@ export type Database = {
           },
         ]
       }
+      doubt_comments: {
+        Row: {
+          content: string
+          created_at: string
+          doubt_id: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          doubt_id: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          doubt_id?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "doubt_comments_doubt_id_fkey"
+            columns: ["doubt_id"]
+            isOneToOne: false
+            referencedRelation: "doubts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       doubts: {
         Row: {
           category: Database["public"]["Enums"]["doubt_category"]
@@ -1138,6 +1173,10 @@ export type Database = {
     }
     Functions: {
       accept_mentor_invite: { Args: { invite_token: string }; Returns: Json }
+      add_doubt_comment: {
+        Args: { p_content: string; p_doubt_id: string }
+        Returns: Json
+      }
       add_to_revision_queue: {
         Args: {
           p_days_until_revision?: number
@@ -1188,6 +1227,7 @@ export type Database = {
         }
         Returns: Json
       }
+      delete_doubt_comment: { Args: { p_comment_id: string }; Returns: Json }
       get_activity_summary: { Args: never; Returns: Json }
       get_ai_usage_today: { Args: never; Returns: Json }
       get_challenge_stats: {
@@ -1199,6 +1239,8 @@ export type Database = {
           success_rate: number
         }[]
       }
+      get_doubt_comment_count: { Args: { p_doubt_id: string }; Returns: number }
+      get_doubt_comments: { Args: { p_doubt_id: string }; Returns: Json }
       get_eligible_doubt_topics: { Args: never; Returns: Json }
       get_friend_requests: { Args: never; Returns: Json }
       get_friends: { Args: never; Returns: Json }
