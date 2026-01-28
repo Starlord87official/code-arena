@@ -1,24 +1,41 @@
 import { Award } from 'lucide-react';
-import crownsRowImage from '@/assets/crowns-row.jpg';
+import { CrownIcon } from './CrownIcon';
+
+interface Achievement {
+  title: string;
+  subtitle: string;
+}
 
 interface AchievementsRowProps {
+  achievements?: Achievement[];
   isChampion?: boolean;
 }
 
-export function AchievementsRow({ isChampion = false }: AchievementsRowProps) {
+export function AchievementsRow({ achievements, isChampion = false }: AchievementsRowProps) {
+  // Default achievements for demo - in production these would come from DB
+  const defaultAchievements: Achievement[] = [
+    { title: 'CodeLock Solo', subtitle: 'Crown – India 2026' },
+    { title: 'CodeLock Duo', subtitle: 'Crown – India 2026' },
+    { title: 'CodeLock Clan', subtitle: '– India 2026 –' },
+    { title: 'CodeLock Clan', subtitle: 'Crown – India 2026' },
+  ];
+
+  const displayAchievements = achievements || defaultAchievements;
+
   return (
     <div className="arena-card p-6">
-      {/* Crown Achievements Row - Using exact reference image */}
-      <div className="flex items-center justify-center mb-6">
-        <img 
-          src={crownsRowImage} 
-          alt="CodeLock Achievement Crowns"
-          className="max-w-full h-auto object-contain"
-          style={{
-            filter: 'drop-shadow(0 0 20px hsla(45, 90%, 55%, 0.3))',
-            maxHeight: '140px',
-          }}
-        />
+      {/* Crown Achievements Row */}
+      <div className="flex items-center justify-center gap-8 mb-6">
+        {displayAchievements.map((achievement, index) => (
+          <div key={index} className="text-center">
+            {/* Crown Icon */}
+            <div className="flex items-center justify-center mb-3">
+              <CrownIcon size={100} />
+            </div>
+            <div className="text-sm font-medium text-foreground">{achievement.title}</div>
+            <div className="text-xs text-muted-foreground">{achievement.subtitle}</div>
+          </div>
+        ))}
       </div>
 
       {/* Verified Champion Badge */}
