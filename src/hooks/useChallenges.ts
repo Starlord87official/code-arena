@@ -34,6 +34,12 @@ export interface ChallengeWithStats extends ChallengeFromDB {
   attemptCount: number;
   successRate: number | null;
   isSolved: boolean;
+  is_new?: boolean;
+  is_beta?: boolean;
+  company_tags?: string[];
+  unlock_level?: number;
+  pack_id?: string;
+  pattern_type?: string;
 }
 
 interface ChallengeStat {
