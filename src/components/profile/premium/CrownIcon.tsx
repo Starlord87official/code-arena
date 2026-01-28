@@ -1,220 +1,532 @@
+import { useMemo } from 'react';
+
+type CrownVariant = 'solo' | 'duo' | 'clan' | 'clan-alt';
+
 interface CrownIconProps {
   size?: number;
+  variant?: CrownVariant;
   className?: string;
 }
 
-export function CrownIcon({ size = 120, className = '' }: CrownIconProps) {
-  const uniqueId = Math.random().toString(36).substr(2, 9);
+export function CrownIcon({ size = 140, variant = 'solo', className = '' }: CrownIconProps) {
+  const uniqueId = useMemo(() => Math.random().toString(36).substr(2, 9), []);
+  
+  // Variant-specific adjustments
+  const gemIntensity = variant === 'clan' || variant === 'clan-alt' ? 1.2 : 1;
+  const glowIntensity = variant === 'solo' ? 0.5 : variant === 'duo' ? 0.6 : 0.7;
   
   return (
     <svg 
       width={size} 
-      height={size * 0.7} 
-      viewBox="0 0 200 140" 
+      height={size * 0.75} 
+      viewBox="0 0 280 210" 
       className={className}
       style={{
-        filter: `drop-shadow(0 0 12px hsla(45, 90%, 50%, 0.4)) drop-shadow(0 0 24px hsla(45, 90%, 50%, 0.2))`,
+        filter: `drop-shadow(0 4px 20px hsla(45, 100%, 50%, ${glowIntensity})) drop-shadow(0 0 40px hsla(45, 100%, 45%, 0.3))`,
       }}
     >
       <defs>
-        {/* Gold gradient - base metal */}
-        <linearGradient id={`goldBase-${uniqueId}`} x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#FFD700" />
-          <stop offset="30%" stopColor="#FFC200" />
-          <stop offset="50%" stopColor="#DAA520" />
-          <stop offset="70%" stopColor="#B8860B" />
-          <stop offset="100%" stopColor="#8B6914" />
+        {/* === GOLD GRADIENTS === */}
+        {/* Main gold body gradient */}
+        <linearGradient id={`goldBody-${uniqueId}`} x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#FFF8E1" />
+          <stop offset="8%" stopColor="#FFE082" />
+          <stop offset="20%" stopColor="#FFD54F" />
+          <stop offset="35%" stopColor="#FFCA28" />
+          <stop offset="50%" stopColor="#FFC107" />
+          <stop offset="65%" stopColor="#FFB300" />
+          <stop offset="80%" stopColor="#FF8F00" />
+          <stop offset="92%" stopColor="#E65100" />
+          <stop offset="100%" stopColor="#BF360C" />
         </linearGradient>
         
-        {/* Gold gradient - highlights */}
+        {/* Rich metallic highlight */}
         <linearGradient id={`goldHighlight-${uniqueId}`} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#FFF8DC" />
-          <stop offset="20%" stopColor="#FFD700" />
-          <stop offset="50%" stopColor="#FFA500" />
-          <stop offset="80%" stopColor="#DAA520" />
-          <stop offset="100%" stopColor="#B8860B" />
+          <stop offset="0%" stopColor="#FFFDE7" />
+          <stop offset="15%" stopColor="#FFF9C4" />
+          <stop offset="40%" stopColor="#FFE082" />
+          <stop offset="60%" stopColor="#FFD54F" />
+          <stop offset="85%" stopColor="#FFCA28" />
+          <stop offset="100%" stopColor="#FFB300" />
         </linearGradient>
         
-        {/* Gold gradient - darker shade for depth */}
-        <linearGradient id={`goldDark-${uniqueId}`} x1="0%" y1="100%" x2="0%" y2="0%">
-          <stop offset="0%" stopColor="#5C4A1F" />
-          <stop offset="40%" stopColor="#8B6914" />
-          <stop offset="100%" stopColor="#B8860B" />
+        {/* Deep gold shadow */}
+        <linearGradient id={`goldShadow-${uniqueId}`} x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#FF8F00" />
+          <stop offset="30%" stopColor="#E65100" />
+          <stop offset="60%" stopColor="#BF360C" />
+          <stop offset="100%" stopColor="#4E342E" />
         </linearGradient>
         
-        {/* Gem gradient - blue faceted */}
-        <radialGradient id={`gemBlue-${uniqueId}`} cx="30%" cy="30%" r="70%">
-          <stop offset="0%" stopColor="#FFFFFF" />
-          <stop offset="15%" stopColor="#00FFFF" />
-          <stop offset="40%" stopColor="#00BFFF" />
-          <stop offset="70%" stopColor="#1E90FF" />
-          <stop offset="100%" stopColor="#0066CC" />
-        </radialGradient>
-        
-        {/* Gem inner glow */}
-        <radialGradient id={`gemGlow-${uniqueId}`} cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#00FFFF" stopOpacity="0.8" />
-          <stop offset="100%" stopColor="#0066CC" stopOpacity="0" />
-        </radialGradient>
+        {/* Warm edge highlight */}
+        <linearGradient id={`goldEdge-${uniqueId}`} x1="50%" y1="0%" x2="50%" y2="100%">
+          <stop offset="0%" stopColor="#FFFDE7" />
+          <stop offset="50%" stopColor="#FFE082" />
+          <stop offset="100%" stopColor="#FFB300" />
+        </linearGradient>
         
         {/* Crown base band gradient */}
         <linearGradient id={`bandGold-${uniqueId}`} x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#FFD700" />
-          <stop offset="25%" stopColor="#FFC200" />
-          <stop offset="50%" stopColor="#DAA520" />
-          <stop offset="75%" stopColor="#B8860B" />
-          <stop offset="100%" stopColor="#6B4E0B" />
+          <stop offset="0%" stopColor="#FFE082" />
+          <stop offset="15%" stopColor="#FFD54F" />
+          <stop offset="35%" stopColor="#FFCA28" />
+          <stop offset="55%" stopColor="#FFB300" />
+          <stop offset="75%" stopColor="#FF8F00" />
+          <stop offset="100%" stopColor="#6D4C00" />
         </linearGradient>
         
-        {/* Subtle blue rim light for gems */}
-        <filter id={`gemFilter-${uniqueId}`}>
-          <feGaussianBlur stdDeviation="1" result="blur" />
+        {/* Band inner shadow */}
+        <linearGradient id={`bandShadow-${uniqueId}`} x1="0%" y1="100%" x2="0%" y2="0%">
+          <stop offset="0%" stopColor="#3E2723" stopOpacity="0.8" />
+          <stop offset="100%" stopColor="#3E2723" stopOpacity="0" />
+        </linearGradient>
+        
+        {/* === GEM GRADIENTS === */}
+        {/* Blue diamond main */}
+        <linearGradient id={`gemBlue-${uniqueId}`} x1="30%" y1="0%" x2="70%" y2="100%">
+          <stop offset="0%" stopColor="#E0F7FA" />
+          <stop offset="15%" stopColor="#80DEEA" />
+          <stop offset="35%" stopColor="#26C6DA" />
+          <stop offset="55%" stopColor="#00ACC1" />
+          <stop offset="75%" stopColor="#0097A7" />
+          <stop offset="100%" stopColor="#006064" />
+        </linearGradient>
+        
+        {/* Gem facet light */}
+        <linearGradient id={`gemFacetLight-${uniqueId}`} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.9" />
+          <stop offset="50%" stopColor="#B2EBF2" stopOpacity="0.6" />
+          <stop offset="100%" stopColor="#4DD0E1" stopOpacity="0.3" />
+        </linearGradient>
+        
+        {/* Gem facet dark */}
+        <linearGradient id={`gemFacetDark-${uniqueId}`} x1="100%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#00838F" />
+          <stop offset="50%" stopColor="#006064" />
+          <stop offset="100%" stopColor="#004D40" />
+        </linearGradient>
+        
+        {/* Gem inner glow */}
+        <radialGradient id={`gemGlow-${uniqueId}`} cx="50%" cy="50%" r="60%">
+          <stop offset="0%" stopColor="#00FFFF" stopOpacity={0.9 * gemIntensity} />
+          <stop offset="40%" stopColor="#00BCD4" stopOpacity={0.5 * gemIntensity} />
+          <stop offset="100%" stopColor="#006064" stopOpacity="0" />
+        </radialGradient>
+        
+        {/* Gem bloom effect */}
+        <radialGradient id={`gemBloom-${uniqueId}`} cx="50%" cy="50%" r="80%">
+          <stop offset="0%" stopColor="#00FFFF" stopOpacity="0.4" />
+          <stop offset="60%" stopColor="#00BCD4" stopOpacity="0.1" />
+          <stop offset="100%" stopColor="#00BCD4" stopOpacity="0" />
+        </radialGradient>
+        
+        {/* === FILTERS === */}
+        <filter id={`gemBlur-${uniqueId}`} x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="2" result="blur" />
           <feComposite in="SourceGraphic" in2="blur" operator="over" />
         </filter>
+        
+        <filter id={`innerShadow-${uniqueId}`} x="-20%" y="-20%" width="140%" height="140%">
+          <feOffset dx="0" dy="2" />
+          <feGaussianBlur stdDeviation="2" />
+          <feComposite operator="out" in="SourceGraphic" result="shadow" />
+          <feColorMatrix values="0 0 0 0 0.2  0 0 0 0 0.1  0 0 0 0 0  0 0 0 0.5 0" />
+          <feComposite operator="over" in="SourceGraphic" />
+        </filter>
+        
+        {/* Metallic noise texture */}
+        <pattern id={`noise-${uniqueId}`} x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
+          <rect width="100" height="100" fill="transparent" />
+          {Array.from({ length: 30 }).map((_, i) => (
+            <circle
+              key={i}
+              cx={Math.random() * 100}
+              cy={Math.random() * 100}
+              r={Math.random() * 0.8 + 0.2}
+              fill="#FFFFFF"
+              opacity={Math.random() * 0.15 + 0.05}
+            />
+          ))}
+        </pattern>
       </defs>
       
-      {/* Crown Base Band */}
-      <path 
-        d="M25 115 Q30 105, 50 102 L150 102 Q170 105, 175 115 L180 125 Q100 130, 20 125 Z"
-        fill={`url(#bandGold-${uniqueId})`}
-        stroke="#8B6914"
-        strokeWidth="1"
-      />
+      {/* === AMBIENT SHADOW === */}
+      <ellipse cx="140" cy="195" rx="80" ry="12" fill="#000000" opacity="0.3">
+        <animate attributeName="opacity" values="0.3;0.4;0.3" dur="3s" repeatCount="indefinite" />
+      </ellipse>
       
-      {/* Band highlight line */}
-      <path 
-        d="M35 108 Q100 104, 165 108"
-        fill="none"
-        stroke="#FFE4B5"
-        strokeWidth="1.5"
-        opacity="0.6"
-      />
+      {/* === CROWN BASE BAND === */}
+      <g filter={`url(#innerShadow-${uniqueId})`}>
+        {/* Band main shape */}
+        <path 
+          d="M40 165 
+             Q45 150, 80 145 
+             L200 145 
+             Q235 150, 240 165 
+             L245 180 
+             Q140 188, 35 180 
+             Z"
+          fill={`url(#bandGold-${uniqueId})`}
+        />
+        
+        {/* Band inner shadow overlay */}
+        <path 
+          d="M40 165 
+             Q45 150, 80 145 
+             L200 145 
+             Q235 150, 240 165 
+             L245 180 
+             Q140 188, 35 180 
+             Z"
+          fill={`url(#bandShadow-${uniqueId})`}
+          opacity="0.4"
+        />
+        
+        {/* Band highlight line top */}
+        <path 
+          d="M55 152 Q140 146, 225 152"
+          fill="none"
+          stroke="#FFFDE7"
+          strokeWidth="2"
+          opacity="0.8"
+        />
+        
+        {/* Band decorative ridge */}
+        <path 
+          d="M50 162 Q140 158, 230 162"
+          fill="none"
+          stroke="#FFB300"
+          strokeWidth="1.5"
+          opacity="0.6"
+        />
+        
+        {/* Band texture overlay */}
+        <path 
+          d="M40 165 Q45 150, 80 145 L200 145 Q235 150, 240 165 L245 180 Q140 188, 35 180 Z"
+          fill={`url(#noise-${uniqueId})`}
+          opacity="0.3"
+        />
+      </g>
       
-      {/* Crown Body - Main shape with 5 points */}
-      <path 
-        d="M50 102 
-           L35 75 L55 55 L45 25
-           L65 45 L85 20
-           L100 8
-           L115 20 L135 45
-           L155 25 L145 55 L165 75
-           L150 102
-           Z"
-        fill={`url(#goldBase-${uniqueId})`}
-        stroke="#8B6914"
-        strokeWidth="1.5"
-      />
+      {/* === CROWN MAIN BODY === */}
+      <g filter={`url(#innerShadow-${uniqueId})`}>
+        {/* Crown main silhouette - elegant curved tips */}
+        <path 
+          d="M80 145
+             L55 115 
+             Q50 95, 55 75 
+             Q60 55, 48 30
+             Q55 45, 75 50
+             Q85 35, 90 20
+             Q95 35, 110 45
+             Q125 25, 140 12
+             Q155 25, 170 45
+             Q185 35, 190 20
+             Q195 35, 205 50
+             Q225 45, 232 30
+             Q220 55, 225 75
+             Q230 95, 225 115
+             L200 145
+             Z"
+          fill={`url(#goldBody-${uniqueId})`}
+        />
+        
+        {/* Crown highlight overlay */}
+        <path 
+          d="M80 145
+             L55 115 
+             Q50 95, 55 75 
+             Q60 55, 48 30
+             Q55 45, 75 50
+             Q85 35, 90 20
+             Q95 35, 110 45
+             Q125 25, 140 12
+             Q155 25, 170 45
+             Q185 35, 190 20
+             Q195 35, 205 50
+             Q225 45, 232 30
+             Q220 55, 225 75
+             Q230 95, 225 115
+             L200 145
+             Z"
+          fill={`url(#goldHighlight-${uniqueId})`}
+          opacity="0.4"
+        />
+        
+        {/* Texture overlay */}
+        <path 
+          d="M80 145 L55 115 Q50 95, 55 75 Q60 55, 48 30 Q55 45, 75 50 Q85 35, 90 20 Q95 35, 110 45 Q125 25, 140 12 Q155 25, 170 45 Q185 35, 190 20 Q195 35, 205 50 Q225 45, 232 30 Q220 55, 225 75 Q230 95, 225 115 L200 145 Z"
+          fill={`url(#noise-${uniqueId})`}
+          opacity="0.2"
+        />
+        
+        {/* Crown edge highlights */}
+        <path 
+          d="M48 30 Q55 45, 75 50 Q85 35, 90 20 Q95 35, 110 45 Q125 25, 140 12 Q155 25, 170 45 Q185 35, 190 20 Q195 35, 205 50 Q225 45, 232 30"
+          fill="none"
+          stroke="#FFFDE7"
+          strokeWidth="2.5"
+          opacity="0.9"
+          strokeLinecap="round"
+        />
+        
+        {/* Secondary edge glow */}
+        <path 
+          d="M48 30 Q55 45, 75 50 Q85 35, 90 20 Q95 35, 110 45 Q125 25, 140 12 Q155 25, 170 45 Q185 35, 190 20 Q195 35, 205 50 Q225 45, 232 30"
+          fill="none"
+          stroke="#FFE082"
+          strokeWidth="4"
+          opacity="0.3"
+          strokeLinecap="round"
+        />
+        
+        {/* Inner architectural lines */}
+        <path d="M75 50 L85 100" stroke="#BF360C" strokeWidth="1" opacity="0.3" />
+        <path d="M110 45 L115 95" stroke="#BF360C" strokeWidth="1" opacity="0.3" />
+        <path d="M140 12 L140 90" stroke="#BF360C" strokeWidth="1.5" opacity="0.25" />
+        <path d="M170 45 L165 95" stroke="#BF360C" strokeWidth="1" opacity="0.3" />
+        <path d="M205 50 L195 100" stroke="#BF360C" strokeWidth="1" opacity="0.3" />
+        
+        {/* Decorative engraving lines */}
+        <path d="M90 80 Q140 70, 190 80" stroke="#FFE082" strokeWidth="1" opacity="0.4" fill="none" />
+        <path d="M100 100 Q140 92, 180 100" stroke="#FFE082" strokeWidth="1" opacity="0.3" fill="none" />
+      </g>
       
-      {/* Crown inner detail lines - left side */}
-      <path 
-        d="M50 100 L42 78 L58 58 L52 35"
-        fill="none"
-        stroke="#B8860B"
-        strokeWidth="1"
-        opacity="0.5"
-      />
-      
-      {/* Crown inner detail lines - right side */}
-      <path 
-        d="M150 100 L158 78 L142 58 L148 35"
-        fill="none"
-        stroke="#B8860B"
-        strokeWidth="1"
-        opacity="0.5"
-      />
-      
-      {/* Crown inner detail lines - center */}
-      <path 
-        d="M100 95 L100 20"
-        fill="none"
-        stroke="#B8860B"
-        strokeWidth="1"
-        opacity="0.3"
-      />
-      
-      {/* Highlight edges on crown points */}
-      <path 
-        d="M45 25 L65 45 L85 20 L100 8 L115 20 L135 45 L155 25"
-        fill="none"
-        stroke="#FFE4B5"
-        strokeWidth="2"
-        opacity="0.7"
-      />
-      
-      {/* Secondary highlight */}
-      <path 
-        d="M55 55 L65 45 L85 20 L100 8 L115 20 L135 45 L145 55"
-        fill="none"
-        stroke="#FFFACD"
-        strokeWidth="1"
-        opacity="0.4"
-      />
+      {/* === DIAMOND GEMS === */}
       
       {/* CENTER GEM (Largest) */}
-      <g filter={`url(#gemFilter-${uniqueId})`}>
-        {/* Gem glow background */}
-        <ellipse cx="100" cy="22" rx="14" ry="12" fill={`url(#gemGlow-${uniqueId})`} opacity="0.6" />
-        {/* Main gem shape - faceted */}
+      <g filter={`url(#gemBlur-${uniqueId})`}>
+        {/* Bloom effect */}
+        <ellipse cx="140" cy="35" rx="22" ry="20" fill={`url(#gemBloom-${uniqueId})`} />
+        
+        {/* Glow base */}
+        <ellipse cx="140" cy="35" rx="16" ry="14" fill={`url(#gemGlow-${uniqueId})`} />
+        
+        {/* Diamond shape - main body */}
         <path 
-          d="M100 10 L112 18 L110 30 L100 34 L90 30 L88 18 Z"
+          d="M140 15 L156 30 L156 42 L140 55 L124 42 L124 30 Z"
           fill={`url(#gemBlue-${uniqueId})`}
         />
-        {/* Gem facet lines */}
-        <path d="M100 10 L100 34" stroke="#0088CC" strokeWidth="0.5" opacity="0.5" />
-        <path d="M88 18 L112 18" stroke="#0088CC" strokeWidth="0.5" opacity="0.3" />
-        {/* Gem highlight */}
-        <ellipse cx="94" cy="16" rx="4" ry="3" fill="#FFFFFF" opacity="0.7" />
+        
+        {/* Left facet (light) */}
+        <path 
+          d="M140 15 L124 30 L124 42 L140 35 Z"
+          fill={`url(#gemFacetLight-${uniqueId})`}
+          opacity="0.6"
+        />
+        
+        {/* Right facet (dark) */}
+        <path 
+          d="M140 15 L156 30 L156 42 L140 35 Z"
+          fill={`url(#gemFacetDark-${uniqueId})`}
+          opacity="0.4"
+        />
+        
+        {/* Bottom facet */}
+        <path 
+          d="M124 42 L140 55 L156 42 L140 35 Z"
+          fill="#004D40"
+          opacity="0.5"
+        />
+        
+        {/* Top highlight */}
+        <path 
+          d="M135 18 L140 15 L145 18 L142 24 L138 24 Z"
+          fill="#FFFFFF"
+          opacity="0.85"
+        />
+        
+        {/* Sparkle */}
+        <circle cx="132" cy="25" r="2" fill="#FFFFFF" opacity="0.9">
+          <animate attributeName="opacity" values="0.9;0.4;0.9" dur="2s" repeatCount="indefinite" />
+        </circle>
       </g>
       
       {/* LEFT-CENTER GEM */}
-      <g filter={`url(#gemFilter-${uniqueId})`}>
-        <ellipse cx="72" cy="38" rx="10" ry="9" fill={`url(#gemGlow-${uniqueId})`} opacity="0.5" />
+      <g filter={`url(#gemBlur-${uniqueId})`}>
+        <ellipse cx="90" cy="42" rx="16" ry="14" fill={`url(#gemBloom-${uniqueId})`} />
+        <ellipse cx="90" cy="42" rx="12" ry="10" fill={`url(#gemGlow-${uniqueId})`} />
+        
         <path 
-          d="M72 29 L81 35 L79 45 L72 48 L65 45 L63 35 Z"
+          d="M90 26 L103 38 L103 48 L90 58 L77 48 L77 38 Z"
           fill={`url(#gemBlue-${uniqueId})`}
         />
-        <ellipse cx="68" cy="33" rx="3" ry="2" fill="#FFFFFF" opacity="0.6" />
+        <path 
+          d="M90 26 L77 38 L77 48 L90 42 Z"
+          fill={`url(#gemFacetLight-${uniqueId})`}
+          opacity="0.6"
+        />
+        <path 
+          d="M90 26 L103 38 L103 48 L90 42 Z"
+          fill={`url(#gemFacetDark-${uniqueId})`}
+          opacity="0.4"
+        />
+        <path 
+          d="M86 29 L90 26 L94 29 L91 34 L89 34 Z"
+          fill="#FFFFFF"
+          opacity="0.8"
+        />
+        <circle cx="83" cy="34" r="1.5" fill="#FFFFFF" opacity="0.85">
+          <animate attributeName="opacity" values="0.85;0.3;0.85" dur="2.5s" repeatCount="indefinite" />
+        </circle>
       </g>
       
       {/* RIGHT-CENTER GEM */}
-      <g filter={`url(#gemFilter-${uniqueId})`}>
-        <ellipse cx="128" cy="38" rx="10" ry="9" fill={`url(#gemGlow-${uniqueId})`} opacity="0.5" />
+      <g filter={`url(#gemBlur-${uniqueId})`}>
+        <ellipse cx="190" cy="42" rx="16" ry="14" fill={`url(#gemBloom-${uniqueId})`} />
+        <ellipse cx="190" cy="42" rx="12" ry="10" fill={`url(#gemGlow-${uniqueId})`} />
+        
         <path 
-          d="M128 29 L137 35 L135 45 L128 48 L121 45 L119 35 Z"
+          d="M190 26 L203 38 L203 48 L190 58 L177 48 L177 38 Z"
           fill={`url(#gemBlue-${uniqueId})`}
         />
-        <ellipse cx="124" cy="33" rx="3" ry="2" fill="#FFFFFF" opacity="0.6" />
+        <path 
+          d="M190 26 L177 38 L177 48 L190 42 Z"
+          fill={`url(#gemFacetLight-${uniqueId})`}
+          opacity="0.6"
+        />
+        <path 
+          d="M190 26 L203 38 L203 48 L190 42 Z"
+          fill={`url(#gemFacetDark-${uniqueId})`}
+          opacity="0.4"
+        />
+        <path 
+          d="M186 29 L190 26 L194 29 L191 34 L189 34 Z"
+          fill="#FFFFFF"
+          opacity="0.8"
+        />
+        <circle cx="183" cy="34" r="1.5" fill="#FFFFFF" opacity="0.85">
+          <animate attributeName="opacity" values="0.85;0.5;0.85" dur="1.8s" repeatCount="indefinite" />
+        </circle>
       </g>
       
       {/* LEFT OUTER GEM (smaller) */}
-      <g filter={`url(#gemFilter-${uniqueId})`}>
-        <ellipse cx="50" cy="48" rx="8" ry="7" fill={`url(#gemGlow-${uniqueId})`} opacity="0.4" />
+      <g filter={`url(#gemBlur-${uniqueId})`}>
+        <ellipse cx="58" cy="55" rx="12" ry="10" fill={`url(#gemBloom-${uniqueId})`} />
+        <ellipse cx="58" cy="55" rx="9" ry="7" fill={`url(#gemGlow-${uniqueId})`} />
+        
         <path 
-          d="M50 41 L57 46 L55 54 L50 57 L45 54 L43 46 Z"
+          d="M58 43 L68 52 L68 60 L58 68 L48 60 L48 52 Z"
           fill={`url(#gemBlue-${uniqueId})`}
         />
-        <ellipse cx="47" cy="44" rx="2" ry="1.5" fill="#FFFFFF" opacity="0.6" />
+        <path 
+          d="M58 43 L48 52 L48 60 L58 55 Z"
+          fill={`url(#gemFacetLight-${uniqueId})`}
+          opacity="0.6"
+        />
+        <path 
+          d="M55 45 L58 43 L61 45 L59 49 L57 49 Z"
+          fill="#FFFFFF"
+          opacity="0.75"
+        />
+        <circle cx="52" cy="49" r="1.2" fill="#FFFFFF" opacity="0.8">
+          <animate attributeName="opacity" values="0.8;0.3;0.8" dur="2.2s" repeatCount="indefinite" />
+        </circle>
       </g>
       
       {/* RIGHT OUTER GEM (smaller) */}
-      <g filter={`url(#gemFilter-${uniqueId})`}>
-        <ellipse cx="150" cy="48" rx="8" ry="7" fill={`url(#gemGlow-${uniqueId})`} opacity="0.4" />
+      <g filter={`url(#gemBlur-${uniqueId})`}>
+        <ellipse cx="222" cy="55" rx="12" ry="10" fill={`url(#gemBloom-${uniqueId})`} />
+        <ellipse cx="222" cy="55" rx="9" ry="7" fill={`url(#gemGlow-${uniqueId})`} />
+        
         <path 
-          d="M150 41 L157 46 L155 54 L150 57 L145 54 L143 46 Z"
+          d="M222 43 L232 52 L232 60 L222 68 L212 60 L212 52 Z"
           fill={`url(#gemBlue-${uniqueId})`}
         />
-        <ellipse cx="147" cy="44" rx="2" ry="1.5" fill="#FFFFFF" opacity="0.6" />
+        <path 
+          d="M222 43 L212 52 L212 60 L222 55 Z"
+          fill={`url(#gemFacetLight-${uniqueId})`}
+          opacity="0.6"
+        />
+        <path 
+          d="M219 45 L222 43 L225 45 L223 49 L221 49 Z"
+          fill="#FFFFFF"
+          opacity="0.75"
+        />
+        <circle cx="216" cy="49" r="1.2" fill="#FFFFFF" opacity="0.8">
+          <animate attributeName="opacity" values="0.8;0.4;0.8" dur="2.7s" repeatCount="indefinite" />
+        </circle>
       </g>
       
-      {/* Crown band decorative gems */}
-      <circle cx="70" cy="112" r="4" fill={`url(#gemBlue-${uniqueId})`} />
-      <circle cx="100" cy="110" r="5" fill={`url(#gemBlue-${uniqueId})`} />
-      <circle cx="130" cy="112" r="4" fill={`url(#gemBlue-${uniqueId})`} />
+      {/* === BAND DECORATIVE GEMS === */}
+      {/* Left band gem */}
+      <g>
+        <ellipse cx="90" cy="162" rx="8" ry="6" fill={`url(#gemBloom-${uniqueId})`} opacity="0.5" />
+        <path 
+          d="M90 155 L97 160 L97 166 L90 171 L83 166 L83 160 Z"
+          fill={`url(#gemBlue-${uniqueId})`}
+        />
+        <circle cx="86" cy="158" r="1" fill="#FFFFFF" opacity="0.8" />
+      </g>
       
-      {/* Band gem highlights */}
-      <circle cx="68" cy="110" r="1.5" fill="#FFFFFF" opacity="0.7" />
-      <circle cx="98" cy="108" r="2" fill="#FFFFFF" opacity="0.7" />
-      <circle cx="128" cy="110" r="1.5" fill="#FFFFFF" opacity="0.7" />
+      {/* Center band gem (larger) */}
+      <g>
+        <ellipse cx="140" cy="160" rx="10" ry="8" fill={`url(#gemBloom-${uniqueId})`} opacity="0.6" />
+        <path 
+          d="M140 151 L149 157 L149 165 L140 172 L131 165 L131 157 Z"
+          fill={`url(#gemBlue-${uniqueId})`}
+        />
+        <circle cx="135" cy="154" r="1.5" fill="#FFFFFF" opacity="0.85" />
+      </g>
+      
+      {/* Right band gem */}
+      <g>
+        <ellipse cx="190" cy="162" rx="8" ry="6" fill={`url(#gemBloom-${uniqueId})`} opacity="0.5" />
+        <path 
+          d="M190 155 L197 160 L197 166 L190 171 L183 166 L183 160 Z"
+          fill={`url(#gemBlue-${uniqueId})`}
+        />
+        <circle cx="186" cy="158" r="1" fill="#FFFFFF" opacity="0.8" />
+      </g>
+      
+      {/* === FLOATING PARTICLE SPARKLES === */}
+      <g opacity="0.8">
+        <circle cx="45" cy="60" r="1" fill="#FFE082">
+          <animate attributeName="opacity" values="0;1;0" dur="3s" repeatCount="indefinite" begin="0s" />
+          <animate attributeName="cy" values="60;55;60" dur="3s" repeatCount="indefinite" begin="0s" />
+        </circle>
+        <circle cx="235" cy="65" r="1.2" fill="#FFE082">
+          <animate attributeName="opacity" values="0;1;0" dur="2.5s" repeatCount="indefinite" begin="0.5s" />
+          <animate attributeName="cy" values="65;60;65" dur="2.5s" repeatCount="indefinite" begin="0.5s" />
+        </circle>
+        <circle cx="120" cy="25" r="0.8" fill="#FFFFFF">
+          <animate attributeName="opacity" values="0;1;0" dur="2s" repeatCount="indefinite" begin="1s" />
+        </circle>
+        <circle cx="160" cy="28" r="0.8" fill="#FFFFFF">
+          <animate attributeName="opacity" values="0;1;0" dur="2.2s" repeatCount="indefinite" begin="0.3s" />
+        </circle>
+        <circle cx="70" cy="45" r="0.6" fill="#00FFFF">
+          <animate attributeName="opacity" values="0;0.8;0" dur="1.8s" repeatCount="indefinite" begin="0.7s" />
+        </circle>
+        <circle cx="210" cy="48" r="0.6" fill="#00FFFF">
+          <animate attributeName="opacity" values="0;0.8;0" dur="2.1s" repeatCount="indefinite" begin="1.2s" />
+        </circle>
+        <circle cx="140" cy="5" r="1" fill="#FFD54F">
+          <animate attributeName="opacity" values="0;1;0" dur="2.8s" repeatCount="indefinite" begin="0.2s" />
+        </circle>
+        <circle cx="55" cy="100" r="0.5" fill="#FFE082">
+          <animate attributeName="opacity" values="0;0.6;0" dur="3.2s" repeatCount="indefinite" begin="1.5s" />
+        </circle>
+        <circle cx="225" cy="95" r="0.5" fill="#FFE082">
+          <animate attributeName="opacity" values="0;0.6;0" dur="2.9s" repeatCount="indefinite" begin="0.8s" />
+        </circle>
+      </g>
+      
+      {/* Variant-specific marks */}
+      {variant === 'duo' && (
+        <g opacity="0.5">
+          <path d="M130 125 L140 115 L150 125" stroke="#FFE082" strokeWidth="1.5" fill="none" />
+          <path d="M130 130 L140 120 L150 130" stroke="#FFE082" strokeWidth="1" fill="none" />
+        </g>
+      )}
+      
+      {(variant === 'clan' || variant === 'clan-alt') && (
+        <g opacity="0.5">
+          <path d="M125 125 L140 110 L155 125" stroke="#FFE082" strokeWidth="1.5" fill="none" />
+          <path d="M128 130 L140 118 L152 130" stroke="#FFE082" strokeWidth="1" fill="none" />
+          <path d="M131 135 L140 126 L149 135" stroke="#FFE082" strokeWidth="0.8" fill="none" />
+        </g>
+      )}
     </svg>
   );
 }
