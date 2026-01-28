@@ -128,6 +128,108 @@ export type Database = {
         }
         Relationships: []
       }
+      battle_queue: {
+        Row: {
+          created_at: string
+          elo: number
+          expires_at: string
+          id: string
+          matched_at: string | null
+          mode: string
+          status: string
+          target_user_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          elo?: number
+          expires_at?: string
+          id?: string
+          matched_at?: string | null
+          mode: string
+          status?: string
+          target_user_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          elo?: number
+          expires_at?: string
+          id?: string
+          matched_at?: string | null
+          mode?: string
+          status?: string
+          target_user_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      battle_sessions: {
+        Row: {
+          battle_id: string
+          created_at: string
+          duration_minutes: number
+          elo_change: number | null
+          end_time: string | null
+          id: string
+          mode: string
+          player_a_elo: number
+          player_a_id: string
+          player_a_score: number
+          player_b_elo: number
+          player_b_id: string
+          player_b_score: number
+          problems: Json
+          start_time: string
+          status: string
+          winner_id: string | null
+          xp_awarded_a: number | null
+          xp_awarded_b: number | null
+        }
+        Insert: {
+          battle_id?: string
+          created_at?: string
+          duration_minutes?: number
+          elo_change?: number | null
+          end_time?: string | null
+          id?: string
+          mode: string
+          player_a_elo?: number
+          player_a_id: string
+          player_a_score?: number
+          player_b_elo?: number
+          player_b_id: string
+          player_b_score?: number
+          problems?: Json
+          start_time?: string
+          status?: string
+          winner_id?: string | null
+          xp_awarded_a?: number | null
+          xp_awarded_b?: number | null
+        }
+        Update: {
+          battle_id?: string
+          created_at?: string
+          duration_minutes?: number
+          elo_change?: number | null
+          end_time?: string | null
+          id?: string
+          mode?: string
+          player_a_elo?: number
+          player_a_id?: string
+          player_a_score?: number
+          player_b_elo?: number
+          player_b_id?: string
+          player_b_score?: number
+          problems?: Json
+          start_time?: string
+          status?: string
+          winner_id?: string | null
+          xp_awarded_a?: number | null
+          xp_awarded_b?: number | null
+        }
+        Relationships: []
+      }
       challenge_completions: {
         Row: {
           challenge_id: string
@@ -779,6 +881,54 @@ export type Database = {
           },
         ]
       }
+      user_battle_stats: {
+        Row: {
+          best_win_streak: number
+          created_at: string
+          draws: number
+          elo: number
+          id: string
+          last_battle_at: string | null
+          losses: number
+          total_duels: number
+          total_xp_earned: number
+          updated_at: string
+          user_id: string
+          win_streak: number
+          wins: number
+        }
+        Insert: {
+          best_win_streak?: number
+          created_at?: string
+          draws?: number
+          elo?: number
+          id?: string
+          last_battle_at?: string | null
+          losses?: number
+          total_duels?: number
+          total_xp_earned?: number
+          updated_at?: string
+          user_id: string
+          win_streak?: number
+          wins?: number
+        }
+        Update: {
+          best_win_streak?: number
+          created_at?: string
+          draws?: number
+          elo?: number
+          id?: string
+          last_battle_at?: string | null
+          losses?: number
+          total_duels?: number
+          total_xp_earned?: number
+          updated_at?: string
+          user_id?: string
+          win_streak?: number
+          wins?: number
+        }
+        Relationships: []
+      }
       user_roadmap_progress: {
         Row: {
           completed_at: string | null
@@ -997,6 +1147,8 @@ export type Database = {
         }
         Returns: Json
       }
+      cancel_battle_queue: { Args: never; Returns: Json }
+      check_battle_queue_status: { Args: never; Returns: Json }
       check_daily_streak: { Args: never; Returns: Json }
       claim_invite_code: {
         Args: { p_code: string; p_user_id: string }
@@ -1013,6 +1165,14 @@ export type Database = {
       }
       complete_daily_challenge: {
         Args: { p_challenge_id: string }
+        Returns: Json
+      }
+      complete_duo_battle: {
+        Args: {
+          p_player_a_score: number
+          p_player_b_score: number
+          p_session_id: string
+        }
         Returns: Json
       }
       complete_revision: { Args: { p_topic_id: string }; Returns: Json }
@@ -1072,6 +1232,7 @@ export type Database = {
         Returns: Json
       }
       get_revision_queue: { Args: never; Returns: Json }
+      get_user_battle_stats: { Args: never; Returns: Json }
       get_visible_doubts: {
         Args: {
           p_category?: Database["public"]["Enums"]["doubt_category"]
@@ -1100,6 +1261,10 @@ export type Database = {
         Returns: boolean
       }
       is_reading_public_fields: { Args: never; Returns: boolean }
+      join_battle_queue: {
+        Args: { p_mode: string; p_target_user_id?: string }
+        Returns: Json
+      }
       join_clan: { Args: { p_clan_id: string }; Returns: Json }
       mark_doubt_solved: { Args: { p_doubt_id: string }; Returns: Json }
       record_activity: { Args: { p_problems_solved?: number }; Returns: Json }
