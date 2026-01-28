@@ -6,9 +6,10 @@ export type MentorExpertise = 'dsa' | 'cp' | 'web' | 'system_design';
 export type InviteStatus = 'pending' | 'accepted' | 'expired';
 
 // Safe interface - no raw email or token exposed
+// Safe interface - no raw email or token exposed (token removed from view entirely)
 export interface MentorInviteSafe {
   id: string;
-  email_masked: string | null; // Only first 3 chars + domain hint
+  email_masked: string | null; // Only first 2 chars + domain hint (e.g., "jo***@gmail.com")
   name: string | null;
   expertise: MentorExpertise | null;
   invited_by: string;
