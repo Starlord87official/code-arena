@@ -66,6 +66,21 @@ function ChallengeCard({ challenge }: { challenge: ChallengeWithStats }) {
               {riskLabel}
             </span>
             
+            {/* NEW Badge */}
+            {challenge.is_new && (
+              <Badge className="text-xs bg-primary/20 text-primary border-primary/30 animate-pulse">
+                <Sparkles className="h-3 w-3 mr-1" />
+                NEW
+              </Badge>
+            )}
+            
+            {/* BETA Badge */}
+            {challenge.is_beta && (
+              <Badge variant="outline" className="text-xs border-status-warning/30 text-status-warning bg-status-warning/10">
+                BETA
+              </Badge>
+            )}
+            
             {/* Solved Badge */}
             {challenge.isSolved && (
               <span className="flex items-center gap-1 text-xs text-status-success bg-status-success/10 px-2 py-1 rounded">
@@ -197,6 +212,20 @@ export default function Challenges() {
               <ChevronsUp className="h-6 w-6 text-primary animate-pulse" />
             </div>
           </div>
+          
+          {/* Total Challenge Count */}
+          {!isLoading && challenges.length > 0 && (
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Badge className="bg-primary/10 text-primary border-primary/30 text-sm px-3 py-1">
+                <Zap className="h-4 w-4 mr-1" />
+                {challenges.length} Challenges Available
+              </Badge>
+              <Badge variant="outline" className="text-xs border-status-success/30 text-status-success">
+                More unlocking daily during beta
+              </Badge>
+            </div>
+          )}
+          
           <p className="text-muted-foreground text-lg">
             Every challenge is a <span className="text-primary font-semibold">step up</span> or a <span className="text-destructive font-semibold">fall down</span>. Choose wisely.
           </p>
