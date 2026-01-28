@@ -5,7 +5,7 @@ import { MarkForRevisionButton } from '@/components/revision/MarkForRevisionButt
 import { CompanyBadge } from '@/components/company/CompanyBadge';
 
 interface ChallengeCardProps {
-  challenge: Challenge;
+  challenge: Challenge & { company_tags?: string[] };
   solved?: boolean;
 }
 
@@ -38,8 +38,10 @@ export function ChallengeCard({ challenge, solved = false }: ChallengeCardProps)
               </span>
             ))}
           </div>
-          {/* Company badges */}
-          <CompanyBadge challengeId={challenge.id} maxCompanies={2} />
+          {/* Company badges - pass company_tags array */}
+          {challenge.company_tags && challenge.company_tags.length > 0 && (
+            <CompanyBadge companyTags={challenge.company_tags} maxCompanies={2} />
+          )}
         </Link>
         <div className="flex items-center gap-2 flex-shrink-0">
           <MarkForRevisionButton

@@ -1,28 +1,16 @@
 import { useParams, Link } from 'react-router-dom';
 import { 
-  Building2, ChevronLeft, ChevronRight, Zap, Users, Star, 
-  TrendingUp, Calendar, Clock, ChevronsUp, TrendingDown, Target, Crown, ShieldAlert
+  Building2, ChevronLeft, ChevronRight, Zap, 
+  TrendingUp, Clock, ChevronsUp, TrendingDown, Target, Crown, ShieldAlert, Star
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  getCompanyBySlug, 
-  getChallengesForCompany, 
-  getFrequencyLabel, 
-  getFrequencyBadgeClass,
-  CompanyChallengeMeta 
-} from '@/lib/companyData';
-import { mockChallenges, getDifficultyColor, Challenge } from '@/lib/mockData';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useCompanyChallenges, getCompanyDefinition, CompanyChallenge } from '@/hooks/useCompanyChallenges';
 import { MarkForRevisionButton } from '@/components/revision/MarkForRevisionButton';
 
-function CompanyChallengeCard({ 
-  challenge, 
-  meta 
-}: { 
-  challenge: Challenge;
-  meta: CompanyChallengeMeta;
-}) {
-  const getDifficultyStyle = (difficulty: Challenge['difficulty']) => {
+function CompanyChallengeCard({ challenge }: { challenge: CompanyChallenge }) {
+  const getDifficultyStyle = (difficulty: CompanyChallenge['difficulty']) => {
     switch (difficulty) {
       case 'easy': return {
         badge: 'bg-status-success/20 text-status-success border-status-success/50',
@@ -50,7 +38,7 @@ function CompanyChallengeCard({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-2 flex-wrap">
-            <Link to={`/solve/${challenge.id}`}>
+            <Link to={`/solve/${challenge.slug}`}>
               <h3 className="font-heading font-semibold text-lg group-hover:text-primary transition-colors">
                 {challenge.title}
               </h3>
@@ -58,14 +46,14 @@ function CompanyChallengeCard({
             <Badge className={`${style.badge} border uppercase text-xs font-bold`}>
               {challenge.difficulty}
             </Badge>
-            <Badge className={`${getFrequencyBadgeClass(meta.frequency)} border text-xs`}>
-              <TrendingUp className="h-3 w-3 mr-1" />
-              {getFrequencyLabel(meta.frequency)}
-            </Badge>
-            {meta.lastAskedYear && (
-              <Badge variant="outline" className="text-xs">
-                <Calendar className="h-3 w-3 mr-1" />
-                {meta.lastAskedYear}
+            {challenge.is_new && (
+              <Badge className="bg-primary/20 text-primary border-primary/50 text-xs">
+                NEW
+              </Badge>
+            )}
+            {challenge.is_beta && (
+              <Badge className="bg-secondary text-muted-foreground border text-xs">
+                BETA
               </Badge>
             )}
           </div>
@@ -75,7 +63,7 @@ function CompanyChallengeCard({
           </p>
           
           <div className="flex flex-wrap gap-1.5">
-            {challenge.tags.map(tag => (
+            {challenge.tags.slice(0, 4).map(tag => (
               <Badge key={tag} variant="outline" className="text-xs">
                 {tag}
               </Badge>
@@ -89,30 +77,23 @@ function CompanyChallengeCard({
             <div className="text-center">
               <div className="flex items-center gap-1 text-status-success">
                 <ChevronsUp className="h-4 w-4" />
-                <span className="font-bold">+{challenge.rankImpact.win}</span>
+                <span className="font-bold">+{challenge.rank_impact_win}</span>
               </div>
               <span className="text-[10px] text-muted-foreground uppercase">Win</span>
             </div>
             <div className="text-center">
               <div className="flex items-center gap-1 text-destructive">
                 <TrendingDown className="h-4 w-4" />
-                <span className="font-bold">-{challenge.rankImpact.loss}</span>
+                <span className="font-bold">-{challenge.rank_impact_loss}</span>
               </div>
               <span className="text-[10px] text-muted-foreground uppercase">Fail</span>
             </div>
             <div className="text-center">
               <div className="flex items-center gap-1 text-primary">
                 <Zap className="h-4 w-4" />
-                <span className="font-bold">{challenge.xpReward}</span>
+                <span className="font-bold">{challenge.xp_reward}</span>
               </div>
               <span className="text-[10px] text-muted-foreground">XP</span>
-            </div>
-            <div className="text-center">
-              <div className="flex items-center gap-1 text-muted-foreground">
-                <Users className="h-4 w-4" />
-                <span className="font-medium">{challenge.solvedBy.toLocaleString()}</span>
-              </div>
-              <span className="text-[10px] text-muted-foreground">Solved</span>
             </div>
           </div>
 
@@ -124,7 +105,7 @@ function CompanyChallengeCard({
               topic={challenge.tags[0]}
               variant="compact"
             />
-            <Link to={`/solve/${challenge.id}`}>
+            <Link to={`/solve/${challenge.slug}`}>
               <Button variant="arena" size="sm" className="gap-1">
                 Solve
                 <ChevronRight className="h-4 w-4" />
@@ -137,9 +118,33 @@ function CompanyChallengeCard({
   );
 }
 
+function ChallengeCardSkeleton() {
+  return (
+    <div className="arena-card p-5 rounded-xl">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex-1">
+          <div className="flex items-center gap-3 mb-2">
+            <Skeleton className="h-6 w-48" />
+            <Skeleton className="h-5 w-16" />
+          </div>
+          <Skeleton className="h-4 w-full mb-3" />
+          <div className="flex gap-1.5">
+            <Skeleton className="h-5 w-16" />
+            <Skeleton className="h-5 w-20" />
+          </div>
+        </div>
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-10 w-20" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function CompanyDetail() {
   const { slug } = useParams<{ slug: string }>();
-  const company = getCompanyBySlug(slug || '');
+  const company = getCompanyDefinition(slug || '');
+  const { data: challenges = [], isLoading, error } = useCompanyChallenges(slug || '');
 
   if (!company) {
     return (
@@ -155,27 +160,15 @@ export default function CompanyDetail() {
     );
   }
 
-  const challengeMetas = getChallengesForCompany(company.slug);
-  const challenges = challengeMetas
-    .map(meta => ({
-      challenge: mockChallenges.find(c => c.id === meta.challengeId),
-      meta,
-    }))
-    .filter((item): item is { challenge: Challenge; meta: CompanyChallengeMeta } => 
-      item.challenge !== undefined
-    );
-
-  // Sort by frequency (frequent first) then by difficulty
-  const sortedChallenges = challenges.sort((a, b) => {
-    const freqOrder = { frequent: 0, medium: 1, rare: 2 };
-    const freqDiff = freqOrder[a.meta.frequency] - freqOrder[b.meta.frequency];
-    if (freqDiff !== 0) return freqDiff;
-    
+  // Sort by difficulty
+  const sortedChallenges = [...challenges].sort((a, b) => {
     const diffOrder = { easy: 0, medium: 1, hard: 2, extreme: 3 };
-    return diffOrder[a.challenge.difficulty] - diffOrder[b.challenge.difficulty];
+    return diffOrder[a.difficulty] - diffOrder[b.difficulty];
   });
 
-  const frequentCount = challenges.filter(c => c.meta.frequency === 'frequent').length;
+  const easyCount = challenges.filter(c => c.difficulty === 'easy').length;
+  const mediumCount = challenges.filter(c => c.difficulty === 'medium').length;
+  const hardCount = challenges.filter(c => c.difficulty === 'hard').length;
 
   return (
     <div className="min-h-screen bg-background py-8 px-4">
@@ -228,30 +221,48 @@ export default function CompanyDetail() {
             {/* Stats */}
             <div className="flex gap-4 md:gap-6">
               <div className="text-center">
-                <div className="text-2xl font-bold text-primary">{challenges.length}</div>
+                <div className="text-2xl font-bold text-primary">
+                  {isLoading ? '-' : challenges.length}
+                </div>
                 <div className="text-xs text-muted-foreground uppercase">Problems</div>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-status-success">{frequentCount}</div>
-                <div className="text-xs text-muted-foreground uppercase">Frequent</div>
-              </div>
+              {!isLoading && challenges.length > 0 && (
+                <>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-status-success">{easyCount}</div>
+                    <div className="text-xs text-muted-foreground uppercase">Easy</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-status-warning">{mediumCount}</div>
+                    <div className="text-xs text-muted-foreground uppercase">Medium</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-destructive">{hardCount}</div>
+                    <div className="text-xs text-muted-foreground uppercase">Hard</div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Frequency Legend */}
+        {/* Difficulty Legend */}
         <div className="flex flex-wrap gap-4 justify-center mb-6 text-xs">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded bg-status-success"></div>
-            <span className="text-muted-foreground">Frequently Asked</span>
+            <span className="text-muted-foreground">Easy</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded bg-status-warning"></div>
-            <span className="text-muted-foreground">Sometimes Asked</span>
+            <span className="text-muted-foreground">Medium</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded bg-muted"></div>
-            <span className="text-muted-foreground">Rarely Asked</span>
+            <div className="w-3 h-3 rounded bg-destructive"></div>
+            <span className="text-muted-foreground">Hard</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded bg-rank-legend"></div>
+            <span className="text-muted-foreground">Extreme</span>
           </div>
         </div>
 
@@ -262,18 +273,39 @@ export default function CompanyDetail() {
             Problems Asked at {company.name}
           </h2>
           
-          {sortedChallenges.length === 0 ? (
+          {isLoading ? (
+            <div className="space-y-3">
+              <ChallengeCardSkeleton />
+              <ChallengeCardSkeleton />
+              <ChallengeCardSkeleton />
+            </div>
+          ) : error ? (
             <div className="arena-card p-8 rounded-xl text-center">
-              <p className="text-muted-foreground">No problems mapped to this company yet.</p>
+              <p className="text-destructive">Failed to load challenges. Please try again.</p>
+            </div>
+          ) : sortedChallenges.length === 0 ? (
+            <div className="arena-card p-8 rounded-xl text-center">
+              <div className="flex flex-col items-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
+                  <Target className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg mb-2">No challenges available yet</h3>
+                  <p className="text-muted-foreground text-sm max-w-md">
+                    We're working on adding {company.name}-specific problems. Check back soon or explore other companies.
+                  </p>
+                </div>
+                <Link to="/companies">
+                  <Button variant="outline" className="mt-2">
+                    Browse Other Companies
+                  </Button>
+                </Link>
+              </div>
             </div>
           ) : (
             <div className="space-y-3">
-              {sortedChallenges.map(({ challenge, meta }) => (
-                <CompanyChallengeCard 
-                  key={challenge.id} 
-                  challenge={challenge} 
-                  meta={meta}
-                />
+              {sortedChallenges.map((challenge) => (
+                <CompanyChallengeCard key={challenge.id} challenge={challenge} />
               ))}
             </div>
           )}
@@ -286,7 +318,7 @@ export default function CompanyDetail() {
             <div>
               <h4 className="font-semibold mb-1">Interview Prep Tip</h4>
               <p className="text-sm text-muted-foreground">
-                Focus on "Frequently Asked" problems first. Use the revision feature to schedule follow-up practice.
+                Start with Easy problems to build confidence, then progress to Medium and Hard. Use the revision feature to schedule follow-up practice.
               </p>
             </div>
           </div>
