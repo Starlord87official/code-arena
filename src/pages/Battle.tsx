@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Swords, Users, Zap, Clock, Trophy, Search, 
-  ChevronRight, Shield, Flame, Target, Crown
+  ChevronRight, Shield, Flame, Target, Crown, Loader2, X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +11,8 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useBattleData } from '@/hooks/useBattleData';
+import { useMatchmaking, BattleMode } from '@/hooks/useMatchmaking';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Division color helper - kept for UI consistency
 const getDivisionColor = (division: string): string => {
@@ -39,8 +42,10 @@ const getDivisionAura = (division: string): string => {
 };
 
 export default function Battle() {
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedMode, setSelectedMode] = useState<'quick' | 'ranked' | 'custom'>('quick');
+  const [selectedMode, setSelectedMode] = useState<BattleMode>('quick');
   
   const {
     onlineWarriors,
@@ -49,14 +54,40 @@ export default function Battle() {
     isLoadingPending,
     recentBattles,
     isLoadingRecent,
+  } = useBattleData();
+
+  const {
+    matchmakingState,
+    findOpponent,
+    cancelSearch,
+    isSearching,
+    isMatched,
+    isFindingOpponent,
     battleStats,
     isLoadingStats,
-  } = useBattleData();
+    activeSession,
+  } = useMatchmaking();
+
+  // Redirect to battle when matched
+  useEffect(() => {
+    if (isMatched && matchmakingState.sessionId) {
+      // Navigate to the active battle session
+      navigate(`/battle/session/${matchmakingState.sessionId}`);
+    }
+  }, [isMatched, matchmakingState.sessionId, navigate]);
 
   // Filter online warriors by search
   const filteredWarriors = onlineWarriors.filter(w => 
     w.username.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleFindOpponent = () => {
+    if (!isAuthenticated) {
+      navigate('/auth');
+      return;
+    }
+    findOpponent(selectedMode);
+  };
 
   return (
     <div className="min-h-screen bg-background py-8 px-4">
@@ -126,10 +157,45 @@ export default function Battle() {
               </div>
 
               <div className="mt-6">
-                <Button variant="arena" size="lg" className="w-full">
-                  <Swords className="h-5 w-5 mr-2" />
-                  Find Opponent
-                </Button>
+                {isSearching ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-center gap-3 p-4 bg-primary/10 rounded-lg border border-primary/30">
+                      <Loader2 className="h-5 w-5 text-primary animate-spin" />
+                      <div className="text-center">
+                        <p className="font-medium text-foreground">Searching for opponent...</p>
+                        <p className="text-sm text-muted-foreground">
+                          {matchmakingState.waitTime !== undefined 
+                            ? `${Math.floor(matchmakingState.waitTime)}s elapsed`
+                            : 'Please wait...'}
+                        </p>
+                      </div>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="lg" 
+                      className="w-full"
+                      onClick={cancelSearch}
+                    >
+                      <X className="h-5 w-5 mr-2" />
+                      Cancel Search
+                    </Button>
+                  </div>
+                ) : (
+                  <Button 
+                    variant="arena" 
+                    size="lg" 
+                    className="w-full"
+                    onClick={handleFindOpponent}
+                    disabled={isFindingOpponent}
+                  >
+                    {isFindingOpponent ? (
+                      <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                    ) : (
+                      <Swords className="h-5 w-5 mr-2" />
+                    )}
+                    {isFindingOpponent ? 'Connecting...' : 'Find Opponent'}
+                  </Button>
+                )}
               </div>
             </div>
 
@@ -306,20 +372,20 @@ export default function Battle() {
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Win Rate</span>
                     <span className="font-bold text-status-success">
-                      {battleStats.totalDuels > 0 ? `${battleStats.winRate}%` : '—'}
+                      {battleStats.total_duels > 0 ? `${battleStats.win_rate}%` : '—'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Total Duels</span>
-                    <span className="font-bold text-foreground">{battleStats.totalDuels}</span>
+                    <span className="font-bold text-foreground">{battleStats.total_duels}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Win Streak</span>
                     <span className="font-bold text-status-warning flex items-center gap-1">
-                      {battleStats.winStreak > 0 ? (
+                      {battleStats.win_streak > 0 ? (
                         <>
                           <Flame className="h-4 w-4" />
-                          {battleStats.winStreak}
+                          {battleStats.win_streak}
                         </>
                       ) : (
                         '—'
@@ -331,13 +397,13 @@ export default function Battle() {
                     <div className="flex items-center justify-between text-sm mb-2">
                       <span className="text-muted-foreground">Next Rank</span>
                       <span className="text-primary">
-                        {battleStats.eloToNextRank > 0 
-                          ? `${battleStats.nextRankName} (+${battleStats.eloToNextRank} ELO)`
-                          : battleStats.nextRankName
+                        {battleStats.elo_to_next > 0 
+                          ? `${battleStats.next_rank} (+${battleStats.elo_to_next} ELO)`
+                          : battleStats.next_rank
                         }
                       </span>
                     </div>
-                    <Progress value={battleStats.nextRankProgress} className="h-2" />
+                    <Progress value={battleStats.rank_progress} className="h-2" />
                   </div>
                 </div>
               )}

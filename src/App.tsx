@@ -25,6 +25,7 @@ import Onboarding from "./pages/Onboarding";
 import Battle from "./pages/Battle";
 import ClanVsClanBattle from "./pages/ClanVsClanBattle";
 import BattleHistory from "./pages/BattleHistory";
+import BattleSession from "./pages/BattleSession";
 import Roadmap from "./pages/Roadmap";
 import Planner from "./pages/Planner";
 import Doubts from "./pages/Doubts";
@@ -82,6 +83,7 @@ const App = () => {
               {/* Battle Mode - Always available to all authenticated users */}
               <Route path="/battle" element={<Battle />} />
               <Route path="/battle/clan/:id" element={<ClanVsClanBattle />} />
+              <Route path="/battle/session/:sessionId" element={<BattleSession />} />
               <Route path="/battle/history" element={<BattleHistory />} />
               <Route path="*" element={<NotFound />} />
             </Route>
