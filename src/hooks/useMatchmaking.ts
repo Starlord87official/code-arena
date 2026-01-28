@@ -203,17 +203,40 @@ export function useMatchmaking() {
   // Cancel queue mutation
   const cancelQueue = useMutation({
     mutationFn: async () => {
+      // Stop polling immediately before making the request
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+      
       const { data, error } = await supabase.rpc('cancel_battle_queue');
-      if (error) throw error;
-      return data;
+      
+      // Handle the response - the RPC now returns success even if no rows deleted (idempotent)
+      if (error) {
+        // Only throw for real errors (network, auth), not constraint violations
+        if (error.code !== '23505') {
+          throw error;
+        }
+        // Constraint violation means already cancelled/gone - treat as success
+        return { success: true, deleted_count: 0 };
+      }
+      
+      return data as { success: boolean; deleted_count?: number };
     },
     onSuccess: () => {
       setMatchmakingState({ status: 'idle' });
       toast.info('Search cancelled');
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Cancel queue error:', error);
-      toast.error('Failed to cancel search');
+      // Only show error for actual failures (network issues, etc.)
+      // Still reset state to idle since we want the user to be able to retry
+      setMatchmakingState({ status: 'idle' });
+      if (error?.message?.includes('Failed to fetch') || error?.code === 'NETWORK_ERROR') {
+        toast.error('Network error - please try again');
+      } else {
+        toast.error('Failed to cancel search');
+      }
     },
   });
 
