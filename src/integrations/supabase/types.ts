@@ -1369,6 +1369,33 @@ export type Database = {
       }
       get_invite_info: { Args: { invite_token: string }; Returns: Json }
       get_invite_status_by_token: { Args: { p_token: string }; Returns: Json }
+      get_leaderboard_data: {
+        Args: { p_division?: string; p_limit?: number }
+        Returns: {
+          avatar_url: string
+          division: string
+          id: string
+          joined_at: string
+          streak: number
+          username: string
+          xp: number
+        }[]
+      }
+      get_my_mentor_invites: {
+        Args: never
+        Returns: {
+          accepted_at: string
+          accepted_by: string
+          clan_id: string
+          created_at: string
+          email_masked: string
+          expertise: Database["public"]["Enums"]["mentor_expertise"]
+          id: string
+          invited_by: string
+          name: string
+          status: Database["public"]["Enums"]["invite_status"]
+        }[]
+      }
       get_or_create_user_targets: {
         Args: never
         Returns: {

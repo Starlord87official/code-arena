@@ -50,18 +50,16 @@ function generateSecureToken(): string {
   return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
 }
 
-// Fetch invites created by the current user (using safe view)
+// Fetch invites created by the current user (using SECURITY DEFINER RPC)
 export function useMentorInvites() {
   return useQuery({
     queryKey: ['mentor-invites'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('mentor_invites_safe')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // Use RPC instead of view - view is now SECURITY INVOKER and returns no data
+      const { data, error } = await supabase.rpc('get_my_mentor_invites');
 
       if (error) throw error;
-      return data as MentorInviteSafe[];
+      return (data || []) as MentorInviteSafe[];
     },
   });
 }
