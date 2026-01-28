@@ -15,26 +15,10 @@ import { MarkForRevisionButton } from '@/components/revision/MarkForRevisionButt
 import { useSolveChallenge } from '@/hooks/useSolveChallenge';
 import { useAuth } from '@/contexts/AuthContext';
 import { getRiskLevel, getRiskLabel, getRiskColor } from '@/hooks/useChallenges';
+import { validateCode, starterTemplates, simulateTestExecution } from '@/lib/codeValidation';
 
-const starterCode = {
-  javascript: `function solve(input) {
-  // Your solution here
-  // Prove your worth.
-  
-  return result;
-}`,
-  python: `def solve(input):
-    # Your solution here
-    # Prove your worth.
-    
-    return result`,
-  typescript: `function solve(input: any): any {
-  // Your solution here
-  // Prove your worth.
-  
-  return result;
-}`,
-};
+// Use templates from the validation module
+const starterCode = starterTemplates;
 
 export default function Solve() {
   const { id } = useParams();
@@ -117,30 +101,106 @@ export default function Solve() {
   const style = getDifficultyStyle(challenge.difficulty);
 
   const handleRun = () => {
-    setIsRunning(true);
-    setOutput('⚡ Executing tests...\n');
+    // First validate the code
+    const validation = validateCode(code, language);
     
+    if (!validation.isValid) {
+      setOutput(`❌ VALIDATION FAILED\n\n${validation.error}\n\nPlease fix your code before running tests.`);
+      setTestResults(prev => prev.map(t => ({ ...t, passed: false })));
+      toast({
+        title: "❌ Invalid Code",
+        description: validation.error,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsRunning(true);
+    setOutput('⚡ Validating solution structure...\n');
+    
+    // Simulate test execution with validation
     setTimeout(() => {
-      setOutput('⚡ Executing tests...\n\n▸ Test 1: Running...');
-      setTimeout(() => {
-        setOutput('⚡ Executing tests...\n\n✓ Test 1: Passed\n▸ Test 2: Running...');
-        setTestResults(prev => prev.map((t, i) => i === 0 ? { ...t, passed: true } : t));
+      const testExecution = simulateTestExecution(code, language, challenge.examples);
+      
+      if (!testExecution.allPassed) {
+        setOutput(`❌ TEST EXECUTION FAILED\n\n${testExecution.results[0]?.error || 'Unknown error'}`);
+        setTestResults(testExecution.results.map(r => ({
+          passed: r.passed,
+          input: r.input,
+          expected: r.expected,
+        })));
+        setIsRunning(false);
+        return;
+      }
+
+      // Show progressive test results
+      let outputText = '⚡ Executing tests...\n\n';
+      setOutput(outputText);
+      
+      challenge.examples.forEach((_, index) => {
         setTimeout(() => {
-          setOutput('⚡ Executing tests...\n\n✓ Test 1: Passed\n✓ Test 2: Passed\n▸ Test 3: Running...');
-          setTestResults(prev => prev.map((t, i) => i <= 1 ? { ...t, passed: true } : t));
-          setTimeout(() => {
-            setOutput('⚡ Executing tests...\n\n✓ Test 1: Passed\n✓ Test 2: Passed\n✓ Test 3: Passed\n\n━━━━━━━━━━━━━━━━━━━━\n✓ All sample tests passed!\n\nReady to submit for full evaluation.');
-            setTestResults(prev => prev.map(t => ({ ...t, passed: true })));
+          const passedCount = index + 1;
+          const passed = testExecution.results[index]?.passed ?? false;
+          
+          setTestResults(prev => prev.map((t, i) => 
+            i <= index ? { ...t, passed } : t
+          ));
+          
+          outputText += passed 
+            ? `✓ Test ${passedCount}: Passed\n`
+            : `✗ Test ${passedCount}: Failed\n`;
+          
+          if (index === challenge.examples.length - 1) {
+            const allPassed = testExecution.allPassed;
+            outputText += '\n━━━━━━━━━━━━━━━━━━━━\n';
+            outputText += allPassed 
+              ? '✓ All sample tests passed!\n\nReady to submit for full evaluation against hidden test cases.'
+              : '✗ Some tests failed. Review your solution.';
             setIsRunning(false);
-          }, 600);
-        }, 500);
-      }, 500);
-    }, 800);
+          }
+          
+          setOutput(outputText);
+        }, (index + 1) * 400);
+      });
+    }, 500);
   };
 
   const handleSubmit = async () => {
+    // CRITICAL: Validate code before submission
+    const validation = validateCode(code, language);
+    
+    if (!validation.isValid) {
+      setOutput(`❌ SUBMISSION REJECTED\n\n${validation.error}\n\nYour submission was not evaluated because the code is incomplete or invalid.`);
+      setSubmissionResult('failure');
+      toast({
+        title: "❌ Submission Rejected",
+        description: validation.error,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // First run validation tests
+    const testExecution = simulateTestExecution(code, language, challenge.examples);
+    
+    if (!testExecution.allPassed) {
+      setOutput(`❌ SUBMISSION REJECTED\n\nYour solution failed validation tests.\n\n${testExecution.results[0]?.error || 'Please ensure your code produces correct output for the sample test cases.'}`);
+      setSubmissionResult('failure');
+      setTestResults(testExecution.results.map(r => ({
+        passed: r.passed,
+        input: r.input,
+        expected: r.expected,
+      })));
+      toast({
+        title: "❌ Submission Rejected",
+        description: "Solution failed validation tests.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Show running hidden tests UI
-    setOutput('🔥 SUBMITTING SOLUTION...\n\n▸ Running hidden test cases...\n');
+    setOutput('🔥 SUBMITTING SOLUTION...\n\n▸ Code validation passed\n▸ Running hidden test cases...\n');
     
     // Simulate test running for UX
     await new Promise(resolve => setTimeout(resolve, 1500));
@@ -155,7 +215,7 @@ export default function Solve() {
     if (result?.success) {
       const xpEarned = ('xp_earned' in result ? result.xp_earned : null) || challenge.xp_reward;
       const alreadySolved = 'already_solved' in result ? result.already_solved : false;
-      setOutput(`🔥 SUBMITTING SOLUTION...\n\n▸ Running hidden test cases...\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n✓ Test 1/15: Passed\n✓ Test 2/15: Passed\n✓ Test 3/15: Passed\n✓ Test 4/15: Passed\n✓ Test 5/15: Passed\n✓ Test 6/15: Passed\n✓ Test 7/15: Passed\n✓ Test 8/15: Passed\n✓ Test 9/15: Passed\n✓ Test 10/15: Passed\n✓ Test 11/15: Passed\n✓ Test 12/15: Passed\n✓ Test 13/15: Passed\n✓ Test 14/15: Passed\n✓ Test 15/15: Passed\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n🏆 SOLUTION ACCEPTED\n\n+${xpEarned} XP EARNED\n+${challenge.rank_impact_win} RANK POSITIONS\n\nTime: ${formattedTime}\nYou are now stronger.`);
+      setOutput(`🔥 SUBMITTING SOLUTION...\n\n▸ Code validation passed\n▸ Running hidden test cases...\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n✓ Test 1/15: Passed\n✓ Test 2/15: Passed\n✓ Test 3/15: Passed\n✓ Test 4/15: Passed\n✓ Test 5/15: Passed\n✓ Test 6/15: Passed\n✓ Test 7/15: Passed\n✓ Test 8/15: Passed\n✓ Test 9/15: Passed\n✓ Test 10/15: Passed\n✓ Test 11/15: Passed\n✓ Test 12/15: Passed\n✓ Test 13/15: Passed\n✓ Test 14/15: Passed\n✓ Test 15/15: Passed\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n🏆 SOLUTION ACCEPTED\n\n+${xpEarned} XP EARNED\n+${challenge.rank_impact_win} RANK POSITIONS\n\nTime: ${formattedTime}\nYou are now stronger.`);
       
       toast({
         title: "🏆 VICTORY!",
@@ -165,18 +225,18 @@ export default function Solve() {
       });
     } else {
       const failedTest = Math.floor(Math.random() * 10) + 6;
-      setOutput(`🔥 SUBMITTING SOLUTION...\n\n▸ Running hidden test cases...\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n✓ Test 1/15: Passed\n✓ Test 2/15: Passed\n✓ Test 3/15: Passed\n✓ Test 4/15: Passed\n✓ Test 5/15: Passed\n✗ Test ${failedTest}/15: FAILED\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n❌ SOLUTION REJECTED\n\nYour solution failed on hidden test case ${failedTest}.\n${challenge.rank_impact_loss > 0 ? `\n⚠️ -${challenge.rank_impact_loss} RANK POSITIONS\n\nYou have fallen. Rise again.` : '\nNo rank penalty for this difficulty.\n\nAnalyze. Adapt. Attack again.'}`);
+      setOutput(`🔥 SUBMITTING SOLUTION...\n\n▸ Code validation passed\n▸ Running hidden test cases...\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n✓ Test 1/15: Passed\n✓ Test 2/15: Passed\n✓ Test 3/15: Passed\n✓ Test 4/15: Passed\n✓ Test 5/15: Passed\n✗ Test ${failedTest}/15: FAILED\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n❌ WRONG ANSWER\n\nYour solution produced incorrect output on hidden test case ${failedTest}.\n${challenge.rank_impact_loss > 0 ? `\n⚠️ -${challenge.rank_impact_loss} RANK POSITIONS\n\nYou have fallen. Rise again.` : '\nNo rank penalty for this difficulty.\n\nAnalyze. Adapt. Attack again.'}`);
       
       if (challenge.rank_impact_loss > 0) {
         toast({
-          title: "❌ DEFEAT",
+          title: "❌ WRONG ANSWER",
           description: `Solution rejected. You dropped ${challenge.rank_impact_loss} rank positions.`,
           variant: "destructive",
         });
       } else {
         toast({
-          title: "❌ Solution Rejected",
-          description: "Analyze your approach and try again.",
+          title: "❌ Wrong Answer",
+          description: "Your solution produced incorrect output. Analyze and try again.",
           variant: "destructive",
         });
       }
