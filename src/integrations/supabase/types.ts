@@ -1232,7 +1232,6 @@ export type Database = {
           invited_by: string | null
           name: string | null
           status: Database["public"]["Enums"]["invite_status"] | null
-          token: string | null
         }
         Insert: {
           accepted_at?: string | null
@@ -1245,7 +1244,6 @@ export type Database = {
           invited_by?: string | null
           name?: string | null
           status?: Database["public"]["Enums"]["invite_status"] | null
-          token?: never
         }
         Update: {
           accepted_at?: string | null
@@ -1258,7 +1256,6 @@ export type Database = {
           invited_by?: string | null
           name?: string | null
           status?: Database["public"]["Enums"]["invite_status"] | null
-          token?: never
         }
         Relationships: []
       }
@@ -1277,18 +1274,18 @@ export type Database = {
           division?: string | null
           id?: string | null
           joined_at?: string | null
-          streak?: number | null
+          streak?: never
           username?: string | null
-          xp?: number | null
+          xp?: never
         }
         Update: {
           avatar_url?: string | null
           division?: string | null
           id?: string | null
           joined_at?: string | null
-          streak?: number | null
+          streak?: never
           username?: string | null
-          xp?: number | null
+          xp?: never
         }
         Relationships: []
       }
