@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLeaderboard, LeaderboardUser, Division } from '@/hooks/useLeaderboard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { UsernameLink } from '@/components/social/UsernameLink';
+import { TopThreePodium } from '@/components/leaderboard/TopThreePodium';
 
 const divisions = ['all', 'legend', 'master', 'diamond', 'platinum', 'gold', 'silver', 'bronze'] as const;
 
@@ -322,7 +323,13 @@ export default function Leaderboard() {
 
   const leaderboardUsers = data?.users || [];
   const stats = data?.stats;
-  const champion = leaderboardUsers.length > 0 ? leaderboardUsers[0] : null;
+  
+  // Top 3 users for the podium (only when showing "all" divisions)
+  const topThreeUsers = selectedDivision === 'all' ? leaderboardUsers.slice(0, 3) : [];
+  
+  // Remaining users for the main list (exclude top 3 when showing podium)
+  const remainingUsers = selectedDivision === 'all' ? leaderboardUsers.slice(3) : leaderboardUsers;
+  
   const hasEnoughUsers = leaderboardUsers.length >= 1;
 
   return (
@@ -401,9 +408,9 @@ export default function Leaderboard() {
         {/* Main Leaderboard */}
         {!isLoading && !error && hasEnoughUsers && (
           <>
-            {/* Champion Card - Only show for 'all' filter and if champion exists */}
-            {selectedDivision === 'all' && champion && (
-              <ChampionCard champion={champion} />
+            {/* Top 3 Podium - Only show for 'all' filter and if we have at least 1 user */}
+            {selectedDivision === 'all' && topThreeUsers.length > 0 && (
+              <TopThreePodium users={topThreeUsers} />
             )}
 
             {/* Division Empty State */}
@@ -411,10 +418,21 @@ export default function Leaderboard() {
               <DivisionEmptyState division={selectedDivision} />
             )}
 
-            {/* Leaderboard List */}
-            {leaderboardUsers.length > 0 && (
+            {/* Remaining Leaderboard List Header */}
+            {remainingUsers.length > 0 && selectedDivision === 'all' && (
+              <div className="flex items-center gap-3 mb-4 mt-2">
+                <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+                <span className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
+                  Rankings Continue
+                </span>
+                <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+              </div>
+            )}
+
+            {/* Leaderboard List - Shows from rank #4 when podium is displayed */}
+            {(selectedDivision === 'all' ? remainingUsers : leaderboardUsers).length > 0 && (
               <div className="space-y-2">
-                {leaderboardUsers.map((leaderboardUser) => (
+                {(selectedDivision === 'all' ? remainingUsers : leaderboardUsers).map((leaderboardUser) => (
                   <LeaderboardRow 
                     key={leaderboardUser.id} 
                     user={leaderboardUser} 
