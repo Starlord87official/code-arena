@@ -52,21 +52,11 @@ export function useLeaderboard(divisionFilter: string = 'all') {
   return useQuery({
     queryKey: ['leaderboard', divisionFilter, user?.id],
     queryFn: async (): Promise<{ users: LeaderboardUser[]; stats: LeaderboardStats }> => {
-      // Fetch all users with XP > 0 or who have challenge completions
-      // First, get profiles with XP
-      let query = supabase
-        .from('public_profiles')
-        .select('id, username, avatar_url, xp, streak, division, joined_at')
-        .gt('xp', 0)
-        .not('username', 'is', null)
-        .order('xp', { ascending: false });
-      
-      // Apply division filter if not 'all'
-      if (divisionFilter !== 'all') {
-        query = query.eq('division', divisionFilter);
-      }
-      
-      const { data: profiles, error } = await query;
+      // Use SECURITY DEFINER RPC to fetch public profile data safely
+      const { data: profiles, error } = await supabase.rpc('get_leaderboard_data', {
+        p_division: divisionFilter === 'all' ? null : divisionFilter,
+        p_limit: 100
+      });
       
       if (error) {
         console.error('Error fetching leaderboard:', error);
@@ -178,13 +168,11 @@ export function useUserRank() {
     queryFn: async () => {
       if (!user?.id) return null;
       
-      // Get all users ordered by XP to calculate rank
-      const { data: profiles, error } = await supabase
-        .from('public_profiles')
-        .select('id, xp')
-        .gt('xp', 0)
-        .not('username', 'is', null)
-        .order('xp', { ascending: false });
+      // Use SECURITY DEFINER RPC to get leaderboard data safely
+      const { data: profiles, error } = await supabase.rpc('get_leaderboard_data', {
+        p_division: null,
+        p_limit: 1000
+      });
       
       if (error || !profiles) return null;
       
