@@ -33,6 +33,15 @@ import Companies from "./pages/Companies";
 import CompanyDetail from "./pages/CompanyDetail";
 import ChallengesList from "./pages/ChallengesList";
 import NotFound from "./pages/NotFound";
+// Partner Program Pages
+import PartnerLanding from "./pages/PartnerLanding";
+import TrainingCardBuilder from "./pages/TrainingCardBuilder";
+import PartnerMatches from "./pages/PartnerMatches";
+import PartnerProfile from "./pages/PartnerProfile";
+import PartnerContract from "./pages/PartnerContract";
+import DuoDashboard from "./pages/DuoDashboard";
+import PartnerTrials from "./pages/PartnerTrials";
+import PartnerReport from "./pages/PartnerReport";
 
 // Phase 1: Student-focused app - mentor/clan features disabled
 // Battle Mode is always available to all authenticated users
@@ -87,6 +96,15 @@ const App = () => {
               <Route path="/battle/clan/:id" element={<ClanVsClanBattle />} />
               <Route path="/battle/session/:sessionId" element={<BattleSession />} />
               <Route path="/battle/history" element={<BattleHistory />} />
+              {/* Lock-In Partner Program */}
+              <Route path="/partner" element={<PartnerLanding />} />
+              <Route path="/partner/training-card" element={<TrainingCardBuilder />} />
+              <Route path="/partner/matches" element={<PartnerMatches />} />
+              <Route path="/partner/profile/:id" element={<PartnerProfile />} />
+              <Route path="/partner/contract/:id" element={<PartnerContract />} />
+              <Route path="/partner/duo/:id" element={<DuoDashboard />} />
+              <Route path="/partner/trials" element={<PartnerTrials />} />
+              <Route path="/partner/report/:id" element={<PartnerReport />} />
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>
