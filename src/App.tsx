@@ -42,6 +42,11 @@ import PartnerContract from "./pages/PartnerContract";
 import DuoDashboard from "./pages/DuoDashboard";
 import PartnerTrials from "./pages/PartnerTrials";
 import PartnerReport from "./pages/PartnerReport";
+// Championship Pages
+import Championship from "./pages/Championship";
+import ChampionshipProgress from "./pages/ChampionshipProgress";
+import ChampionshipStandings from "./pages/ChampionshipStandings";
+import HallOfChampions from "./pages/HallOfChampions";
 
 // Phase 1: Student-focused app - mentor/clan features disabled
 // Battle Mode is always available to all authenticated users
@@ -105,6 +110,11 @@ const App = () => {
               <Route path="/partner/duo/:id" element={<DuoDashboard />} />
               <Route path="/partner/trials" element={<PartnerTrials />} />
               <Route path="/partner/report/:id" element={<PartnerReport />} />
+              {/* Championship */}
+              <Route path="/championship" element={<Championship />} />
+              <Route path="/championship/my-progress" element={<ChampionshipProgress />} />
+              <Route path="/championship/standings" element={<ChampionshipStandings />} />
+              <Route path="/hall-of-champions" element={<HallOfChampions />} />
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>
