@@ -10,8 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/contexts/AuthContext';
-import { useChallenges, ChallengeWithStats, getRiskLevel, getRiskLabel, getRiskColor } from '@/hooks/useChallenges';
-import { useDailyChallenge, useDailyStreak } from '@/hooks/useDailyChallenge';
+import { useChallenges, ChallengeWithStats, ChallengeType, getRiskLevel, getRiskLabel, getRiskColor } from '@/hooks/useChallenges';
+import { useDailyChallenge, useDailyStreak, DailyChallengeType } from '@/hooks/useDailyChallenge';
 import { MarkForRevisionButton } from '@/components/revision/MarkForRevisionButton';
 import { DailyChallengeBanner } from '@/components/challenge/DailyChallengeBanner';
 
@@ -50,6 +50,8 @@ const categoryConfig: Record<string, {
   icon: React.ReactNode;
   color: string;
   glowColor: string;
+  challengeType: ChallengeType;
+  emptyMessage: string;
 }> = {
   dsa: {
     title: 'DSA',
@@ -57,6 +59,8 @@ const categoryConfig: Record<string, {
     icon: <Network className="h-8 w-8" />,
     color: 'text-primary',
     glowColor: 'drop-shadow-[0_0_15px_hsl(var(--primary))]',
+    challengeType: 'dsa',
+    emptyMessage: 'DSA challenges are being added daily during private beta.',
   },
   'system-design': {
     title: 'System Design',
@@ -64,6 +68,8 @@ const categoryConfig: Record<string, {
     icon: <Server className="h-8 w-8" />,
     color: 'text-rank-gold',
     glowColor: 'drop-shadow-[0_0_15px_hsl(var(--rank-gold))]',
+    challengeType: 'system_design',
+    emptyMessage: 'System Design challenges are unlocking daily during beta.',
   },
   coding: {
     title: 'Coding',
@@ -71,6 +77,8 @@ const categoryConfig: Record<string, {
     icon: <Code2 className="h-8 w-8" />,
     color: 'text-accent',
     glowColor: 'drop-shadow-[0_0_15px_hsl(var(--accent))]',
+    challengeType: 'coding',
+    emptyMessage: 'Coding practice challenges are coming soon.',
   },
 };
 
@@ -195,8 +203,14 @@ export default function ChallengesList() {
   const { category } = useParams<{ category: string }>();
   const navigate = useNavigate();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
-  const { challenges, allTags, isLoading, error } = useChallenges();
-  const { dailyChallenge, isLoading: dailyLoading } = useDailyChallenge();
+  
+  // Get config and challenge type for current category
+  const config = category ? categoryConfig[category] : null;
+  const challengeType = config?.challengeType;
+  
+  // Pass challenge type to hooks for category-specific filtering
+  const { challenges, allTags, isLoading, error } = useChallenges(challengeType);
+  const { dailyChallenge, isLoading: dailyLoading } = useDailyChallenge(challengeType as DailyChallengeType);
   const { streak } = useDailyStreak();
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -207,8 +221,6 @@ export default function ChallengesList() {
   if (!authLoading && !isAuthenticated) {
     return <Navigate to="/auth" replace />;
   }
-
-  const config = category ? categoryConfig[category] : null;
 
   // Filter challenges (exclude the daily challenge from regular list to avoid duplication)
   const filteredChallenges = challenges.filter(challenge => {
@@ -412,39 +424,40 @@ export default function ChallengesList() {
           </div>
         )}
 
-        {/* Empty State - No challenges exist yet */}
+        {/* Empty State - No challenges exist yet for this category */}
         {!isLoading && !authLoading && !error && challenges.length === 0 && (
           <div className="arena-card p-12 text-center">
             <div className="max-w-md mx-auto">
               <div className="relative mb-6">
-                <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-accent/20 to-primary/20 blur-3xl rounded-full" />
-                <div className="relative inline-flex items-center justify-center p-6 rounded-full bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20">
-                  <Sparkles className="h-12 w-12 text-primary" />
+                <div className={`absolute inset-0 bg-gradient-to-r ${config?.color === 'text-rank-gold' ? 'from-rank-gold/20 via-amber-500/20 to-rank-gold/20' : config?.color === 'text-accent' ? 'from-accent/20 via-teal-400/20 to-accent/20' : 'from-primary/20 via-accent/20 to-primary/20'} blur-3xl rounded-full`} />
+                <div className={`relative inline-flex items-center justify-center p-6 rounded-full bg-gradient-to-br ${config?.color === 'text-rank-gold' ? 'from-rank-gold/10 to-amber-500/10 border-rank-gold/20' : config?.color === 'text-accent' ? 'from-accent/10 to-teal-400/10 border-accent/20' : 'from-primary/10 to-accent/10 border-primary/20'} border`}>
+                  {config?.icon || <Sparkles className="h-12 w-12 text-primary" />}
                 </div>
               </div>
               
-              <Badge className="mb-4 bg-primary/10 text-primary border-primary/30">
+              <Badge className={`mb-4 ${config?.color === 'text-rank-gold' ? 'bg-rank-gold/10 text-rank-gold border-rank-gold/30' : config?.color === 'text-accent' ? 'bg-accent/10 text-accent border-accent/30' : 'bg-primary/10 text-primary border-primary/30'}`}>
                 PRIVATE BETA
               </Badge>
               
               <h2 className="font-display text-2xl font-bold mb-3">
-                You're Among the First
+                {config?.title || 'Challenges'} Coming Soon
               </h2>
               
               <p className="text-muted-foreground mb-6">
-                Challenges are being added. In the meantime, follow your roadmap to build a strong foundation.
+                {config?.emptyMessage || 'Challenges are being added. In the meantime, follow your roadmap to build a strong foundation.'}
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Link to="/challenges">
+                  <Button variant="outline">
+                    <ChevronLeft className="h-4 w-4 mr-2" />
+                    Back to Arena
+                  </Button>
+                </Link>
                 <Link to="/roadmap">
                   <Button variant="arena">
                     <BookOpen className="h-4 w-4 mr-2" />
                     Follow Your Roadmap
-                  </Button>
-                </Link>
-                <Link to="/dashboard">
-                  <Button variant="outline">
-                    Back to Dashboard
                   </Button>
                 </Link>
               </div>

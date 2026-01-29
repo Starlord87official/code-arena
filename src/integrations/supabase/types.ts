@@ -324,6 +324,7 @@ export type Database = {
       }
       challenges: {
         Row: {
+          challenge_type: string
           company_tags: string[] | null
           constraints: string[]
           created_at: string
@@ -352,6 +353,7 @@ export type Database = {
           xp_reward: number
         }
         Insert: {
+          challenge_type?: string
           company_tags?: string[] | null
           constraints?: string[]
           created_at?: string
@@ -380,6 +382,7 @@ export type Database = {
           xp_reward?: number
         }
         Update: {
+          challenge_type?: string
           company_tags?: string[] | null
           constraints?: string[]
           created_at?: string

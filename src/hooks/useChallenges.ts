@@ -88,17 +88,25 @@ function parseExamples(examples: Json): ChallengeExample[] {
   return [];
 }
 
-export function useChallenges() {
+export type ChallengeType = 'dsa' | 'system_design' | 'coding';
+
+export function useChallenges(challengeType?: ChallengeType) {
   const { user, isAuthenticated } = useAuth();
 
   const challengesQuery = useQuery({
-    queryKey: ['challenges'],
+    queryKey: ['challenges', challengeType],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('challenges')
         .select('*')
-        .eq('is_active', true)
-        .order('difficulty', { ascending: true });
+        .eq('is_active', true);
+      
+      // Filter by challenge type if provided
+      if (challengeType) {
+        query = query.eq('challenge_type', challengeType);
+      }
+      
+      const { data, error } = await query.order('difficulty', { ascending: true });
 
       if (error) throw error;
       
