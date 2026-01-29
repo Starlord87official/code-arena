@@ -31,6 +31,7 @@ import Planner from "./pages/Planner";
 import Doubts from "./pages/Doubts";
 import Companies from "./pages/Companies";
 import CompanyDetail from "./pages/CompanyDetail";
+import ChallengesList from "./pages/ChallengesList";
 import NotFound from "./pages/NotFound";
 
 // Phase 1: Student-focused app - mentor/clan features disabled
@@ -63,6 +64,7 @@ const App = () => {
               <Route path="/onboarding" element={<Onboarding />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/challenges" element={<Challenges />} />
+              <Route path="/challenges/:category" element={<ChallengesList />} />
               <Route path="/solve/:id" element={<Solve />} />
               <Route path="/leaderboard" element={<Leaderboard />} />
               <Route path="/notifications" element={<Notifications />} />
