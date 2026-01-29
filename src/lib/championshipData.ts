@@ -211,26 +211,78 @@ export const FRAMES: Record<FrameRarity, Frame> = {
   }
 };
 
-// Mock Season Data - India 2026
-export const MOCK_SEASON_2026: ChampionshipSeason = {
-  id: 'india-2026',
+// ========================================
+// CHAMPIONSHIP CONFIGURATION (CENTRALIZED)
+// ========================================
+// All championship dates are configured here.
+// Backend can replace this object in the future.
+
+export interface ChampionshipConfig {
+  year: number;
+  registrationStart: string;
+  registrationEnd: string;
+  warmUpStart: string;
+  warmUpEnd: string;
+  qualifierStart: string;
+  qualifierEnd: string;
+  playoffStart: string;
+  playoffEnd: string;
+  semiFinalStart: string;
+  semiFinalEnd: string;
+  grandFinalStart: string;
+  grandFinalEnd: string;
+}
+
+// Centralized date configuration - change dates here only
+export const CHAMPIONSHIP_CONFIG: ChampionshipConfig = {
   year: 2026,
-  country: 'India',
-  title: 'CodeLock Championship India 2026',
-  subtitle: 'Once a year. Earn the Crown.',
-  isActive: true,
-  registrationStart: '2026-01-15T00:00:00+05:30',
-  registrationEnd: '2026-02-01T23:59:59+05:30',
-  finalsDate: '2026-03-29T18:00:00+05:30',
-  stages: [
+  // Registration: October
+  registrationStart: '2026-10-01T00:00:00+05:30',
+  registrationEnd: '2026-10-20T23:59:59+05:30',
+  // Warm-Up Practice: November
+  warmUpStart: '2026-11-01T00:00:00+05:30',
+  warmUpEnd: '2026-11-07T23:59:59+05:30',
+  // Qualifier Trials: November
+  qualifierStart: '2026-11-10T10:00:00+05:30',
+  qualifierEnd: '2026-11-10T13:00:00+05:30',
+  // Playoff Rounds: November
+  playoffStart: '2026-11-20T18:00:00+05:30',
+  playoffEnd: '2026-11-20T20:00:00+05:30',
+  // Semi-Finals: December
+  semiFinalStart: '2026-12-05T18:00:00+05:30',
+  semiFinalEnd: '2026-12-05T21:00:00+05:30',
+  // Grand Finals: December
+  grandFinalStart: '2026-12-20T18:00:00+05:30',
+  grandFinalEnd: '2026-12-20T22:00:00+05:30',
+};
+
+// Helper function to determine stage status based on current time
+function getStageStatusFromDates(startDate: string, endDate: string): StageStatus {
+  const now = Date.now();
+  const start = new Date(startDate).getTime();
+  const end = new Date(endDate).getTime();
+  
+  if (now > end) {
+    return 'completed';
+  } else if (now >= start && now <= end) {
+    return 'active';
+  } else {
+    // Check if this stage should be locked (future stages after an active one)
+    return 'upcoming';
+  }
+}
+
+// Build season data dynamically from config
+function buildSeasonFromConfig(config: ChampionshipConfig): ChampionshipSeason {
+  const stages: ChampionshipStage[] = [
     {
       id: 'registration',
       name: 'Registration',
       shortName: 'REG',
       order: 1,
-      startDate: '2026-01-15T00:00:00+05:30',
-      endDate: '2026-02-01T23:59:59+05:30',
-      status: 'completed',
+      startDate: config.registrationStart,
+      endDate: config.registrationEnd,
+      status: getStageStatusFromDates(config.registrationStart, config.registrationEnd),
       format: 'Open registration with phone verification for Crown Lane'
     },
     {
@@ -238,9 +290,9 @@ export const MOCK_SEASON_2026: ChampionshipSeason = {
       name: 'Warm-Up Practice',
       shortName: 'WARM',
       order: 2,
-      startDate: '2026-02-03T00:00:00+05:30',
-      endDate: '2026-02-09T23:59:59+05:30',
-      status: 'completed',
+      startDate: config.warmUpStart,
+      endDate: config.warmUpEnd,
+      status: getStageStatusFromDates(config.warmUpStart, config.warmUpEnd),
       format: 'Unranked practice sets, 3 per day'
     },
     {
@@ -248,9 +300,9 @@ export const MOCK_SEASON_2026: ChampionshipSeason = {
       name: 'Qualifier Trials',
       shortName: 'QUAL',
       order: 3,
-      startDate: '2026-02-15T10:00:00+05:30',
-      endDate: '2026-02-15T13:00:00+05:30',
-      status: 'active',
+      startDate: config.qualifierStart,
+      endDate: config.qualifierEnd,
+      status: getStageStatusFromDates(config.qualifierStart, config.qualifierEnd),
       format: '3-hour trial, 6 problems',
       cutoffPercentile: 10
     },
@@ -259,9 +311,9 @@ export const MOCK_SEASON_2026: ChampionshipSeason = {
       name: 'Playoff Rounds',
       shortName: 'PLAY',
       order: 4,
-      startDate: '2026-02-22T18:00:00+05:30',
-      endDate: '2026-02-22T20:00:00+05:30',
-      status: 'upcoming',
+      startDate: config.playoffStart,
+      endDate: config.playoffEnd,
+      status: getStageStatusFromDates(config.playoffStart, config.playoffEnd),
       format: '2-hour sprint, 4 problems',
       cutoffPercentile: 25
     },
@@ -270,9 +322,9 @@ export const MOCK_SEASON_2026: ChampionshipSeason = {
       name: 'Semi-Finals',
       shortName: 'SEMI',
       order: 5,
-      startDate: '2026-03-08T18:00:00+05:30',
-      endDate: '2026-03-08T21:00:00+05:30',
-      status: 'locked',
+      startDate: config.semiFinalStart,
+      endDate: config.semiFinalEnd,
+      status: getStageStatusFromDates(config.semiFinalStart, config.semiFinalEnd),
       format: '3-hour challenge, 5 problems',
       cutoffPercentile: 50
     },
@@ -281,13 +333,106 @@ export const MOCK_SEASON_2026: ChampionshipSeason = {
       name: 'Grand Finals',
       shortName: 'FINAL',
       order: 6,
-      startDate: '2026-03-29T18:00:00+05:30',
-      endDate: '2026-03-29T22:00:00+05:30',
-      status: 'locked',
+      startDate: config.grandFinalStart,
+      endDate: config.grandFinalEnd,
+      status: getStageStatusFromDates(config.grandFinalStart, config.grandFinalEnd),
       format: 'Live problem reveal, 4 hours'
     }
-  ]
-};
+  ];
+
+  // Apply locked status to stages after an active one
+  let foundActive = false;
+  for (const stage of stages) {
+    if (stage.status === 'active') {
+      foundActive = true;
+    } else if (foundActive && stage.status === 'upcoming') {
+      stage.status = 'locked';
+    }
+  }
+
+  return {
+    id: `india-${config.year}`,
+    year: config.year,
+    country: 'India',
+    title: `CodeLock Championship India ${config.year}`,
+    subtitle: 'Once a year. Earn the Crown.',
+    isActive: true,
+    registrationStart: config.registrationStart,
+    registrationEnd: config.registrationEnd,
+    finalsDate: config.grandFinalStart,
+    stages
+  };
+}
+
+// Export dynamically built season data
+export const MOCK_SEASON_2026: ChampionshipSeason = buildSeasonFromConfig(CHAMPIONSHIP_CONFIG);
+
+// ========================================
+// COUNTDOWN & PHASE DETECTION HELPERS
+// ========================================
+
+export interface NextPhaseInfo {
+  stageName: string;
+  stageId: string;
+  targetDate: string;
+  label: string; // e.g., "Registration starts in", "Grand Finals start in"
+  isActive: boolean;
+}
+
+/**
+ * Get the next upcoming phase for countdown display.
+ * Returns the active stage (counting down to end) or next upcoming stage.
+ */
+export function getNextPhaseForCountdown(season: ChampionshipSeason): NextPhaseInfo | null {
+  const now = Date.now();
+  
+  // First check if any stage is currently active
+  const activeStage = season.stages.find(s => s.status === 'active');
+  if (activeStage) {
+    return {
+      stageName: activeStage.name,
+      stageId: activeStage.id,
+      targetDate: activeStage.endDate,
+      label: `${activeStage.name} ends in`,
+      isActive: true
+    };
+  }
+  
+  // Find the next upcoming stage (first non-completed stage)
+  const upcomingStage = season.stages.find(s => 
+    s.status === 'upcoming' || s.status === 'locked'
+  );
+  
+  if (upcomingStage) {
+    const stageLabelMap: Record<string, string> = {
+      'registration': 'Registration starts in',
+      'warmup': 'Warm-Up Practice begins in',
+      'qualifier': 'Qualifier Trials begin in',
+      'playoffs': 'Playoff Rounds start in',
+      'semifinal': 'Semi-Finals start in',
+      'finals': 'Grand Finals start in'
+    };
+    
+    return {
+      stageName: upcomingStage.name,
+      stageId: upcomingStage.id,
+      targetDate: upcomingStage.startDate,
+      label: stageLabelMap[upcomingStage.id] || `${upcomingStage.name} starts in`,
+      isActive: false
+    };
+  }
+  
+  // All stages completed
+  return null;
+}
+
+/**
+ * Refresh the season data with current timestamps.
+ * Call this to get up-to-date stage statuses.
+ */
+export function getRefreshedSeasonData(): ChampionshipSeason {
+  return buildSeasonFromConfig(CHAMPIONSHIP_CONFIG);
+}
 
 // Mock User Championship Status
 export const MOCK_USER_STATUS: UserChampionshipStatus = {

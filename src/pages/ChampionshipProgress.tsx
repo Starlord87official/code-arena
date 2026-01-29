@@ -13,14 +13,14 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AvatarWithFrame } from "@/components/championship/AvatarWithFrame";
 import { 
-  MOCK_SEASON_2026, 
   MOCK_USER_STATUS, 
   TRACKS,
   FRAMES,
   TrackType,
   UserTrackProgress,
   getUserStatusLabel,
-  formatTimeMs
+  formatTimeMs,
+  getRefreshedSeasonData
 } from "@/lib/championshipData";
 import { cn } from "@/lib/utils";
 
@@ -399,9 +399,10 @@ function TrainingRecommendations() {
 export default function ChampionshipProgress() {
   const [activeTrack, setActiveTrack] = useState<TrackType>('solo');
   const status = MOCK_USER_STATUS;
-  const season = MOCK_SEASON_2026;
+  // Get refreshed season data with current stage statuses
+  const season = getRefreshedSeasonData();
   
-  const nextStage = season.stages.find(s => s.status === 'upcoming');
+  const nextStage = season.stages.find(s => s.status === 'upcoming' || s.status === 'locked');
   const hasEliminated = Object.values(status.tracks).some(t => t?.status === 'eliminated');
 
   return (

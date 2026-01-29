@@ -12,14 +12,15 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AvatarWithFrame, AvatarWithCrown } from "@/components/championship/AvatarWithFrame";
 import { 
-  MOCK_SEASON_2026, 
   MOCK_USER_STATUS, 
   MOCK_SOLO_STANDINGS,
   TRACKS,
   TrackType,
   UserTrackStatus,
   getStageStatusLabel,
-  getUserStatusLabel
+  getUserStatusLabel,
+  getRefreshedSeasonData,
+  getNextPhaseForCountdown
 } from "@/lib/championshipData";
 import { cn } from "@/lib/utils";
 
@@ -205,7 +206,8 @@ function TrackCard({
 
 // Stage Timeline Component
 function StageTimeline() {
-  const stages = MOCK_SEASON_2026.stages;
+  const season = getRefreshedSeasonData();
+  const stages = season.stages;
 
   return (
     <Card className="bg-card/80 backdrop-blur-sm border-border/50">
@@ -420,9 +422,12 @@ function UserStatusPanel() {
 
 // Main Championship Page
 export default function Championship() {
-  const season = MOCK_SEASON_2026;
+  // Get refreshed season data with current stage statuses
+  const season = getRefreshedSeasonData();
   const userStatus = MOCK_USER_STATUS;
   
+  // Get countdown target dynamically
+  const nextPhase = getNextPhaseForCountdown(season);
   const activeStage = season.stages.find(s => s.status === 'active');
   const nextStage = season.stages.find(s => s.status === 'upcoming');
 
@@ -465,9 +470,9 @@ export default function Championship() {
             {/* Countdown */}
             <div className="flex flex-col items-center gap-2">
               <span className="text-sm text-muted-foreground">
-                {activeStage ? `${activeStage.name} ends in` : `${nextStage?.name || 'Finals'} starts in`}
+                {nextPhase?.label || 'Championship concluded'}
               </span>
-              <CountdownTimer targetDate={activeStage?.endDate || nextStage?.startDate || season.finalsDate} />
+              {nextPhase && <CountdownTimer targetDate={nextPhase.targetDate} />}
             </div>
 
             {/* Primary CTA */}
