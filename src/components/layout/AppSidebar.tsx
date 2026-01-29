@@ -12,7 +12,8 @@ import {
   Settings,
   Code2,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Crown
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -32,11 +33,13 @@ interface NavItem {
   path: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
+  highlight?: boolean;
 }
 
 const primaryNavItems: NavItem[] = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/challenges', label: 'Challenge Arena', icon: Swords },
+  { path: '/championship', label: 'Championship', icon: Crown, highlight: true },
   { path: '/planner', label: 'Planner', icon: CalendarDays },
   { path: '/companies', label: 'Companies', icon: Building2 },
   { path: '/doubts', label: 'Doubts', icon: MessageCircleQuestion },
@@ -46,6 +49,7 @@ const primaryNavItems: NavItem[] = [
 
 const secondaryNavItems: NavItem[] = [
   { path: '/partner', label: 'Lock-In Partner', icon: Users },
+  { path: '/hall-of-champions', label: 'Hall of Champions', icon: Crown },
   { path: '/battle/history', label: 'Battle History', icon: FileBarChart },
   { path: '/settings', label: 'Settings', icon: Settings },
 ];
@@ -60,6 +64,9 @@ export function AppSidebar() {
   const isActive = (path: string) => {
     if (path === '/challenges') {
       return location.pathname === '/challenges' || location.pathname.startsWith('/challenges/');
+    }
+    if (path === '/championship') {
+      return location.pathname === '/championship' || location.pathname.startsWith('/championship/');
     }
     return location.pathname === path;
   };
@@ -124,12 +131,15 @@ export function AppSidebar() {
                       "font-heading text-sm tracking-wide",
                       isActive(item.path)
                         ? "bg-primary/15 text-primary shadow-[0_0_20px_hsla(199,100%,50%,0.3)] border border-primary/30"
-                        : "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent"
+                        : item.highlight && !isActive(item.path)
+                          ? "text-yellow-400 hover:bg-yellow-500/10 hover:text-yellow-300"
+                          : "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent"
                     )}
                   >
                     <item.icon className={cn(
                       "h-5 w-5 flex-shrink-0 transition-all",
-                      isActive(item.path) && "drop-shadow-[0_0_8px_hsl(199,100%,50%)]"
+                      isActive(item.path) && "drop-shadow-[0_0_8px_hsl(199,100%,50%)]",
+                      item.highlight && !isActive(item.path) && "text-yellow-400"
                     )} />
                     <span className={cn(
                       "transition-opacity duration-200",
@@ -137,6 +147,11 @@ export function AppSidebar() {
                     )}>
                       {item.label}
                     </span>
+                    {item.highlight && !isCollapsed && (
+                      <span className="ml-auto text-[9px] font-display bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded border border-yellow-500/30">
+                        NEW
+                      </span>
+                    )}
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
