@@ -60,7 +60,9 @@ export interface DailyChallengeInfo {
   successRate: number | null;
 }
 
-export function useDailyChallenge() {
+export type DailyChallengeType = 'dsa' | 'system_design' | 'coding';
+
+export function useDailyChallenge(challengeType?: DailyChallengeType) {
   const { user, isAuthenticated } = useAuth();
   
   // Initialize with actual calculated values to avoid flash of "expired"
@@ -86,15 +88,21 @@ export function useDailyChallenge() {
   const [timeRemaining, setTimeRemaining] = useState<string>(initialTimeInfo.timeRemaining);
   const [hoursRemaining, setHoursRemaining] = useState<number>(initialTimeInfo.hoursRemaining);
 
-  // Fetch all active challenges
+  // Fetch challenges filtered by type for category-specific daily challenges
   const challengesQuery = useQuery({
-    queryKey: ['all-challenges-for-daily'],
+    queryKey: ['all-challenges-for-daily', challengeType],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('challenges')
         .select('*')
-        .eq('is_active', true)
-        .order('id');
+        .eq('is_active', true);
+      
+      // Filter by challenge type if provided
+      if (challengeType) {
+        query = query.eq('challenge_type', challengeType);
+      }
+      
+      const { data, error } = await query.order('id');
 
       if (error) throw error;
       
