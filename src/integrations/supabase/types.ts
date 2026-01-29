@@ -1420,6 +1420,18 @@ export type Database = {
         Args: { profile_row: Database["public"]["Tables"]["profiles"]["Row"] }
         Returns: Json
       }
+      get_public_profiles: {
+        Args: { p_limit?: number }
+        Returns: {
+          avatar_url: string
+          division: string
+          id: string
+          joined_at: string
+          streak: number
+          username: string
+          xp: number
+        }[]
+      }
       get_revision_queue: { Args: never; Returns: Json }
       get_user_battle_stats: { Args: never; Returns: Json }
       get_user_level: { Args: { p_user_id: string }; Returns: number }
