@@ -22,7 +22,7 @@ export const GlyphTile = memo(function GlyphTile({
   if (isInFuture) {
     return (
       <div
-        className="rounded-sm bg-muted/20"
+        className="rounded bg-muted/20"
         style={{ width: TILE_SIZE, height: TILE_SIZE }}
         aria-hidden="true"
       />
@@ -44,7 +44,7 @@ export const GlyphTile = memo(function GlyphTile({
   return (
     <div
       className={cn(
-        "relative rounded-sm cursor-pointer transition-all duration-150",
+        "relative rounded cursor-pointer transition-all duration-150",
         "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1",
         isSelected && "ring-2 ring-primary ring-offset-1 ring-offset-background z-10"
       )}
@@ -61,7 +61,7 @@ export const GlyphTile = memo(function GlyphTile({
     >
       {/* Liquid Fill Bar */}
       <div 
-        className="absolute bottom-0 left-0 right-0 rounded-b-sm transition-all duration-300"
+        className="absolute bottom-0 left-0 right-0 rounded-b transition-all duration-300"
         style={{
           height: `${fillLevel * 100}%`,
           backgroundColor: bgColor,
@@ -71,11 +71,11 @@ export const GlyphTile = memo(function GlyphTile({
       
       {/* Micro Impact Marks - Bottom right dots */}
       {dots > 0 && (
-        <div className="absolute bottom-0.5 right-0.5 flex gap-px">
+        <div className="absolute bottom-0.5 right-0.5 flex gap-0.5">
           {Array.from({ length: dots }).map((_, i) => (
             <div 
               key={i}
-              className="w-1 h-1 rounded-full bg-background/80"
+              className="w-1.5 h-1.5 rounded-full bg-background/80"
             />
           ))}
         </div>
@@ -86,8 +86,8 @@ export const GlyphTile = memo(function GlyphTile({
         <div 
           className="absolute top-0 right-0 w-0 h-0"
           style={{
-            borderLeft: '4px solid transparent',
-            borderTop: '4px solid hsl(var(--primary))',
+            borderLeft: '5px solid transparent',
+            borderTop: '5px solid hsl(var(--primary))',
           }}
         />
       )}
