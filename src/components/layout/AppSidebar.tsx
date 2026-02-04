@@ -13,7 +13,8 @@ import {
   Code2,
   ChevronLeft,
   ChevronRight,
-  Crown
+  Crown,
+  BarChart3
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -48,6 +49,7 @@ const primaryNavItems: NavItem[] = [
 ];
 
 const secondaryNavItems: NavItem[] = [
+  { path: '/analytics/glyph-heatmap', label: 'Glyph Heatmap', icon: BarChart3, highlight: true },
   { path: '/partner', label: 'Lock-In Partner', icon: Users },
   { path: '/hall-of-champions', label: 'Hall of Champions', icon: Crown },
   { path: '/battle/history', label: 'Battle History', icon: FileBarChart },
@@ -67,6 +69,9 @@ export function AppSidebar() {
     }
     if (path === '/championship') {
       return location.pathname === '/championship' || location.pathname.startsWith('/championship/');
+    }
+    if (path === '/analytics/glyph-heatmap') {
+      return location.pathname.startsWith('/analytics');
     }
     return location.pathname === path;
   };
@@ -183,12 +188,15 @@ export function AppSidebar() {
                       "font-heading text-sm tracking-wide",
                       isActive(item.path)
                         ? "bg-primary/15 text-primary shadow-[0_0_20px_hsla(199,100%,50%,0.3)] border border-primary/30"
-                        : "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent"
+                        : item.highlight && !isActive(item.path)
+                          ? "text-cyan-400 hover:bg-cyan-500/10 hover:text-cyan-300"
+                          : "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent"
                     )}
                   >
                     <item.icon className={cn(
                       "h-5 w-5 flex-shrink-0 transition-all",
-                      isActive(item.path) && "drop-shadow-[0_0_8px_hsl(199,100%,50%)]"
+                      isActive(item.path) && "drop-shadow-[0_0_8px_hsl(199,100%,50%)]",
+                      item.highlight && !isActive(item.path) && "text-cyan-400"
                     )} />
                     <span className={cn(
                       "transition-opacity duration-200",
@@ -196,6 +204,11 @@ export function AppSidebar() {
                     )}>
                       {item.label}
                     </span>
+                    {item.highlight && !isCollapsed && (
+                      <span className="ml-auto text-[9px] font-display bg-cyan-500/20 text-cyan-400 px-1.5 py-0.5 rounded border border-cyan-500/30">
+                        NEW
+                      </span>
+                    )}
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

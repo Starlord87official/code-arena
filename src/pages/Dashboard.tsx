@@ -7,7 +7,7 @@ import { DivisionProgress } from '@/components/dashboard/DivisionProgress';
 import { RoadmapCard } from '@/components/roadmap/RoadmapCard';
 import { RevisionSummaryCard } from '@/components/revision/RevisionSummaryCard';
 import { TargetCard } from '@/components/dashboard/TargetCard';
-import { ActivityHeatmap } from '@/components/dashboard/ActivityHeatmap';
+// ActivityHeatmap removed - replaced by Glyph Heatmap at /analytics/glyph-heatmap
 import { RevisionQueueCard } from '@/components/dashboard/RevisionQueueCard';
 import { AreasToImproveCard } from '@/components/dashboard/AreasToImproveCard';
 import { InterviewReadinessCard } from '@/components/dashboard/InterviewReadinessCard';
@@ -266,9 +266,6 @@ export default function Dashboard() {
 
             {/* Target & Streak Card */}
             <TargetCard />
-
-            {/* Activity Heatmap */}
-            <ActivityHeatmap />
 
             {/* Revision Summary */}
             <RevisionSummaryCard />
