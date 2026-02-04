@@ -47,6 +47,8 @@ import Championship from "./pages/Championship";
 import ChampionshipProgress from "./pages/ChampionshipProgress";
 import ChampionshipStandings from "./pages/ChampionshipStandings";
 import HallOfChampions from "./pages/HallOfChampions";
+// Analytics Pages
+import GlyphHeatmapPage from "./pages/GlyphHeatmapPage";
 
 // Phase 1: Student-focused app - mentor/clan features disabled
 // Battle Mode is always available to all authenticated users
@@ -115,6 +117,8 @@ const App = () => {
               <Route path="/championship/my-progress" element={<ChampionshipProgress />} />
               <Route path="/championship/standings" element={<ChampionshipStandings />} />
               <Route path="/hall-of-champions" element={<HallOfChampions />} />
+              {/* Analytics */}
+              <Route path="/analytics/glyph-heatmap" element={<GlyphHeatmapPage />} />
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>
