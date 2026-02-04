@@ -10,11 +10,11 @@ export function GlyphLegend() {
       {/* Volume Legend */}
       <div className="flex items-center gap-3">
         <span className="text-xs text-muted-foreground">Less</span>
-        <div className="flex gap-1">
+        <div className="flex gap-1.5">
           {fillLevels.map((fill, i) => (
             <div
               key={i}
-              className="rounded-sm relative overflow-hidden"
+              className="rounded relative overflow-hidden"
               style={{
                 width: TILE_SIZE,
                 height: TILE_SIZE,
@@ -22,7 +22,7 @@ export function GlyphLegend() {
               }}
             >
               <div
-                className="absolute bottom-0 left-0 right-0 rounded-b-sm"
+                className="absolute bottom-0 left-0 right-0 rounded-b"
                 style={{
                   height: `${fill * 100}%`,
                   backgroundColor: fill === 0 
@@ -65,10 +65,10 @@ export function GlyphLegend() {
       {/* Markers Legend */}
       <div className="flex items-center gap-4 text-xs text-muted-foreground">
         <div className="flex items-center gap-1.5">
-          <div className="flex gap-px">
-            <div className="w-1 h-1 rounded-full bg-foreground/60" />
-            <div className="w-1 h-1 rounded-full bg-foreground/60" />
-            <div className="w-1 h-1 rounded-full bg-foreground/60" />
+          <div className="flex gap-0.5">
+            <div className="w-1.5 h-1.5 rounded-full bg-foreground/60" />
+            <div className="w-1.5 h-1.5 rounded-full bg-foreground/60" />
+            <div className="w-1.5 h-1.5 rounded-full bg-foreground/60" />
           </div>
           <span>Unique problems</span>
         </div>

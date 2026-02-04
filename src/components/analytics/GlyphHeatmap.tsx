@@ -151,7 +151,7 @@ export function GlyphHeatmap({ data, className }: GlyphHeatmapProps) {
       <div 
         ref={containerRef}
         className={cn(
-          "relative p-4 rounded-xl overflow-hidden",
+          "relative p-6 rounded-xl overflow-hidden",
           "bg-card/50 backdrop-blur-sm border border-border/50",
           selectionSummary && "pr-72"
         )}
@@ -159,13 +159,14 @@ export function GlyphHeatmap({ data, className }: GlyphHeatmapProps) {
         onMouseLeave={handleMouseLeave}
       >
         {/* Month Labels */}
-        <div className="flex mb-2 ml-8 text-[10px] text-muted-foreground select-none">
+        <div className="flex mb-3 ml-10 text-xs text-muted-foreground select-none relative" style={{ height: 16 }}>
           {monthLabels.map(({ month, weekIndex }, i) => (
             <span
               key={`${month}-${weekIndex}`}
+              className="font-medium"
               style={{
                 position: 'absolute',
-                left: 32 + weekIndex * (TILE_SIZE + TILE_GAP),
+                left: weekIndex * (TILE_SIZE + TILE_GAP),
               }}
             >
               {month}
@@ -174,10 +175,10 @@ export function GlyphHeatmap({ data, className }: GlyphHeatmapProps) {
         </div>
         
         {/* Day Labels + Grid */}
-        <div className="flex mt-6">
+        <div className="flex">
           {/* Day labels */}
           <div 
-            className="flex flex-col justify-between text-[9px] text-muted-foreground mr-2 select-none"
+            className="flex flex-col justify-between text-[11px] text-muted-foreground mr-3 select-none font-medium"
             style={{ height: gridHeight }}
           >
             <span>Sun</span>
@@ -218,9 +219,9 @@ export function GlyphHeatmap({ data, className }: GlyphHeatmapProps) {
               </svg>
               
               {/* Tiles Grid */}
-              <div className="flex gap-[3px]">
+              <div className="flex" style={{ gap: TILE_GAP }}>
                 {weeks.map((week, weekIndex) => (
-                  <div key={weekIndex} className="flex flex-col gap-[3px]">
+                  <div key={weekIndex} className="flex flex-col" style={{ gap: TILE_GAP }}>
                     {week.map((day, dayIndex) => {
                       const isInFuture = isBefore(today, day.dateObj);
                       return (
@@ -315,7 +316,7 @@ function StreakPath({ streak }: { streak: StreakSegment }) {
     }
   }
   
-  const strokeWidth = Math.min(1.5 + streak.length * 0.05, 2.5);
+  const strokeWidth = Math.min(2 + streak.length * 0.06, 3.5);
   
   return (
     <path

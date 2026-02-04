@@ -40,8 +40,8 @@ export interface StoryInsight {
 export type GlyphMetric = 'submissions' | 'accepted' | 'solved';
 
 // === Configuration ===
-export const TILE_SIZE = 13;
-export const TILE_GAP = 3;
+export const TILE_SIZE = 18;
+export const TILE_GAP = 4;
 export const WEEKS_TO_SHOW = 52;
 
 // === Mock Data Generator ===
