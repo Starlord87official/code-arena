@@ -1,83 +1,92 @@
 import { cn } from '@/lib/utils';
-import { TILE_WIDTH } from '@/lib/glyphHeatmapData';
 
 export function GlyphLegend() {
-  // Sample fill levels for the legend
-  const fillLevels = [0, 0.25, 0.5, 0.75, 1];
-  
   return (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mt-6 pt-4 border-t border-border/50">
+    <div 
+      className={cn(
+        "flex flex-wrap justify-between items-center gap-4 mt-4 pt-4",
+        "border-t border-border/30 text-muted-foreground text-sm"
+      )}
+    >
       {/* Volume Legend */}
-      <div className="flex items-center gap-3">
-        <span className="text-xs text-muted-foreground">Less</span>
-        <div className="flex gap-1.5">
-          {fillLevels.map((fill, i) => (
-            <div
-              key={i}
-              className="rounded relative overflow-hidden"
-              style={{
-                width: TILE_WIDTH,
-                height: TILE_WIDTH, // Keep legend tiles square for clarity
-                backgroundColor: 'hsl(var(--muted) / 0.15)',
-              }}
-            >
-              <div
-                className="absolute bottom-0 left-0 right-0 rounded-b"
-                style={{
-                  height: `${fill * 100}%`,
-                  backgroundColor: fill === 0 
-                    ? 'transparent' 
-                    : `hsl(120, ${60 + fill * 20}%, ${45 + (1 - fill) * 10}%)`,
-                  minHeight: fill > 0 ? '15%' : 0,
-                }}
-              />
-            </div>
-          ))}
-        </div>
-        <span className="text-xs text-muted-foreground">More</span>
-      </div>
-      
-      {/* Hue Legend */}
-      <div className="flex items-center gap-3">
-        <span className="text-xs text-muted-foreground">Acceptance:</span>
-        <div className="flex items-center gap-1">
-          <div 
-            className="w-4 h-3 rounded-sm"
-            style={{ backgroundColor: 'hsl(0, 70%, 50%)' }}
-          />
-          <span className="text-xs text-muted-foreground">Low</span>
-        </div>
+      <div className="flex items-center gap-2">
+        <span>Less</span>
         <div 
-          className="w-8 h-3 rounded-sm"
+          className="w-[18px] h-2 rounded-full"
           style={{ 
-            background: 'linear-gradient(to right, hsl(0, 70%, 50%), hsl(60, 70%, 50%), hsl(120, 70%, 50%))'
+            background: 'rgba(255,255,255,0.06)',
+            boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.08)',
           }}
         />
-        <div className="flex items-center gap-1">
-          <div 
-            className="w-4 h-3 rounded-sm"
-            style={{ backgroundColor: 'hsl(120, 70%, 45%)' }}
-          />
-          <span className="text-xs text-muted-foreground">High</span>
-        </div>
+        <div 
+          className="w-[18px] h-2 rounded-full"
+          style={{ background: 'rgba(0,255,120,0.22)' }}
+        />
+        <div 
+          className="w-[18px] h-2 rounded-full"
+          style={{ background: 'rgba(0,255,120,0.35)' }}
+        />
+        <div 
+          className="w-[18px] h-2 rounded-full"
+          style={{ background: 'rgba(0,255,120,0.52)' }}
+        />
+        <div 
+          className="w-[18px] h-2 rounded-full"
+          style={{ background: 'rgba(0,255,120,0.72)' }}
+        />
+        <span>More</span>
       </div>
       
-      {/* Markers Legend */}
-      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+      {/* Acceptance Legend */}
+      <div className="flex items-center gap-2">
+        <span>Acceptance:</span>
+        <span 
+          className="inline-flex items-center justify-center h-5 px-2.5 rounded-full border text-xs"
+          style={{ 
+            borderColor: 'rgba(255,255,255,0.08)',
+            background: 'rgba(255,255,255,0.03)',
+            color: 'rgba(255,90,90,0.95)',
+          }}
+        >
+          Low
+        </span>
+        <div 
+          className="w-[72px] h-5 rounded-full border"
+          style={{
+            background: 'linear-gradient(90deg, rgba(255,90,90,0.85), rgba(255,190,90,0.9), rgba(90,255,160,0.9))',
+            borderColor: 'rgba(255,255,255,0.10)',
+          }}
+        />
+        <span 
+          className="inline-flex items-center justify-center h-5 px-2.5 rounded-full border text-xs"
+          style={{ 
+            borderColor: 'rgba(255,255,255,0.08)',
+            background: 'rgba(255,255,255,0.03)',
+            color: 'rgba(90,255,160,0.95)',
+          }}
+        >
+          High
+        </span>
+      </div>
+      
+      {/* Marker Legend */}
+      <div className="flex items-center gap-4">
         <div className="flex items-center gap-1.5">
-          <div className="flex gap-0.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-foreground/60" />
-            <div className="w-1.5 h-1.5 rounded-full bg-foreground/60" />
-            <div className="w-1.5 h-1.5 rounded-full bg-foreground/60" />
-          </div>
+          <span className="flex gap-0.5">
+            <i className="w-[3px] h-[3px] rounded-full bg-white/50" />
+            <i className="w-[3px] h-[3px] rounded-full bg-white/50" />
+            <i className="w-[3px] h-[3px] rounded-full bg-white/50" />
+          </span>
           <span>Unique problems</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div 
-            className="w-0 h-0"
+          <span 
+            className="inline-block w-0 h-0"
             style={{
-              borderLeft: '5px solid transparent',
-              borderTop: '5px solid hsl(var(--primary))',
+              borderLeft: '6px solid transparent',
+              borderRight: '6px solid transparent',
+              borderBottom: '9px solid rgba(90,190,255,0.95)',
+              filter: 'drop-shadow(0 0 6px rgba(90,190,255,0.45))',
             }}
           />
           <span>Hard solved</span>

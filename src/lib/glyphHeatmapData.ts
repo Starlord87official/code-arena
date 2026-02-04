@@ -29,6 +29,12 @@ export interface StreakSegment {
   length: number;
 }
 
+export interface TrailPoint {
+  weekIndex: number;
+  dayOfWeek: number;
+  date: string;
+}
+
 export interface StoryInsight {
   id: string;
   icon: string;
@@ -40,10 +46,8 @@ export interface StoryInsight {
 export type GlyphMetric = 'submissions' | 'accepted' | 'solved';
 
 // === Configuration ===
-export const TILE_WIDTH = 18;
-export const TILE_HEIGHT = 32; // Taller tiles for vertical readability
-export const TILE_GAP_H = 4; // Horizontal gap
-export const TILE_GAP_V = 12; // Generous vertical gap to match reference
+export const TILE_SIZE = 18; // Square tiles matching reference
+export const TILE_GAP = 6; // Gap between tiles
 export const WEEKS_TO_SHOW = 52;
 
 // === Mock Data Generator ===
@@ -54,26 +58,39 @@ export function generateMockGlyphData(): GlyphDayData[] {
   
   const data: GlyphDayData[] = [];
   
+  // Deterministic random for consistent demo data
+  let seed = 20250206;
+  const rand = () => {
+    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+    return seed / 0x7fffffff;
+  };
+  
   days.forEach((day, index) => {
     const dateStr = format(day, 'yyyy-MM-dd');
     const dayOfWeek = getDay(day);
     
-    // Create realistic activity patterns
+    // Create realistic activity patterns with seasonal variation
     const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-    const baseChance = isWeekend ? 0.4 : 0.6;
+    let baseChance = isWeekend ? 0.25 : 0.45;
     
-    // Add seasonal variation (more active in certain periods)
+    // Add seasonal bursts
     const monthFactor = Math.sin((index / 30) * Math.PI) * 0.2 + 0.8;
-    const hasActivity = Math.random() < baseChance * monthFactor;
+    const hasActivity = rand() < baseChance * monthFactor;
     
     if (hasActivity) {
-      const intensity = Math.random();
+      const intensity = rand();
       const submissions = Math.floor(intensity * 12) + 1;
-      const acceptanceRate = 0.3 + Math.random() * 0.6; // 30-90% acceptance
-      const accepted = Math.floor(submissions * acceptanceRate);
+      // Acceptance ratio cluster: mostly mid-high (green/yellow), some low (red-ish)
+      const accRatio = rand() < 0.15 
+        ? 0.05 + rand() * 0.3  // Low acceptance
+        : rand() < 0.55 
+          ? 0.45 + rand() * 0.3  // Mid acceptance
+          : 0.75 + rand() * 0.23; // High acceptance
+      
+      const accepted = Math.max(0, Math.min(submissions, Math.round(submissions * accRatio)));
       const wrong = submissions - accepted;
-      const solved = Math.min(accepted, Math.floor(Math.random() * 5) + 1);
-      const hardSolved = Math.random() > 0.7 ? Math.floor(Math.random() * 2) + 1 : 0;
+      const solved = Math.min(accepted, Math.floor(rand() * 5) + 1);
+      const hardSolved = rand() > 0.91 ? Math.floor(rand() * 2) + 1 : 0;
       
       const problemNames = Array.from({ length: solved }, (_, i) => 
         `problem-${dateStr}-${i}`
@@ -86,7 +103,7 @@ export function generateMockGlyphData(): GlyphDayData[] {
         wrong,
         solved,
         hardSolved,
-        timeSpentMin: Math.floor(Math.random() * 120) + 15,
+        timeSpentMin: Math.floor(rand() * 120) + 15,
         problems: problemNames,
       });
     } else {
@@ -113,6 +130,7 @@ export function processGlyphData(
 ): {
   weeks: ProcessedGlyphDay[][];
   streaks: StreakSegment[];
+  trailPoints: TrailPoint[];
   p95Value: number;
 } {
   const today = new Date();
@@ -180,7 +198,10 @@ export function processGlyphData(
   // Find streaks (consecutive active days)
   const streaks = findStreaks(weeks);
   
-  return { weeks, streaks, p95Value };
+  // Find trail points (days with hard solves)
+  const trailPoints = findTrailPoints(weeks);
+  
+  return { weeks, streaks, trailPoints, p95Value };
 }
 
 function findStreaks(weeks: ProcessedGlyphDay[][]): StreakSegment[] {
@@ -226,6 +247,28 @@ function findStreaks(weeks: ProcessedGlyphDay[][]): StreakSegment[] {
   }
   
   return streaks;
+}
+
+function findTrailPoints(weeks: ProcessedGlyphDay[][]): TrailPoint[] {
+  const points: TrailPoint[] = [];
+  
+  for (let w = 0; w < weeks.length; w++) {
+    for (let d = 0; d < weeks[w].length; d++) {
+      const day = weeks[w][d];
+      if (day.hardSolved > 0) {
+        points.push({
+          weekIndex: w,
+          dayOfWeek: d,
+          date: day.date,
+        });
+      }
+    }
+  }
+  
+  // Sort by date for proper trail connection
+  points.sort((a, b) => a.date.localeCompare(b.date));
+  
+  return points;
 }
 
 // === Story Insights Generation ===

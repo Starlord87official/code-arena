@@ -4,15 +4,13 @@ import {
   GlyphDayData,
   ProcessedGlyphDay,
   GlyphMetric,
-  StreakSegment,
+  TrailPoint,
   processGlyphData,
   generateMockGlyphData,
   generateStoryInsights,
   calculateSelectionSummary,
-  TILE_WIDTH,
-  TILE_HEIGHT,
-  TILE_GAP_H,
-  TILE_GAP_V,
+  TILE_SIZE,
+  TILE_GAP,
 } from '@/lib/glyphHeatmapData';
 import { GlyphTile } from './GlyphTile';
 import { GlyphTooltip } from './GlyphTooltip';
@@ -39,7 +37,7 @@ export function GlyphHeatmap({ data, className }: GlyphHeatmapProps) {
   const rawData = useMemo(() => data || generateMockGlyphData(), [data]);
   
   // Process data based on selected metric
-  const { weeks, streaks, p95Value } = useMemo(
+  const { weeks, trailPoints, p95Value } = useMemo(
     () => processGlyphData(rawData, metric),
     [rawData, metric]
   );
@@ -120,8 +118,9 @@ export function GlyphHeatmap({ data, className }: GlyphHeatmapProps) {
   }, []);
   
   const today = new Date();
-  const gridWidth = weeks.length * (TILE_WIDTH + TILE_GAP_H);
-  const gridHeight = 7 * (TILE_HEIGHT + TILE_GAP_V);
+  const cellSize = TILE_SIZE + TILE_GAP;
+  const gridWidth = weeks.length * cellSize;
+  const gridHeight = 7 * cellSize;
   
   return (
     <div className={cn("relative", className)}>
@@ -153,22 +152,26 @@ export function GlyphHeatmap({ data, className }: GlyphHeatmapProps) {
       <div 
         ref={containerRef}
         className={cn(
-          "relative py-10 px-8 rounded-xl overflow-hidden",
+          "relative py-4 px-4 rounded-xl overflow-hidden",
           "bg-card/50 backdrop-blur-sm border border-border/50",
+          "shadow-lg",
           selectionSummary && "pr-72"
         )}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseLeave}
       >
         {/* Month Labels */}
-        <div className="flex mb-6 ml-14 text-xs text-muted-foreground select-none relative" style={{ height: 20 }}>
-          {monthLabels.map(({ month, weekIndex }, i) => (
+        <div 
+          className="flex mb-2 ml-12 text-sm text-muted-foreground select-none relative" 
+          style={{ height: 22 }}
+        >
+          {monthLabels.map(({ month, weekIndex }) => (
             <span
               key={`${month}-${weekIndex}`}
-              className="font-medium"
+              className="font-medium absolute"
               style={{
-                position: 'absolute',
-                left: weekIndex * (TILE_WIDTH + TILE_GAP_H),
+                left: weekIndex * cellSize + 2,
+                letterSpacing: '0.02em',
               }}
             >
               {month}
@@ -177,11 +180,17 @@ export function GlyphHeatmap({ data, className }: GlyphHeatmapProps) {
         </div>
         
         {/* Day Labels + Grid */}
-        <div className="flex">
+        <div className="flex gap-3">
           {/* Day labels */}
           <div 
-            className="flex flex-col justify-between text-sm text-muted-foreground mr-4 select-none font-medium py-1"
-            style={{ height: gridHeight }}
+            className="grid text-sm text-muted-foreground select-none"
+            style={{ 
+              height: gridHeight,
+              gridTemplateRows: `repeat(7, ${TILE_SIZE}px)`,
+              gap: TILE_GAP,
+              alignContent: 'start',
+              paddingTop: 2,
+            }}
           >
             <span>Sun</span>
             <span>Mon</span>
@@ -193,7 +202,7 @@ export function GlyphHeatmap({ data, className }: GlyphHeatmapProps) {
           </div>
           
           {/* Scrollable Grid */}
-          <div className="overflow-x-auto flex-1">
+          <div className="overflow-x-auto flex-1 relative pb-4">
             <div 
               className="relative"
               style={{ 
@@ -201,30 +210,65 @@ export function GlyphHeatmap({ data, className }: GlyphHeatmapProps) {
                 height: gridHeight,
               }}
             >
-              {/* Streak Paths - SVG layer */}
+              {/* Trail SVG - Connects hard solve days */}
               <svg
                 className="absolute inset-0 pointer-events-none"
                 style={{ width: gridWidth, height: gridHeight }}
               >
                 <defs>
-                  <filter id="streak-glow" x="-50%" y="-50%" width="200%" height="200%">
-                    <feGaussianBlur stdDeviation="1" result="blur" />
+                  <filter id="trail-glow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="1.5" result="blur" />
                     <feMerge>
                       <feMergeNode in="blur" />
                       <feMergeNode in="SourceGraphic" />
                     </feMerge>
                   </filter>
                 </defs>
-                {streaks.map((streak, i) => (
-                  <StreakPath key={i} streak={streak} />
+                
+                {/* Trail line connecting hard solve days */}
+                {trailPoints.length >= 2 && (
+                  <path
+                    d={trailPoints
+                      .map((p, i) => {
+                        const x = p.weekIndex * cellSize + TILE_SIZE / 2;
+                        const y = p.dayOfWeek * cellSize + TILE_SIZE / 2;
+                        return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+                      })
+                      .join(' ')}
+                    fill="none"
+                    stroke="rgba(90, 190, 255, 0.95)"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    filter="url(#trail-glow)"
+                  />
+                )}
+                
+                {/* Point markers on hard solve days */}
+                {trailPoints.map((p) => (
+                  <circle
+                    key={p.date}
+                    cx={p.weekIndex * cellSize + TILE_SIZE / 2}
+                    cy={p.dayOfWeek * cellSize + TILE_SIZE / 2}
+                    r={3}
+                    fill="rgba(90, 190, 255, 0.95)"
+                    filter="url(#trail-glow)"
+                  />
                 ))}
               </svg>
               
               {/* Tiles Grid */}
-              <div className="flex" style={{ gap: TILE_GAP_H }}>
+              <div className="flex" style={{ gap: TILE_GAP }}>
                 {weeks.map((week, weekIndex) => (
-                  <div key={weekIndex} className="flex flex-col" style={{ gap: TILE_GAP_V }}>
-                    {week.map((day, dayIndex) => {
+                  <div 
+                    key={weekIndex} 
+                    className="grid"
+                    style={{ 
+                      gridTemplateRows: `repeat(7, ${TILE_SIZE}px)`,
+                      gap: TILE_GAP,
+                    }}
+                  >
+                    {week.map((day) => {
                       const isInFuture = isBefore(today, day.dateObj);
                       return (
                         <div
@@ -244,6 +288,24 @@ export function GlyphHeatmap({ data, className }: GlyphHeatmapProps) {
                   </div>
                 ))}
               </div>
+            </div>
+            
+            {/* Scrollbar indicator */}
+            <div 
+              className="absolute left-0 right-0 bottom-0 h-2.5 rounded-full"
+              style={{ 
+                background: 'rgba(255,255,255,0.08)',
+                boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.35)',
+              }}
+            >
+              <div 
+                className="h-full rounded-full"
+                style={{ 
+                  width: '52%',
+                  marginLeft: '24%',
+                  background: 'rgba(255,255,255,0.18)',
+                }}
+              />
             </div>
           </div>
         </div>
@@ -269,68 +331,5 @@ export function GlyphHeatmap({ data, className }: GlyphHeatmapProps) {
       {/* Legend */}
       <GlyphLegend />
     </div>
-  );
-}
-
-// Streak Path Component
-function StreakPath({ streak }: { streak: StreakSegment }) {
-  const cellWidth = TILE_WIDTH + TILE_GAP_H;
-  const cellHeight = TILE_HEIGHT + TILE_GAP_V;
-  const halfTileW = TILE_WIDTH / 2;
-  const halfTileH = TILE_HEIGHT / 2;
-  
-  // Build path points
-  const points: { x: number; y: number }[] = [];
-  
-  let currentWeek = streak.startWeek;
-  let currentDay = streak.startDay;
-  
-  while (
-    currentWeek < streak.endWeek ||
-    (currentWeek === streak.endWeek && currentDay <= streak.endDay)
-  ) {
-    const x = currentWeek * cellWidth + halfTileW;
-    const y = currentDay * cellHeight + halfTileH;
-    points.push({ x, y });
-    
-    // Move to next day
-    currentDay++;
-    if (currentDay > 6) {
-      currentDay = 0;
-      currentWeek++;
-    }
-  }
-  
-  if (points.length < 2) return null;
-  
-  // Create smooth path
-  let pathD = `M ${points[0].x} ${points[0].y}`;
-  
-  for (let i = 1; i < points.length; i++) {
-    const p = points[i];
-    const prev = points[i - 1];
-    
-    // Simple line for adjacent cells
-    if (Math.abs(p.x - prev.x) <= cellWidth && Math.abs(p.y - prev.y) <= cellHeight) {
-      pathD += ` L ${p.x} ${p.y}`;
-    } else {
-      // Curved path for week transitions
-      const midX = (prev.x + p.x) / 2;
-      pathD += ` Q ${midX} ${prev.y} ${p.x} ${p.y}`;
-    }
-  }
-  
-  const strokeWidth = Math.min(2 + streak.length * 0.06, 3.5);
-  
-  return (
-    <path
-      d={pathD}
-      fill="none"
-      stroke="hsl(var(--primary) / 0.4)"
-      strokeWidth={strokeWidth}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      filter="url(#streak-glow)"
-    />
   );
 }

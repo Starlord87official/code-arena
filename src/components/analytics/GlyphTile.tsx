@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { ProcessedGlyphDay, TILE_WIDTH, TILE_HEIGHT } from '@/lib/glyphHeatmapData';
+import { ProcessedGlyphDay, TILE_SIZE } from '@/lib/glyphHeatmapData';
 import { cn } from '@/lib/utils';
 
 interface GlyphTileProps {
@@ -10,6 +10,27 @@ interface GlyphTileProps {
   onMouseEnter: () => void;
 }
 
+// Helper to calculate cell color based on submissions and acceptance ratio
+function getCellColor(submissions: number, accepted: number, maxSub: number) {
+  if (submissions <= 0) {
+    return { bg: 'rgba(255,255,255,0.04)', edge: 'rgba(255,255,255,0.08)' };
+  }
+  
+  const ratio = accepted / submissions;
+  // hue: 10 (red) -> 125 (green) based on acceptance ratio
+  const hue = 10 + ratio * 115;
+  // intensity based on submissions volume
+  const t = Math.min(submissions / Math.max(1, maxSub), 1);
+  
+  // Dark theme colors - neon but controlled
+  const sat = 70 + t * 22;
+  const light = 26 + t * 22;
+  const bg = `hsl(${hue} ${sat}% ${light}%)`;
+  const edge = `hsla(${hue} ${sat}% ${38 + t * 24}% / 0.35)`;
+  
+  return { bg, edge };
+}
+
 export const GlyphTile = memo(function GlyphTile({
   day,
   isSelected,
@@ -17,80 +38,145 @@ export const GlyphTile = memo(function GlyphTile({
   onMouseDown,
   onMouseEnter,
 }: GlyphTileProps) {
-  const { fillLevel, hue, isActive, solved, hardSolved } = day;
+  const { submissions, accepted, solved, hardSolved, wrong, isActive } = day;
+  
+  // Calculate max submissions for normalization (use 12 as typical max)
+  const maxSub = 12;
+  const acceptanceRatio = submissions > 0 ? accepted / submissions : 0;
   
   if (isInFuture) {
     return (
       <div
-        className="rounded bg-muted/20"
-        style={{ width: TILE_WIDTH, height: TILE_HEIGHT }}
+        className="rounded-md"
+        style={{ 
+          width: TILE_SIZE, 
+          height: TILE_SIZE,
+          background: 'rgba(255,255,255,0.04)',
+          boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.06)',
+        }}
         aria-hidden="true"
       />
     );
   }
   
-  // Calculate colors based on theme-aware approach
-  // Hue: 0 = red (poor acceptance), 60 = yellow (mid), 120 = green (excellent)
-  const saturation = isActive ? 60 + fillLevel * 20 : 30;
-  const lightness = 45 + (1 - fillLevel) * 10;
-  
-  const bgColor = isActive 
-    ? `hsl(${hue}, ${saturation}%, ${lightness}%)`
-    : 'hsl(var(--muted) / 0.3)';
-  
-  // Dots for unique problems solved (max 3)
-  const dots = Math.min(solved, 3);
+  const colors = getCellColor(submissions, accepted, maxSub);
+  const isEmpty = !isActive;
   
   return (
-    <div
+    <button
+      type="button"
       className={cn(
-        "relative rounded cursor-pointer transition-all duration-150",
-        "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1",
-        isSelected && "ring-2 ring-primary ring-offset-1 ring-offset-background z-10"
+        "relative rounded-md cursor-pointer transition-all duration-150 p-0 border-none",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1",
+        isSelected && "ring-2 ring-primary ring-offset-1 ring-offset-background z-10",
+        isEmpty && "cursor-default"
       )}
       style={{ 
-        width: TILE_WIDTH, 
-        height: TILE_HEIGHT,
-        backgroundColor: 'hsl(var(--muted) / 0.15)',
+        width: TILE_SIZE, 
+        height: TILE_SIZE,
+        background: colors.bg,
+        boxShadow: `inset 0 0 0 1px ${colors.edge}`,
       }}
       onMouseDown={onMouseDown}
       onMouseEnter={onMouseEnter}
-      tabIndex={0}
-      role="gridcell"
-      aria-label={`${day.date}: ${day.submissions} submissions, ${day.accepted} accepted, ${day.solved} solved${hardSolved > 0 ? `, ${hardSolved} hard` : ''}`}
+      tabIndex={isEmpty ? -1 : 0}
+      aria-label={`${day.date}: ${submissions} submissions, ${accepted} accepted, ${solved} solved${hardSolved > 0 ? `, ${hardSolved} hard` : ''}`}
     >
-      {/* Liquid Fill Bar */}
-      <div 
-        className="absolute bottom-0 left-0 right-0 rounded-b transition-all duration-300"
-        style={{
-          height: `${fillLevel * 100}%`,
-          backgroundColor: bgColor,
-          minHeight: isActive ? '15%' : 0,
-        }}
-      />
-      
-      {/* Micro Impact Marks - Bottom right dots */}
-      {dots > 0 && (
-        <div className="absolute bottom-0.5 right-0.5 flex gap-0.5">
-          {Array.from({ length: dots }).map((_, i) => (
-            <div 
-              key={i}
-              className="w-1.5 h-1.5 rounded-full bg-background/80"
+      {!isEmpty && (
+        <>
+          {/* Glyph Face - Two eyes */}
+          <div 
+            className="absolute rounded-md"
+            style={{
+              inset: 0,
+              background: colors.bg,
+            }}
+          >
+            {/* Left eye */}
+            <div
+              className="absolute rounded-full"
+              style={{
+                width: 4,
+                height: 4,
+                background: 'rgba(0,0,0,0.55)',
+                boxShadow: '0 0 0 1px rgba(255,255,255,0.08)',
+                top: 7,
+                left: 3,
+              }}
             />
-          ))}
-        </div>
+            {/* Right eye */}
+            <div
+              className="absolute rounded-full"
+              style={{
+                width: 4,
+                height: 4,
+                background: 'rgba(0,0,0,0.55)',
+                boxShadow: '0 0 0 1px rgba(255,255,255,0.08)',
+                top: 7,
+                right: 3,
+              }}
+            />
+          </div>
+          
+          {/* Hard marker - Blue triangle at top center */}
+          {hardSolved > 0 && (
+            <div 
+              className="absolute"
+              style={{
+                top: -2,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                width: 0,
+                height: 0,
+                borderLeft: '5px solid transparent',
+                borderRight: '5px solid transparent',
+                borderBottom: '7px solid rgba(90,190,255,0.95)',
+                filter: 'drop-shadow(0 0 6px rgba(90,190,255,0.55))',
+              }}
+            />
+          )}
+          
+          {/* Wrong marker - Red dash for low acceptance (<35%) */}
+          {submissions > 0 && acceptanceRatio < 0.35 && (
+            <div
+              className="absolute rounded-full"
+              style={{
+                left: 3,
+                right: 3,
+                top: 2,
+                height: 4,
+                background: 'rgba(255,60,60,0.88)',
+                boxShadow: '0 0 8px rgba(255,60,60,0.35)',
+              }}
+            />
+          )}
+          
+          {/* Unique problems marker - Three dots at bottom */}
+          {solved > 0 && (
+            <div
+              className="absolute flex gap-0.5"
+              style={{
+                bottom: 2,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                opacity: 0.85,
+              }}
+            >
+              {Array.from({ length: Math.min(solved, 3) }).map((_, i) => (
+                <i 
+                  key={i}
+                  className="rounded-full"
+                  style={{
+                    width: 2,
+                    height: 2,
+                    background: 'rgba(255,255,255,0.62)',
+                  }}
+                />
+              ))}
+            </div>
+          )}
+        </>
       )}
-      
-      {/* Hard solved indicator - Top right triangle */}
-      {hardSolved > 0 && (
-        <div 
-          className="absolute top-0 right-0 w-0 h-0"
-          style={{
-            borderLeft: '5px solid transparent',
-            borderTop: '5px solid hsl(var(--primary))',
-          }}
-        />
-      )}
-    </div>
+    </button>
   );
 });
