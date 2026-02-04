@@ -153,7 +153,7 @@ export function GlyphHeatmap({ data, className }: GlyphHeatmapProps) {
       <div 
         ref={containerRef}
         className={cn(
-          "relative p-6 rounded-xl overflow-hidden",
+          "relative py-10 px-8 rounded-xl overflow-hidden",
           "bg-card/50 backdrop-blur-sm border border-border/50",
           selectionSummary && "pr-72"
         )}
@@ -161,7 +161,7 @@ export function GlyphHeatmap({ data, className }: GlyphHeatmapProps) {
         onMouseLeave={handleMouseLeave}
       >
         {/* Month Labels */}
-        <div className="flex mb-3 ml-10 text-xs text-muted-foreground select-none relative" style={{ height: 16 }}>
+        <div className="flex mb-6 ml-14 text-xs text-muted-foreground select-none relative" style={{ height: 20 }}>
           {monthLabels.map(({ month, weekIndex }, i) => (
             <span
               key={`${month}-${weekIndex}`}
@@ -180,7 +180,7 @@ export function GlyphHeatmap({ data, className }: GlyphHeatmapProps) {
         <div className="flex">
           {/* Day labels */}
           <div 
-            className="flex flex-col justify-between text-[11px] text-muted-foreground mr-3 select-none font-medium"
+            className="flex flex-col justify-between text-sm text-muted-foreground mr-4 select-none font-medium py-1"
             style={{ height: gridHeight }}
           >
             <span>Sun</span>
