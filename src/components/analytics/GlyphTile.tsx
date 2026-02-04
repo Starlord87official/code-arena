@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { ProcessedGlyphDay, TILE_SIZE } from '@/lib/glyphHeatmapData';
+import { ProcessedGlyphDay, TILE_WIDTH, TILE_HEIGHT } from '@/lib/glyphHeatmapData';
 import { cn } from '@/lib/utils';
 
 interface GlyphTileProps {
@@ -23,7 +23,7 @@ export const GlyphTile = memo(function GlyphTile({
     return (
       <div
         className="rounded bg-muted/20"
-        style={{ width: TILE_SIZE, height: TILE_SIZE }}
+        style={{ width: TILE_WIDTH, height: TILE_HEIGHT }}
         aria-hidden="true"
       />
     );
@@ -49,8 +49,8 @@ export const GlyphTile = memo(function GlyphTile({
         isSelected && "ring-2 ring-primary ring-offset-1 ring-offset-background z-10"
       )}
       style={{ 
-        width: TILE_SIZE, 
-        height: TILE_SIZE,
+        width: TILE_WIDTH, 
+        height: TILE_HEIGHT,
         backgroundColor: 'hsl(var(--muted) / 0.15)',
       }}
       onMouseDown={onMouseDown}
