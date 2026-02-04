@@ -9,8 +9,10 @@ import {
   generateMockGlyphData,
   generateStoryInsights,
   calculateSelectionSummary,
-  TILE_SIZE,
-  TILE_GAP,
+  TILE_WIDTH,
+  TILE_HEIGHT,
+  TILE_GAP_H,
+  TILE_GAP_V,
 } from '@/lib/glyphHeatmapData';
 import { GlyphTile } from './GlyphTile';
 import { GlyphTooltip } from './GlyphTooltip';
@@ -118,8 +120,8 @@ export function GlyphHeatmap({ data, className }: GlyphHeatmapProps) {
   }, []);
   
   const today = new Date();
-  const gridWidth = weeks.length * (TILE_SIZE + TILE_GAP);
-  const gridHeight = 7 * (TILE_SIZE + TILE_GAP);
+  const gridWidth = weeks.length * (TILE_WIDTH + TILE_GAP_H);
+  const gridHeight = 7 * (TILE_HEIGHT + TILE_GAP_V);
   
   return (
     <div className={cn("relative", className)}>
@@ -166,7 +168,7 @@ export function GlyphHeatmap({ data, className }: GlyphHeatmapProps) {
               className="font-medium"
               style={{
                 position: 'absolute',
-                left: weekIndex * (TILE_SIZE + TILE_GAP),
+                left: weekIndex * (TILE_WIDTH + TILE_GAP_H),
               }}
             >
               {month}
@@ -219,9 +221,9 @@ export function GlyphHeatmap({ data, className }: GlyphHeatmapProps) {
               </svg>
               
               {/* Tiles Grid */}
-              <div className="flex" style={{ gap: TILE_GAP }}>
+              <div className="flex" style={{ gap: TILE_GAP_H }}>
                 {weeks.map((week, weekIndex) => (
-                  <div key={weekIndex} className="flex flex-col" style={{ gap: TILE_GAP }}>
+                  <div key={weekIndex} className="flex flex-col" style={{ gap: TILE_GAP_V }}>
                     {week.map((day, dayIndex) => {
                       const isInFuture = isBefore(today, day.dateObj);
                       return (
@@ -272,8 +274,10 @@ export function GlyphHeatmap({ data, className }: GlyphHeatmapProps) {
 
 // Streak Path Component
 function StreakPath({ streak }: { streak: StreakSegment }) {
-  const cellSize = TILE_SIZE + TILE_GAP;
-  const halfTile = TILE_SIZE / 2;
+  const cellWidth = TILE_WIDTH + TILE_GAP_H;
+  const cellHeight = TILE_HEIGHT + TILE_GAP_V;
+  const halfTileW = TILE_WIDTH / 2;
+  const halfTileH = TILE_HEIGHT / 2;
   
   // Build path points
   const points: { x: number; y: number }[] = [];
@@ -285,8 +289,8 @@ function StreakPath({ streak }: { streak: StreakSegment }) {
     currentWeek < streak.endWeek ||
     (currentWeek === streak.endWeek && currentDay <= streak.endDay)
   ) {
-    const x = currentWeek * cellSize + halfTile;
-    const y = currentDay * cellSize + halfTile;
+    const x = currentWeek * cellWidth + halfTileW;
+    const y = currentDay * cellHeight + halfTileH;
     points.push({ x, y });
     
     // Move to next day
@@ -307,7 +311,7 @@ function StreakPath({ streak }: { streak: StreakSegment }) {
     const prev = points[i - 1];
     
     // Simple line for adjacent cells
-    if (Math.abs(p.x - prev.x) <= cellSize && Math.abs(p.y - prev.y) <= cellSize) {
+    if (Math.abs(p.x - prev.x) <= cellWidth && Math.abs(p.y - prev.y) <= cellHeight) {
       pathD += ` L ${p.x} ${p.y}`;
     } else {
       // Curved path for week transitions

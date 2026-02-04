@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { TILE_SIZE } from '@/lib/glyphHeatmapData';
+import { TILE_WIDTH } from '@/lib/glyphHeatmapData';
 
 export function GlyphLegend() {
   // Sample fill levels for the legend
@@ -16,8 +16,8 @@ export function GlyphLegend() {
               key={i}
               className="rounded relative overflow-hidden"
               style={{
-                width: TILE_SIZE,
-                height: TILE_SIZE,
+                width: TILE_WIDTH,
+                height: TILE_WIDTH, // Keep legend tiles square for clarity
                 backgroundColor: 'hsl(var(--muted) / 0.15)',
               }}
             >
