@@ -11,8 +11,8 @@ interface GlyphTooltipProps {
 export function GlyphTooltip({ day, position, containerRect }: GlyphTooltipProps) {
   if (!containerRect) return null;
   
-  const tooltipWidth = 200;
-  const tooltipHeight = 140;
+  const tooltipWidth = 220;
+  const tooltipHeight = 160;
   
   // Calculate position to avoid clipping
   let left = position.x;
@@ -38,59 +38,37 @@ export function GlyphTooltip({ day, position, containerRect }: GlyphTooltipProps
   return (
     <div
       className={cn(
-        "absolute z-50 p-3 rounded-lg",
-        "bg-popover/95 backdrop-blur-sm border border-border shadow-xl",
-        "text-popover-foreground text-xs",
+        "absolute z-50 p-3 rounded-xl pointer-events-none",
+        "border shadow-xl",
+        "text-xs",
         "animate-in fade-in-0 zoom-in-95 duration-100"
       )}
       style={{
         left,
         top,
         width: tooltipWidth,
+        background: 'rgba(10,14,24,0.92)',
+        borderColor: 'rgba(255,255,255,0.12)',
+        backdropFilter: 'blur(8px)',
+        boxShadow: '0 18px 50px rgba(0,0,0,0.45)',
       }}
     >
       {/* Date header */}
-      <div className="font-semibold text-sm mb-2 text-foreground">
-        {format(new Date(day.date), 'EEEE, MMM d, yyyy')}
+      <div 
+        className="font-black text-sm mb-1.5"
+        style={{ letterSpacing: '0.02em', color: 'rgba(255,255,255,0.92)' }}
+      >
+        {format(new Date(day.date), 'MMM d, yyyy')}
       </div>
       
       {day.submissions === 0 ? (
-        <p className="text-muted-foreground">No activity</p>
+        <p style={{ color: 'rgba(255,255,255,0.55)' }}>No activity</p>
       ) : (
-        <div className="space-y-1.5">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Submissions</span>
-            <span className="font-medium">{day.submissions}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Accepted</span>
-            <span className="font-medium text-status-success">{day.accepted}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Wrong</span>
-            <span className="font-medium text-destructive">{day.wrong}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Problems Solved</span>
-            <span className="font-medium">{day.solved}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Acceptance Rate</span>
-            <span className={cn(
-              "font-medium",
-              Number(acceptanceRate) >= 70 ? "text-status-success" :
-              Number(acceptanceRate) >= 40 ? "text-status-warning" :
-              "text-destructive"
-            )}>
-              {acceptanceRate}%
-            </span>
-          </div>
-          {day.hardSolved > 0 && (
-            <div className="flex justify-between pt-1 border-t border-border/50">
-              <span className="text-muted-foreground">Hard Solved</span>
-              <span className="font-medium text-primary">💎 {day.hardSolved}</span>
-            </div>
-          )}
+        <div className="space-y-0.5" style={{ color: 'rgba(255,255,255,0.72)', fontSize: 13, lineHeight: 1.35 }}>
+          <p>Submissions: {day.submissions}</p>
+          <p>Accepted: {day.accepted}</p>
+          <p>Wrong: {day.wrong}</p>
+          <p>Hard: {day.hardSolved} · Unique: {day.solved}</p>
         </div>
       )}
     </div>
