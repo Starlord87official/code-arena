@@ -427,6 +427,41 @@ export type Database = {
           },
         ]
       }
+      clan_activity_log: {
+        Row: {
+          clan_id: string
+          created_at: string
+          id: string
+          message: string
+          meta: Json | null
+          type: string
+        }
+        Insert: {
+          clan_id: string
+          created_at?: string
+          id?: string
+          message: string
+          meta?: Json | null
+          type: string
+        }
+        Update: {
+          clan_id?: string
+          created_at?: string
+          id?: string
+          message?: string
+          meta?: Json | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clan_activity_log_clan_id_fkey"
+            columns: ["clan_id"]
+            isOneToOne: false
+            referencedRelation: "clans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clan_announcements: {
         Row: {
           clan_id: string
@@ -459,6 +494,73 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      clan_applications: {
+        Row: {
+          clan_id: string
+          created_at: string
+          id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          clan_id: string
+          created_at?: string
+          id?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          clan_id?: string
+          created_at?: string
+          id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clan_applications_clan_id_fkey"
+            columns: ["clan_id"]
+            isOneToOne: false
+            referencedRelation: "clans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clan_invites: {
+        Row: {
+          clan_id: string
+          created_at: string
+          id: string
+          invited_by: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          clan_id: string
+          created_at?: string
+          id?: string
+          invited_by: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          clan_id?: string
+          created_at?: string
+          id?: string
+          invited_by?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clan_invites_clan_id_fkey"
+            columns: ["clan_id"]
+            isOneToOne: false
+            referencedRelation: "clans"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       clan_members: {
         Row: {
@@ -493,6 +595,241 @@ export type Database = {
           user_id?: string | null
           username?: string
           xp?: number
+        }
+        Relationships: []
+      }
+      clan_members_v2: {
+        Row: {
+          clan_id: string
+          daily_xp_date: string
+          daily_xp_today: number
+          id: string
+          joined_at: string
+          last_active_at: string
+          role: string
+          total_xp: number
+          user_id: string
+          weekly_xp: number
+        }
+        Insert: {
+          clan_id: string
+          daily_xp_date?: string
+          daily_xp_today?: number
+          id?: string
+          joined_at?: string
+          last_active_at?: string
+          role?: string
+          total_xp?: number
+          user_id: string
+          weekly_xp?: number
+        }
+        Update: {
+          clan_id?: string
+          daily_xp_date?: string
+          daily_xp_today?: number
+          id?: string
+          joined_at?: string
+          last_active_at?: string
+          role?: string
+          total_xp?: number
+          user_id?: string
+          weekly_xp?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clan_members_v2_clan_id_fkey"
+            columns: ["clan_id"]
+            isOneToOne: false
+            referencedRelation: "clans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clan_quests: {
+        Row: {
+          clan_id: string
+          created_at: string
+          id: string
+          progress: number
+          quest_type: string
+          reward_xp: number
+          target: number
+          week_start: string
+        }
+        Insert: {
+          clan_id: string
+          created_at?: string
+          id?: string
+          progress?: number
+          quest_type: string
+          reward_xp?: number
+          target?: number
+          week_start: string
+        }
+        Update: {
+          clan_id?: string
+          created_at?: string
+          id?: string
+          progress?: number
+          quest_type?: string
+          reward_xp?: number
+          target?: number
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clan_quests_clan_id_fkey"
+            columns: ["clan_id"]
+            isOneToOne: false
+            referencedRelation: "clans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clan_war_contributions: {
+        Row: {
+          clan_id: string
+          clan_war_id: string
+          created_at: string
+          id: string
+          points: number
+          source: string
+          user_id: string
+        }
+        Insert: {
+          clan_id: string
+          clan_war_id: string
+          created_at?: string
+          id?: string
+          points?: number
+          source: string
+          user_id: string
+        }
+        Update: {
+          clan_id?: string
+          clan_war_id?: string
+          created_at?: string
+          id?: string
+          points?: number
+          source?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clan_war_contributions_clan_id_fkey"
+            columns: ["clan_id"]
+            isOneToOne: false
+            referencedRelation: "clans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clan_war_contributions_clan_war_id_fkey"
+            columns: ["clan_war_id"]
+            isOneToOne: false
+            referencedRelation: "clan_wars"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clan_wars: {
+        Row: {
+          clan_a: string
+          clan_b: string
+          created_at: string
+          id: string
+          result: string
+          score_a: number
+          score_b: number
+          week_start: string
+        }
+        Insert: {
+          clan_a: string
+          clan_b: string
+          created_at?: string
+          id?: string
+          result?: string
+          score_a?: number
+          score_b?: number
+          week_start: string
+        }
+        Update: {
+          clan_a?: string
+          clan_b?: string
+          created_at?: string
+          id?: string
+          result?: string
+          score_a?: number
+          score_b?: number
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clan_wars_clan_a_fkey"
+            columns: ["clan_a"]
+            isOneToOne: false
+            referencedRelation: "clans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clan_wars_clan_b_fkey"
+            columns: ["clan_b"]
+            isOneToOne: false
+            referencedRelation: "clans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clans: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          level: number
+          max_members: number
+          motto: string | null
+          name: string
+          privacy: string
+          rank_tier: string
+          tag: string
+          timezone: string
+          total_xp: number
+          updated_at: string
+          weekly_xp: number
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          level?: number
+          max_members?: number
+          motto?: string | null
+          name: string
+          privacy?: string
+          rank_tier?: string
+          tag: string
+          timezone?: string
+          total_xp?: number
+          updated_at?: string
+          weekly_xp?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          level?: number
+          max_members?: number
+          motto?: string | null
+          name?: string
+          privacy?: string
+          rank_tier?: string
+          tag?: string
+          timezone?: string
+          total_xp?: number
+          updated_at?: string
+          weekly_xp?: number
         }
         Relationships: []
       }
@@ -1572,6 +1909,11 @@ export type Database = {
         }
         Returns: Json
       }
+      apply_to_clan: { Args: { p_clan_id: string }; Returns: Json }
+      approve_clan_application: {
+        Args: { p_application_id: string }
+        Returns: Json
+      }
       cancel_battle_queue: { Args: never; Returns: Json }
       check_battle_queue_status: { Args: never; Returns: Json }
       check_daily_streak: { Args: never; Returns: Json }
@@ -1602,6 +1944,18 @@ export type Database = {
       }
       complete_revision: { Args: { p_topic_id: string }; Returns: Json }
       complete_revision_item: { Args: { p_id: string }; Returns: Json }
+      create_clan: {
+        Args: {
+          p_description?: string
+          p_max_members?: number
+          p_motto?: string
+          p_name: string
+          p_privacy?: string
+          p_tag: string
+          p_timezone?: string
+        }
+        Returns: Json
+      }
       create_doubt: {
         Args: {
           p_category: Database["public"]["Enums"]["doubt_category"]
@@ -1743,6 +2097,7 @@ export type Database = {
         Returns: Json
       }
       join_clan: { Args: { p_clan_id: string }; Returns: Json }
+      leave_clan_v2: { Args: never; Returns: Json }
       mark_doubt_solved: { Args: { p_doubt_id: string }; Returns: Json }
       record_activity: { Args: { p_problems_solved?: number }; Returns: Json }
       record_ai_usage: {
@@ -1780,6 +2135,10 @@ export type Database = {
       }
       send_friend_request: { Args: { p_receiver_id: string }; Returns: Json }
       start_roadmap: { Args: { p_roadmap_id: string }; Returns: Json }
+      transfer_clan_leadership: {
+        Args: { p_new_leader_id: string }
+        Returns: Json
+      }
       update_clan_member_stats: {
         Args: { p_streak?: number; p_user_id: string; p_xp_delta?: number }
         Returns: Json

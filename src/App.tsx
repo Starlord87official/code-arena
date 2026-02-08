@@ -58,6 +58,10 @@ import OARoom from "./pages/OARoom";
 import OASubmit from "./pages/OASubmit";
 import OAReport from "./pages/OAReport";
 import OAHistory from "./pages/OAHistory";
+// Clan Arena Pages
+import ClansHome from "./pages/ClansHome";
+import ClansCreate from "./pages/ClansCreate";
+import ClanDashboard from "./pages/ClanDashboard";
 
 // Phase 1: Student-focused app - mentor/clan features disabled
 // Battle Mode is always available to all authenticated users
@@ -137,6 +141,10 @@ const App = () => {
               <Route path="/oa/submit/:attemptId" element={<OASubmit />} />
               <Route path="/oa/report/:attemptId" element={<OAReport />} />
               <Route path="/oa/history" element={<OAHistory />} />
+              {/* Clan Arena */}
+              <Route path="/clans" element={<ClansHome />} />
+              <Route path="/clans/create" element={<ClansCreate />} />
+              <Route path="/clans/:id" element={<ClanDashboard />} />
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>
