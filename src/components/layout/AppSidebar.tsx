@@ -47,6 +47,7 @@ const primaryNavItems: NavItem[] = [
   { path: '/companies', label: 'Companies', icon: Building2 },
   { path: '/doubts', label: 'Doubts', icon: MessageCircleQuestion },
   { path: '/battle', label: 'Battle', icon: Target },
+  { path: '/contests', label: 'Contests', icon: Trophy, highlight: true },
   { path: '/oa', label: 'OA Arena', icon: ClipboardCheck, highlight: true },
   { path: '/leaderboard', label: 'Leaderboard', icon: Trophy },
   { path: '/clans', label: 'Clan Arena', icon: Shield, highlight: true },
@@ -76,6 +77,9 @@ export function AppSidebar() {
     }
     if (path === '/analytics/glyph-heatmap') {
       return location.pathname.startsWith('/analytics');
+    }
+    if (path === '/contests') {
+      return location.pathname === '/contests' || location.pathname.startsWith('/contests/');
     }
     if (path === '/oa') {
       return location.pathname === '/oa' || location.pathname.startsWith('/oa/');
