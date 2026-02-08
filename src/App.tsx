@@ -19,8 +19,13 @@ import Notifications from "./pages/Notifications";
 import Profile from "./pages/Profile";
 import PublicProfile from "./pages/PublicProfile";
 import Settings from "./pages/Settings";
-import Contests from "./pages/Contests";
-import ContestLive from "./pages/ContestLive";
+import ContestsHome from "./pages/ContestsHome";
+import ContestDetail from "./pages/ContestDetail";
+import ContestLobby from "./pages/ContestLobby";
+import ContestArena from "./pages/ContestArena";
+import ContestLeaderboard from "./pages/ContestLeaderboard";
+import ContestReport from "./pages/ContestReport";
+import ContestHistory from "./pages/ContestHistory";
 import Onboarding from "./pages/Onboarding";
 import Battle from "./pages/Battle";
 import ClanVsClanBattle from "./pages/ClanVsClanBattle";
@@ -100,8 +105,13 @@ const App = () => {
               <Route path="/profile" element={<Profile />} />
               <Route path="/profile/:username" element={<PublicProfile />} />
               <Route path="/settings" element={<Settings />} />
-              <Route path="/contests" element={<Contests />} />
-              <Route path="/contest/:id/live" element={<ContestLive />} />
+              <Route path="/contests" element={<ContestsHome />} />
+              <Route path="/contests/history" element={<ContestHistory />} />
+              <Route path="/contests/:id" element={<ContestDetail />} />
+              <Route path="/contests/:id/lobby" element={<ContestLobby />} />
+              <Route path="/contests/:id/arena" element={<ContestArena />} />
+              <Route path="/contests/:id/leaderboard" element={<ContestLeaderboard />} />
+              <Route path="/contests/:id/report" element={<ContestReport />} />
               {/* Roadmap System - Independent feature */}
               <Route path="/roadmap/:roadmapId" element={<Roadmap />} />
               {/* Planner System */}
