@@ -744,6 +744,270 @@ export type Database = {
         }
         Relationships: []
       }
+      oa_assessments: {
+        Row: {
+          created_at: string
+          duration_minutes: number
+          id: string
+          order_index: number | null
+          pack_id: string
+          rules_json: Json | null
+          sections_json: Json | null
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          order_index?: number | null
+          pack_id: string
+          rules_json?: Json | null
+          sections_json?: Json | null
+          title: string
+        }
+        Update: {
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          order_index?: number | null
+          pack_id?: string
+          rules_json?: Json | null
+          sections_json?: Json | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "oa_assessments_pack_id_fkey"
+            columns: ["pack_id"]
+            isOneToOne: false
+            referencedRelation: "oa_packs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      oa_attempt_answers: {
+        Row: {
+          answer: string | null
+          attempt_id: string
+          created_at: string
+          id: string
+          question_id: string
+          score: number | null
+          status: string
+          time_spent_sec: number | null
+          updated_at: string
+        }
+        Insert: {
+          answer?: string | null
+          attempt_id: string
+          created_at?: string
+          id?: string
+          question_id: string
+          score?: number | null
+          status?: string
+          time_spent_sec?: number | null
+          updated_at?: string
+        }
+        Update: {
+          answer?: string | null
+          attempt_id?: string
+          created_at?: string
+          id?: string
+          question_id?: string
+          score?: number | null
+          status?: string
+          time_spent_sec?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "oa_attempt_answers_attempt_id_fkey"
+            columns: ["attempt_id"]
+            isOneToOne: false
+            referencedRelation: "oa_attempts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "oa_attempt_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "oa_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      oa_attempts: {
+        Row: {
+          assessment_id: string
+          created_at: string
+          id: string
+          integrity_json: Json | null
+          max_score: number | null
+          score: number | null
+          started_at: string
+          status: string
+          submitted_at: string | null
+          user_id: string
+        }
+        Insert: {
+          assessment_id: string
+          created_at?: string
+          id?: string
+          integrity_json?: Json | null
+          max_score?: number | null
+          score?: number | null
+          started_at?: string
+          status?: string
+          submitted_at?: string | null
+          user_id: string
+        }
+        Update: {
+          assessment_id?: string
+          created_at?: string
+          id?: string
+          integrity_json?: Json | null
+          max_score?: number | null
+          score?: number | null
+          started_at?: string
+          status?: string
+          submitted_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "oa_attempts_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "oa_assessments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      oa_packs: {
+        Row: {
+          created_at: string
+          description: string | null
+          difficulty: string
+          duration_minutes: number
+          icon: string | null
+          id: string
+          is_featured: boolean | null
+          order_index: number | null
+          role_track: string
+          tags: string[] | null
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          difficulty?: string
+          duration_minutes?: number
+          icon?: string | null
+          id?: string
+          is_featured?: boolean | null
+          order_index?: number | null
+          role_track?: string
+          tags?: string[] | null
+          title: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          difficulty?: string
+          duration_minutes?: number
+          icon?: string | null
+          id?: string
+          is_featured?: boolean | null
+          order_index?: number | null
+          role_track?: string
+          tags?: string[] | null
+          title?: string
+        }
+        Relationships: []
+      }
+      oa_questions: {
+        Row: {
+          assessment_id: string
+          config_json: Json
+          created_at: string
+          difficulty: string
+          id: string
+          points: number
+          question_order: number
+          section_index: number
+          statement: string
+          tags: string[] | null
+          type: string
+        }
+        Insert: {
+          assessment_id: string
+          config_json?: Json
+          created_at?: string
+          difficulty?: string
+          id?: string
+          points?: number
+          question_order?: number
+          section_index?: number
+          statement: string
+          tags?: string[] | null
+          type: string
+        }
+        Update: {
+          assessment_id?: string
+          config_json?: Json
+          created_at?: string
+          difficulty?: string
+          id?: string
+          points?: number
+          question_order?: number
+          section_index?: number
+          statement?: string
+          tags?: string[] | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "oa_questions_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "oa_assessments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      oa_readiness: {
+        Row: {
+          best_score: number | null
+          id: string
+          oa_streak: number | null
+          readiness_score: number | null
+          total_attempts: number | null
+          updated_at: string
+          user_id: string
+          weak_topics: string[] | null
+        }
+        Insert: {
+          best_score?: number | null
+          id?: string
+          oa_streak?: number | null
+          readiness_score?: number | null
+          total_attempts?: number | null
+          updated_at?: string
+          user_id: string
+          weak_topics?: string[] | null
+        }
+        Update: {
+          best_score?: number | null
+          id?: string
+          oa_streak?: number | null
+          readiness_score?: number | null
+          total_attempts?: number | null
+          updated_at?: string
+          user_id?: string
+          weak_topics?: string[] | null
+        }
+        Relationships: []
+      }
       planner_events: {
         Row: {
           category: string

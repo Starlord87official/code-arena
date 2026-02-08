@@ -14,7 +14,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Crown,
-  BarChart3
+  BarChart3,
+  ClipboardCheck
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -45,6 +46,7 @@ const primaryNavItems: NavItem[] = [
   { path: '/companies', label: 'Companies', icon: Building2 },
   { path: '/doubts', label: 'Doubts', icon: MessageCircleQuestion },
   { path: '/battle', label: 'Battle', icon: Target },
+  { path: '/oa', label: 'OA Arena', icon: ClipboardCheck, highlight: true },
   { path: '/leaderboard', label: 'Leaderboard', icon: Trophy },
 ];
 
@@ -72,6 +74,9 @@ export function AppSidebar() {
     }
     if (path === '/analytics/glyph-heatmap') {
       return location.pathname.startsWith('/analytics');
+    }
+    if (path === '/oa') {
+      return location.pathname === '/oa' || location.pathname.startsWith('/oa/');
     }
     return location.pathname === path;
   };
