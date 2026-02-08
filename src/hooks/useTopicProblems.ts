@@ -1,23 +1,23 @@
-import { useMemo } from 'react';
-import { mockChallenges, Challenge } from '@/lib/mockData';
-import { useRevisionQueue, RevisionQueueItem } from './useRevisionQueue';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { TopicWithProgress } from './useRoadmap';
 
-// Map topic names from roadmap_topics to challenge tags
+// Map topic names from roadmap_topics to challenge tags (case-insensitive matching)
 const TOPIC_TAG_MAP: Record<string, string[]> = {
-  'Arrays': ['arrays'],
-  'Strings': ['strings'],
-  'Linked List': ['linked-list'],
-  'Stack & Queue': ['stack', 'queue'],
-  'Recursion': ['recursion'],
-  'Trees': ['trees'],
-  'Binary Search Trees': ['binary-search', 'bst'],
-  'Graphs': ['graphs', 'bfs', 'dfs'],
-  'Dynamic Programming': ['dp', 'dynamic-programming'],
+  'Arrays': ['arrays', 'two pointers', 'two-pointers', 'sliding window', 'pointers', 'prefix', 'matrix'],
+  'Strings': ['strings', 'hashing', 'hash-map'],
+  'Linked List': ['linked list', 'linked-list'],
+  'Stack & Queue': ['stack', 'monotonic stack', 'deque'],
+  'Recursion': ['recursion', 'backtracking', 'memoization'],
+  'Trees': ['trees', 'bfs', 'dfs'],
+  'Binary Search Trees': ['binary search', 'bst'],
+  'Graphs': ['graphs', 'topological sort', 'union find', 'dijkstra', 'shortest-path'],
+  'Dynamic Programming': ['dp', 'optimization'],
   'Greedy': ['greedy'],
-  'Heaps / Priority Queue': ['heap', 'priority-queue'],
+  'Heaps / Priority Queue': ['heap'],
   'Bit Manipulation': ['bit-manipulation', 'bits'],
-  'Tries': ['trie', 'tries'],
+  'Tries': ['trie'],
 };
 
 export interface TopicProblemStats {
@@ -26,107 +26,185 @@ export interface TopicProblemStats {
   totalProblems: number;
   solvedProblems: number;
   revisionCount: number;
-  problems: Challenge[];
+  problems: { id: string; title: string; difficulty: string; tags: string[] }[];
   needsMorePractice: boolean;
 }
 
-// Mock solved problems for development (in production, this would come from DB)
-const MOCK_SOLVED_PROBLEM_IDS = [
-  'ch-001', // Two Sum
-  'ch-006', // String Manipulation
-  'ch-012', // Rotate Array
-];
+interface ChallengeRow {
+  id: string;
+  title: string;
+  difficulty: string;
+  tags: string[];
+}
 
-export function useTopicProblems(topics: TopicWithProgress[]) {
-  const { data: revisionQueue = [], isLoading: revisionLoading } = useRevisionQueue();
+/**
+ * Fetches all active challenges from the DB (cached).
+ */
+function useChallenges() {
+  return useQuery({
+    queryKey: ['challenges-all-active'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('challenges')
+        .select('id, title, difficulty, tags')
+        .eq('is_active', true);
 
-  const topicStats = useMemo(() => {
-    const statsMap: Record<string, TopicProblemStats> = {};
+      if (error) throw error;
+      return (data || []) as ChallengeRow[];
+    },
+    staleTime: 5 * 60 * 1000, // Cache for 5 mins
+  });
+}
 
-    topics.forEach((topic) => {
-      const topicTags = TOPIC_TAG_MAP[topic.topic_name] || [];
-      
-      // Find all problems that match this topic's tags
-      const topicProblems = mockChallenges.filter((challenge) =>
-        challenge.tags.some((tag) => topicTags.includes(tag.toLowerCase()))
-      );
+/**
+ * Fetches the current user's distinct completed challenge IDs.
+ */
+function useUserCompletions() {
+  const { user } = useAuth();
 
-      // Count solved problems (mock for now)
-      const solvedProblems = topicProblems.filter((p) =>
-        MOCK_SOLVED_PROBLEM_IDS.includes(p.id)
-      ).length;
+  return useQuery({
+    queryKey: ['user-completions', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return new Set<string>();
 
-      // Count problems marked for revision in this topic
-      const topicRevisions = (revisionQueue as RevisionQueueItem[]).filter(
-        (item) => {
-          // Match by topic field or by checking if problem tags match
-          if (item.topic) {
-            return topicTags.some(tag => 
-              item.topic?.toLowerCase().includes(tag)
-            );
-          }
-          // Fallback: check if problem ID is in topic problems
-          return topicProblems.some(p => p.id === item.problem_id);
+      const { data, error } = await supabase
+        .from('challenge_completions')
+        .select('challenge_id')
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      // Deduplicate challenge_ids
+      const ids = new Set<string>();
+      for (const row of data || []) {
+        ids.add(row.challenge_id);
+      }
+      return ids;
+    },
+    enabled: !!user?.id,
+  });
+}
+
+/**
+ * Fetches the user's revision queue count per topic.
+ */
+function useRevisionCounts() {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['revision-counts', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return new Map<string, number>();
+
+      const { data, error } = await supabase.rpc('get_revision_queue' as any);
+      if (error) throw error;
+
+      const result = data as { success: boolean; items: { topic: string | null }[] };
+      const counts = new Map<string, number>();
+      for (const item of result.items || []) {
+        if (item.topic) {
+          const key = item.topic.toLowerCase();
+          counts.set(key, (counts.get(key) || 0) + 1);
         }
-      );
+      }
+      return counts;
+    },
+    enabled: !!user?.id,
+  });
+}
 
-      // Determine if user needs more practice (many attempts, few solved)
-      // For now, show if < 30% solved and at least 3 problems available
-      const needsMorePractice = 
-        topicProblems.length >= 3 && 
-        solvedProblems / topicProblems.length < 0.3 &&
+/**
+ * Matches a topic name to challenges using case-insensitive tag matching.
+ */
+function getTopicChallenges(topicName: string, challenges: ChallengeRow[]): ChallengeRow[] {
+  const topicTags = TOPIC_TAG_MAP[topicName] || [];
+  if (topicTags.length === 0) return [];
+
+  return challenges.filter((challenge) =>
+    challenge.tags.some((tag) =>
+      topicTags.includes(tag.toLowerCase())
+    )
+  );
+}
+
+/**
+ * Main hook: computes topic stats from real DB data.
+ */
+export function useTopicProblems(topics: TopicWithProgress[]) {
+  const { data: challenges = [], isLoading: challengesLoading } = useChallenges();
+  const { data: completedIds = new Set<string>(), isLoading: completionsLoading } = useUserCompletions();
+  const { data: revisionCounts = new Map<string, number>(), isLoading: revisionsLoading } = useRevisionCounts();
+
+  const isLoading = challengesLoading || completionsLoading || revisionsLoading;
+
+  const topicStats: Record<string, TopicProblemStats> = {};
+
+  if (!isLoading) {
+    topics.forEach((topic) => {
+      const topicChallenges = getTopicChallenges(topic.topic_name, challenges);
+
+      // Count solved (distinct completions)
+      const solvedProblems = topicChallenges.filter((c) => completedIds.has(c.id)).length;
+
+      // Count revisions for this topic
+      const topicTags = TOPIC_TAG_MAP[topic.topic_name] || [];
+      let revisionCount = 0;
+      for (const tag of topicTags) {
+        revisionCount += revisionCounts.get(tag) || 0;
+      }
+
+      // Needs more practice if < 30% solved and at least 3 problems and in_progress
+      const needsMorePractice =
+        topicChallenges.length >= 3 &&
+        solvedProblems / topicChallenges.length < 0.3 &&
         topic.lockStatus === 'in_progress';
 
-      statsMap[topic.id] = {
+      topicStats[topic.id] = {
         topicId: topic.id,
         topicName: topic.topic_name,
-        totalProblems: topicProblems.length,
+        totalProblems: topicChallenges.length,
         solvedProblems,
-        revisionCount: topicRevisions.length,
-        problems: topicProblems,
+        revisionCount,
+        problems: topicChallenges,
         needsMorePractice,
       };
     });
-
-    return statsMap;
-  }, [topics, revisionQueue]);
+  }
 
   return {
     topicStats,
-    isLoading: revisionLoading,
+    isLoading,
   };
 }
 
+/**
+ * Single-topic variant for standalone use.
+ */
 export function useTopicProblemStats(topicId: string, topicName: string) {
-  const { data: revisionQueue = [] } = useRevisionQueue();
+  const { data: challenges = [], isLoading: challengesLoading } = useChallenges();
+  const { data: completedIds = new Set<string>(), isLoading: completionsLoading } = useUserCompletions();
+  const { data: revisionCounts = new Map<string, number>(), isLoading: revisionsLoading } = useRevisionCounts();
 
-  return useMemo(() => {
-    const topicTags = TOPIC_TAG_MAP[topicName] || [];
-    
-    const topicProblems = mockChallenges.filter((challenge) =>
-      challenge.tags.some((tag) => topicTags.includes(tag.toLowerCase()))
-    );
+  const isLoading = challengesLoading || completionsLoading || revisionsLoading;
 
-    const solvedProblems = topicProblems.filter((p) =>
-      MOCK_SOLVED_PROBLEM_IDS.includes(p.id)
-    ).length;
+  if (isLoading) {
+    return { totalProblems: 0, solvedProblems: 0, revisionCount: 0, problems: [], isLoading: true };
+  }
 
-    const topicRevisions = (revisionQueue as RevisionQueueItem[]).filter(
-      (item) => {
-        if (item.topic) {
-          return topicTags.some(tag => 
-            item.topic?.toLowerCase().includes(tag)
-          );
-        }
-        return topicProblems.some(p => p.id === item.problem_id);
-      }
-    );
+  const topicChallenges = getTopicChallenges(topicName, challenges);
+  const solvedProblems = topicChallenges.filter((c) => completedIds.has(c.id)).length;
 
-    return {
-      totalProblems: topicProblems.length,
-      solvedProblems,
-      revisionCount: topicRevisions.length,
-      problems: topicProblems,
-    };
-  }, [topicId, topicName, revisionQueue]);
+  const topicTags = TOPIC_TAG_MAP[topicName] || [];
+  let revisionCount = 0;
+  for (const tag of topicTags) {
+    revisionCount += revisionCounts.get(tag) || 0;
+  }
+
+  return {
+    totalProblems: topicChallenges.length,
+    solvedProblems,
+    revisionCount,
+    problems: topicChallenges,
+    isLoading: false,
+  };
 }

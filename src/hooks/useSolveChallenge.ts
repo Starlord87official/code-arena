@@ -211,6 +211,8 @@ export function useSolveChallenge(slugOrId: string) {
         queryClient.invalidateQueries({ queryKey: ['my-completions', user?.id] });
         queryClient.invalidateQueries({ queryKey: ['challenges'] });
         queryClient.invalidateQueries({ queryKey: ['challenge', slugOrId] });
+        // Refresh roadmap topic progress
+        queryClient.invalidateQueries({ queryKey: ['user-completions', user?.id] });
 
         // Refresh user profile to update XP on dashboard
         refreshProfile();
