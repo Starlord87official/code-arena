@@ -1,11 +1,22 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from './AppSidebar';
 import { TopBar } from './TopBar';
 import { useAuth } from '@/contexts/AuthContext';
 
+// Routes that render full-screen without TopBar/sidebar
+const FULLSCREEN_ROUTES = ['/auth', '/login', '/register'];
+
 export function Layout() {
   const { isAuthenticated } = useAuth();
+  const location = useLocation();
+
+  const isFullscreen = FULLSCREEN_ROUTES.includes(location.pathname);
+
+  // Full-screen layout (auth pages) — no TopBar, no padding
+  if (isFullscreen) {
+    return <Outlet />;
+  }
 
   if (!isAuthenticated) {
     // For non-authenticated users, show simple layout without sidebar

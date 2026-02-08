@@ -1,197 +1,26 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { z } from 'zod';
-import { 
-  Code2, 
-  Mail, 
-  Lock, 
-  User, 
-  Eye, 
-  EyeOff,
-  Loader2,
-  ArrowRight,
-  Swords,
-  Ticket
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useNavigate } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
 import { useSupabaseAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-
-// Validation schemas
-const emailSchema = z.string().email('Please enter a valid email address');
-const passwordSchema = z.string().min(6, 'Password must be at least 6 characters');
-const usernameSchema = z.string().min(3, 'Username must be at least 3 characters').max(20, 'Username must be less than 20 characters');
-const inviteCodeSchema = z.string().min(1, 'Invite code is required for Closed Beta');
+import { AuthLeftPanel } from '@/components/auth/AuthLeftPanel';
+import { AuthLoginForm } from '@/components/auth/AuthLoginForm';
+import { AuthSignupForm } from '@/components/auth/AuthSignupForm';
+import { Code2 } from 'lucide-react';
 
 export default function Auth() {
   const navigate = useNavigate();
   const { profile, isAuthenticated, isLoading: authLoading, signIn, signUp } = useSupabaseAuth();
-  
   const [tab, setTab] = useState<'login' | 'signup'>('login');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [username, setUsername] = useState('');
-  const [inviteCode, setInviteCode] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isValidatingCode, setIsValidatingCode] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Redirect based on onboarding status after auth
   useEffect(() => {
     if (!authLoading && isAuthenticated && profile) {
       if (!profile.onboarding_completed) {
-        // New user or incomplete onboarding - go to onboarding
         navigate('/onboarding', { replace: true });
       } else {
-        // Returning user - go to dashboard
         navigate('/dashboard', { replace: true });
       }
     }
   }, [isAuthenticated, authLoading, profile, navigate]);
-
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-
-    const emailResult = emailSchema.safeParse(email);
-    if (!emailResult.success) {
-      newErrors.email = emailResult.error.errors[0].message;
-    }
-
-    const passwordResult = passwordSchema.safeParse(password);
-    if (!passwordResult.success) {
-      newErrors.password = passwordResult.error.errors[0].message;
-    }
-
-    if (tab === 'signup') {
-      const usernameResult = usernameSchema.safeParse(username);
-      if (!usernameResult.success) {
-        newErrors.username = usernameResult.error.errors[0].message;
-      }
-      
-      const inviteCodeResult = inviteCodeSchema.safeParse(inviteCode.trim());
-      if (!inviteCodeResult.success) {
-        newErrors.inviteCode = inviteCodeResult.error.errors[0].message;
-      }
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const validateInviteCode = async (): Promise<boolean> => {
-    setIsValidatingCode(true);
-    try {
-      const { data, error } = await supabase.rpc('validate_invite_code', {
-        p_code: inviteCode.trim()
-      });
-
-      if (error) {
-        setErrors(prev => ({ ...prev, inviteCode: 'Failed to validate invite code' }));
-        return false;
-      }
-
-      const result = data as { valid: boolean; message: string };
-      if (!result.valid) {
-        setErrors(prev => ({ ...prev, inviteCode: result.message }));
-        return false;
-      }
-
-      return true;
-    } catch (err) {
-      setErrors(prev => ({ ...prev, inviteCode: 'Failed to validate invite code' }));
-      return false;
-    } finally {
-      setIsValidatingCode(false);
-    }
-  };
-
-  const claimInviteCode = async (userId: string): Promise<boolean> => {
-    try {
-      const { data, error } = await supabase.rpc('claim_invite_code', {
-        p_code: inviteCode.trim(),
-        p_user_id: userId
-      });
-
-      if (error) {
-        console.error('Error claiming invite code:', error);
-        return false;
-      }
-
-      const result = data as { success: boolean; message: string };
-      return result.success;
-    } catch (err) {
-      console.error('Error claiming invite code:', err);
-      return false;
-    }
-  };
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateForm()) return;
-
-    setIsLoading(true);
-    const { error } = await signIn(email, password);
-    setIsLoading(false);
-
-    if (error) {
-      if (error.message.includes('Invalid login credentials')) {
-        toast.error('Invalid email or password');
-      } else if (error.message.includes('Email not confirmed')) {
-        toast.error('Please verify your email before logging in');
-      } else {
-        toast.error(error.message);
-      }
-      return;
-    }
-
-    toast.success('Welcome back!');
-  };
-
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateForm()) return;
-
-    setIsLoading(true);
-    
-    // Step 1: Validate invite code before signup
-    const isValidCode = await validateInviteCode();
-    if (!isValidCode) {
-      setIsLoading(false);
-      return;
-    }
-
-    // Step 2: Create the account
-    const { data, error } = await signUp(email, password, username);
-
-    if (error) {
-      setIsLoading(false);
-      if (error.message.includes('already registered')) {
-        toast.error('An account with this email already exists');
-      } else {
-        toast.error(error.message);
-      }
-      return;
-    }
-
-    // Step 3: Claim the invite code
-    if (data?.user?.id) {
-      const claimed = await claimInviteCode(data.user.id);
-      if (!claimed) {
-        // The user was created but code claim failed - this is an edge case
-        // The code should still work since we validated first
-        console.warn('Invite code claim failed after user creation');
-      }
-    }
-
-    setIsLoading(false);
-    toast.success('Account created! Welcome to CodeTrackX!');
-  };
 
   if (authLoading) {
     return (
@@ -202,208 +31,96 @@ export default function Auth() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-16">
-      {/* Background effects */}
-      <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent" />
-      <div className="absolute inset-0 grid-pattern opacity-20" />
-      
-      <div className="relative w-full max-w-md">
-        {/* Logo */}
-        <Link to="/" className="flex items-center justify-center gap-2 mb-8 group">
-          <div className="relative">
-            <Code2 className="h-10 w-10 text-primary transition-all group-hover:scale-110" />
-            <div className="absolute inset-0 bg-primary/20 blur-lg opacity-0 group-hover:opacity-100 transition-opacity" />
+    <div className="min-h-screen flex">
+      {/* Left Panel - Hero with background image */}
+      <AuthLeftPanel activeStep={tab === 'signup' ? 'create' : 'create'} />
+
+      {/* Right Panel - Form */}
+      <div className="flex-1 lg:w-[55%] flex flex-col justify-center items-center px-6 py-10 md:px-12 lg:px-16 xl:px-24 relative overflow-y-auto">
+        {/* Subtle gradient background for right panel */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: 'linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--arena-dark)) 50%, hsl(var(--background)) 100%)',
+          }}
+        />
+
+        <div className="relative z-10 w-full max-w-md">
+          {/* Mobile-only logo */}
+          <div className="flex items-center justify-center gap-2 mb-8 lg:hidden">
+            <div className="relative">
+              <Code2 className="h-8 w-8 text-primary" />
+              <div className="absolute inset-0 bg-primary/20 blur-lg" />
+            </div>
+            <span className="font-display text-xl font-bold text-foreground">
+              CodeTrackX <span className="text-xs text-muted-foreground">(Private Beta)</span>
+            </span>
           </div>
-          <span className="font-display text-2xl font-bold text-gradient-electric">
-            CodeTrackX <span className="text-xs text-muted-foreground">(Private Beta)</span>
-          </span>
-        </Link>
 
-        <Card className="border-border/50 bg-card/80 backdrop-blur-xl shadow-arena">
-          <CardHeader className="text-center pb-4">
-            <CardTitle className="font-display text-2xl">
-              {tab === 'login' ? 'Welcome Back' : 'Join the Arena'}
-            </CardTitle>
-            <CardDescription>
-              {tab === 'login' 
-                ? 'Enter your credentials to continue' 
-                : 'Create an account to start your journey'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
-              <TabsList className="grid grid-cols-2 w-full mb-6">
-                <TabsTrigger value="login">Login</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
-              </TabsList>
+          {/* Tab Switcher */}
+          <div className="flex rounded-2xl bg-muted/30 border border-border/30 p-1 mb-8">
+            <button
+              onClick={() => setTab('login')}
+              className={`
+                flex-1 py-2.5 rounded-xl text-sm font-semibold tracking-wide transition-all duration-300
+                ${tab === 'login'
+                  ? 'bg-primary text-primary-foreground shadow-[0_0_15px_hsl(var(--primary)/0.3)]'
+                  : 'text-muted-foreground hover:text-foreground'
+                }
+              `}
+            >
+              Login
+            </button>
+            <button
+              onClick={() => setTab('signup')}
+              className={`
+                flex-1 py-2.5 rounded-xl text-sm font-semibold tracking-wide transition-all duration-300
+                ${tab === 'signup'
+                  ? 'bg-primary text-primary-foreground shadow-[0_0_15px_hsl(var(--primary)/0.3)]'
+                  : 'text-muted-foreground hover:text-foreground'
+                }
+              `}
+            >
+              Sign Up
+            </button>
+          </div>
 
-              <TabsContent value="login">
-                <form onSubmit={handleLogin} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="login-email">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="login-email"
-                        type="email"
-                        placeholder="you@example.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="pl-10"
-                      />
-                    </div>
-                    {errors.email && (
-                      <p className="text-sm text-destructive">{errors.email}</p>
-                    )}
-                  </div>
+          {/* Social Login - Google only (GitHub not supported on Lovable Cloud) */}
+          <div className="mb-6">
+            <button
+              type="button"
+              disabled
+              className="w-full flex items-center justify-center gap-2.5 h-11 rounded-xl border border-border/40 bg-muted/20 text-muted-foreground text-sm font-medium hover:bg-muted/30 transition-all cursor-not-allowed opacity-50"
+            >
+              <svg className="h-4 w-4" viewBox="0 0 24 24">
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
+                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+              </svg>
+              Google (Coming Soon)
+            </button>
+          </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="login-password">Password</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="login-password"
-                        type={showPassword ? 'text' : 'password'}
-                        placeholder="••••••••"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="pl-10 pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                    {errors.password && (
-                      <p className="text-sm text-destructive">{errors.password}</p>
-                    )}
-                  </div>
+          {/* Divider */}
+          <div className="flex items-center gap-4 mb-6">
+            <div className="flex-1 h-px bg-border/40" />
+            <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">or</span>
+            <div className="flex-1 h-px bg-border/40" />
+          </div>
 
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    ) : (
-                      <ArrowRight className="h-4 w-4 mr-2" />
-                    )}
-                    {isLoading ? 'Logging in...' : 'Login'}
-                  </Button>
-                </form>
-              </TabsContent>
+          {/* Forms */}
+          {tab === 'login' ? (
+            <AuthLoginForm signIn={signIn} onSwitchTab={() => setTab('signup')} />
+          ) : (
+            <AuthSignupForm signUp={signUp} onSwitchTab={() => setTab('login')} />
+          )}
 
-              <TabsContent value="signup">
-                <form onSubmit={handleSignup} className="space-y-4">
-                  {/* Closed Beta Banner */}
-                  <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 mb-2">
-                    <p className="text-sm text-primary text-center font-medium">
-                      🔒 Closed Beta — Invite code required
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-invite-code">Invite Code</Label>
-                    <div className="relative">
-                      <Ticket className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="signup-invite-code"
-                        type="text"
-                        placeholder="Enter your invite code"
-                        value={inviteCode}
-                        onChange={(e) => {
-                          setInviteCode(e.target.value.toUpperCase());
-                          if (errors.inviteCode) {
-                            setErrors(prev => ({ ...prev, inviteCode: '' }));
-                          }
-                        }}
-                        className="pl-10 uppercase tracking-wider"
-                      />
-                    </div>
-                    {errors.inviteCode && (
-                      <p className="text-sm text-destructive">{errors.inviteCode}</p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-username">Username</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="signup-username"
-                        type="text"
-                        placeholder="CodeNinja"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        className="pl-10"
-                      />
-                    </div>
-                    {errors.username && (
-                      <p className="text-sm text-destructive">{errors.username}</p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-email">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="signup-email"
-                        type="email"
-                        placeholder="you@example.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="pl-10"
-                      />
-                    </div>
-                    {errors.email && (
-                      <p className="text-sm text-destructive">{errors.email}</p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password">Password</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="signup-password"
-                        type={showPassword ? 'text' : 'password'}
-                        placeholder="••••••••"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="pl-10 pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                    {errors.password && (
-                      <p className="text-sm text-destructive">{errors.password}</p>
-                    )}
-                  </div>
-
-                  <Button type="submit" className="w-full" disabled={isLoading || isValidatingCode}>
-                    {isLoading || isValidatingCode ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    ) : (
-                      <Swords className="h-4 w-4 mr-2" />
-                    )}
-                    {isValidatingCode ? 'Validating code...' : isLoading ? 'Creating account...' : 'Enter the Arena'}
-                  </Button>
-                </form>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
-
-        {/* Footer */}
-        <p className="text-center text-sm text-muted-foreground mt-6">
-          By continuing, you agree to our Terms of Service and Privacy Policy
-        </p>
+          {/* Footer */}
+          <p className="text-center text-xs text-muted-foreground mt-8 opacity-60">
+            By continuing, you agree to our Terms of Service and Privacy Policy
+          </p>
+        </div>
       </div>
     </div>
   );
