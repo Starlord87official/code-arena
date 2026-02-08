@@ -49,6 +49,12 @@ import ChampionshipStandings from "./pages/ChampionshipStandings";
 import HallOfChampions from "./pages/HallOfChampions";
 // Analytics Pages
 import GlyphHeatmapPage from "./pages/GlyphHeatmapPage";
+// OA Arena Pages
+import OAArena from "./pages/OAArena";
+import OAPacks from "./pages/OAPacks";
+import OAPackDetail from "./pages/OAPackDetail";
+import OAInstructions from "./pages/OAInstructions";
+import OAHistory from "./pages/OAHistory";
 
 // Phase 1: Student-focused app - mentor/clan features disabled
 // Battle Mode is always available to all authenticated users
@@ -119,6 +125,12 @@ const App = () => {
               <Route path="/hall-of-champions" element={<HallOfChampions />} />
               {/* Analytics */}
               <Route path="/analytics/glyph-heatmap" element={<GlyphHeatmapPage />} />
+              {/* OA Arena */}
+              <Route path="/oa" element={<OAArena />} />
+              <Route path="/oa/packs" element={<OAPacks />} />
+              <Route path="/oa/pack/:packId" element={<OAPackDetail />} />
+              <Route path="/oa/start/:assessmentId" element={<OAInstructions />} />
+              <Route path="/oa/history" element={<OAHistory />} />
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>
