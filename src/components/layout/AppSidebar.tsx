@@ -15,7 +15,8 @@ import {
   ChevronRight,
   Crown,
   BarChart3,
-  ClipboardCheck
+  ClipboardCheck,
+  Shield,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -48,6 +49,7 @@ const primaryNavItems: NavItem[] = [
   { path: '/battle', label: 'Battle', icon: Target },
   { path: '/oa', label: 'OA Arena', icon: ClipboardCheck, highlight: true },
   { path: '/leaderboard', label: 'Leaderboard', icon: Trophy },
+  { path: '/clans', label: 'Clan Arena', icon: Shield, highlight: true },
 ];
 
 const secondaryNavItems: NavItem[] = [
@@ -77,6 +79,9 @@ export function AppSidebar() {
     }
     if (path === '/oa') {
       return location.pathname === '/oa' || location.pathname.startsWith('/oa/');
+    }
+    if (path === '/clans') {
+      return location.pathname === '/clans' || location.pathname.startsWith('/clans/');
     }
     return location.pathname === path;
   };
