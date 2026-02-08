@@ -213,6 +213,8 @@ export function useSolveChallenge(slugOrId: string) {
         queryClient.invalidateQueries({ queryKey: ['challenge', slugOrId] });
         // Refresh roadmap topic progress
         queryClient.invalidateQueries({ queryKey: ['user-completions', user?.id] });
+        // Refresh Today's Plan / activity summary
+        queryClient.invalidateQueries({ queryKey: ['activity-summary', user?.id] });
 
         // Refresh user profile to update XP on dashboard
         refreshProfile();
