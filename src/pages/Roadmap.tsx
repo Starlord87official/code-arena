@@ -1,6 +1,7 @@
 import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { useRoadmapWithProgress, useUserActiveRoadmaps } from '@/hooks/useRoadmap';
 import { useTopicProblems } from '@/hooks/useTopicProblems';
+import { useTargets } from '@/hooks/useTargets';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { MissionMapHero } from '@/components/roadmap/MissionMapHero';
@@ -45,12 +46,13 @@ export default function Roadmap() {
     );
   }
 
+  const { targets, progress, streak } = useTargets();
+
   const currentTopic = data.topics.find(t => t.isCurrentTopic);
   const currentTopicStats = currentTopic ? topicStats[currentTopic.id] || null : null;
 
-  // Mock daily stats (would come from useTargets / useProfileStats in production)
-  const problemsSolved = 1;
-  const problemsTarget = 2;
+  const problemsTarget = targets?.daily || 2;
+  const problemsSolved = Math.min(progress.today, problemsTarget);
 
   const handleTopicClick = (topicId: string) => {
     // Navigate to topic detail or challenges filtered by topic
@@ -114,7 +116,7 @@ export default function Roadmap() {
               problemsTarget={problemsTarget}
               conceptsRead={0}
               conceptsTarget={1}
-              streak={3}
+              streak={streak}
             />
 
             {/* Overall mastery card */}
