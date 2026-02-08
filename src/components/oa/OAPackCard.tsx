@@ -60,7 +60,7 @@ export function OAPackCard({ pack }: OAPackCardProps) {
       </div>
 
       <div className="flex flex-wrap gap-1.5 mb-5">
-        {pack.tags.slice(0, 4).map(tag => (
+        {(pack.tags ?? []).slice(0, 4).map(tag => (
           <span
             key={tag}
             className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground border border-border"
@@ -68,9 +68,9 @@ export function OAPackCard({ pack }: OAPackCardProps) {
             {tag}
           </span>
         ))}
-        {pack.tags.length > 4 && (
+        {(pack.tags ?? []).length > 4 && (
           <span className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground border border-border">
-            +{pack.tags.length - 4}
+            +{(pack.tags ?? []).length - 4}
           </span>
         )}
       </div>
