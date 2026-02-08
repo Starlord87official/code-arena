@@ -1,17 +1,22 @@
-import { useParams, Navigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { RoadmapProgress } from '@/components/roadmap/RoadmapProgress';
+import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { useRoadmapWithProgress, useUserActiveRoadmaps } from '@/hooks/useRoadmap';
-import { BookOpen, Loader2 } from 'lucide-react';
+import { useTopicProblems } from '@/hooks/useTopicProblems';
+import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { MissionMapHero } from '@/components/roadmap/MissionMapHero';
+import { SkillTreeTimeline } from '@/components/roadmap/SkillTreeTimeline';
+import { TodaysPlanCard } from '@/components/roadmap/TodaysPlanCard';
 
 export default function Roadmap() {
   const { roadmapId } = useParams<{ roadmapId: string }>();
+  const navigate = useNavigate();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { data, isLoading, error } = useRoadmapWithProgress(roadmapId);
   const { data: activeRoadmaps, isLoading: activeLoading } = useUserActiveRoadmaps();
 
-  // Check if user has started this roadmap
+  // Use topic stats from the data - must call unconditionally
+  const { topicStats } = useTopicProblems(data?.topics ?? []);
+
   const isStarted = activeRoadmaps?.some(r => r.roadmap_id === roadmapId);
 
   if (authLoading || isLoading || activeLoading) {
@@ -26,57 +31,115 @@ export default function Roadmap() {
     return <Navigate to="/auth" replace />;
   }
 
-  // If user hasn't started this roadmap, redirect to dashboard
   if (!isStarted) {
     return <Navigate to="/dashboard" replace />;
   }
 
   if (error || !data) {
     return (
-      <div className="container max-w-4xl py-8">
-        <Card>
-          <CardContent className="py-8 text-center">
-            <p className="text-muted-foreground">Roadmap not found</p>
-          </CardContent>
-        </Card>
+      <div className="container max-w-5xl py-8">
+        <div className="rounded-xl border border-border/40 bg-card/50 p-8 text-center">
+          <p className="text-muted-foreground">Roadmap not found</p>
+        </div>
       </div>
     );
   }
 
+  const currentTopic = data.topics.find(t => t.isCurrentTopic);
+  const currentTopicStats = currentTopic ? topicStats[currentTopic.id] || null : null;
+
+  // Mock daily stats (would come from useTargets / useProfileStats in production)
+  const problemsSolved = 1;
+  const problemsTarget = 2;
+
+  const handleTopicClick = (topicId: string) => {
+    // Navigate to topic detail or challenges filtered by topic
+    // For now, just scroll or show toast
+    navigate(`/challenges?topic=${topicId}`);
+  };
+
+  const handleResume = () => {
+    if (currentTopic) {
+      handleTopicClick(currentTopic.id);
+    }
+  };
+
   return (
-    <div className="container max-w-4xl py-8 space-y-6">
-      {/* Header */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <BookOpen className="h-6 w-6 text-primary" />
+    <div className="relative min-h-screen">
+      {/* Subtle space background overlay */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-30"
+        style={{
+          background: 'radial-gradient(ellipse 1200px 600px at 60% 0%, hsl(var(--primary) / 0.06), transparent 70%)',
+        }}
+      />
+
+      <div className="relative container max-w-6xl py-8 px-4 md:px-6">
+        {/* Hero Section */}
+        <MissionMapHero
+          roadmapName={data.roadmap.name}
+          roadmapDescription={data.roadmap.description}
+          currentTopic={currentTopic || null}
+          currentTopicStats={currentTopicStats}
+          onResume={handleResume}
+        />
+
+        {/* Main Layout: Skill Tree (left) + Sidebar (right) */}
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Skill Tree - 70% */}
+          <div className="flex-1 min-w-0">
+            <div
+              className="rounded-2xl border border-border/30 bg-card/30 backdrop-blur-sm p-6 md:p-8"
+              style={{
+                boxShadow: '0 16px 50px hsl(var(--background) / 0.5)',
+              }}
+            >
+              <SkillTreeTimeline
+                topics={data.topics}
+                topicStats={topicStats}
+                onTopicClick={handleTopicClick}
+              />
             </div>
-            <div>
-              <CardTitle className="text-2xl">{data.roadmap.name}</CardTitle>
-              <CardDescription>{data.roadmap.description}</CardDescription>
+
+            {/* Practice note */}
+            <p className="text-xs text-muted-foreground text-center mt-4 opacity-70">
+              💡 You can practice any challenge freely, but roadmap progress only counts for your active topic.
+            </p>
+          </div>
+
+          {/* Right Sidebar - 30% */}
+          <div className="w-full lg:w-[320px] flex-shrink-0 space-y-6">
+            <TodaysPlanCard
+              problemsSolved={problemsSolved}
+              problemsTarget={problemsTarget}
+              conceptsRead={0}
+              conceptsTarget={1}
+              streak={3}
+            />
+
+            {/* Overall mastery card */}
+            <div className="rounded-2xl border border-border/40 bg-card/60 backdrop-blur-xl p-5 space-y-3">
+              <h3 className="text-sm font-heading font-bold text-muted-foreground uppercase tracking-wider">
+                Overall Mastery
+              </h3>
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-display font-bold text-foreground">
+                  {data.progressPercentage}%
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {data.completedCount}/{data.totalCount} topics
+                </span>
+              </div>
+              <div className="h-2 rounded-full bg-secondary/60 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-primary to-neon-cyan transition-all duration-700"
+                  style={{ width: `${Math.max(2, data.progressPercentage)}%` }}
+                />
+              </div>
             </div>
           </div>
-        </CardHeader>
-      </Card>
-
-      {/* Progress */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Your Progress</CardTitle>
-          <CardDescription>
-            Track your journey through {data.totalCount} topics
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <RoadmapProgress
-            topics={data.topics}
-            completedCount={data.completedCount}
-            totalCount={data.totalCount}
-            progressPercentage={data.progressPercentage}
-          />
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
