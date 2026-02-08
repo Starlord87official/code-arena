@@ -15,6 +15,7 @@ import {
   useClanActivity, useMyMembership, useApplyToClan,
   useMyApplication, useLeaveClanV2,
 } from '@/hooks/useClans';
+import { BattleHistoryList } from '@/components/clan/BattleHistoryList';
 import { ClanRankBadge } from '@/components/clans/ClanRankBadge';
 import { SEED_CLANS } from '@/lib/clanSeedData';
 import { formatDistanceToNow } from 'date-fns';
@@ -307,38 +308,17 @@ export default function ClanDashboard() {
                 </div>
               )}
 
-              {/* War history */}
-              <div className="arena-card p-6">
-                <h3 className="font-heading font-bold mb-4">War History</h3>
-                {wars && wars.filter(w => w.result !== 'pending').length > 0 ? (
-                  <div className="space-y-3">
-                    {wars.filter(w => w.result !== 'pending').map((w) => {
-                      const isA = w.clan_a === id;
-                      const won = (isA && w.result === 'a_win') || (!isA && w.result === 'b_win');
-                      const draw = w.result === 'draw';
-                      return (
-                        <div key={w.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
-                          <div>
-                            <p className="font-heading font-semibold text-sm">Week of {w.week_start}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {isA ? w.score_a : w.score_b} - {isA ? w.score_b : w.score_a}
-                            </p>
-                          </div>
-                          <Badge className={cn(
-                            'border-0 text-xs',
-                            won ? 'bg-[hsl(var(--success))]/20 text-[hsl(var(--success))]'
-                              : draw ? 'bg-muted text-muted-foreground'
-                              : 'bg-destructive/20 text-destructive'
-                          )}>
-                            {won ? 'Victory' : draw ? 'Draw' : 'Defeat'}
-                          </Badge>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <p className="text-muted-foreground text-sm">No war history yet.</p>
-                )}
+              {/* Battle History (unified data source) */}
+              {id && <BattleHistoryList clanId={id} />}
+
+              {/* Link to full Battle History */}
+              <div className="text-center pt-2">
+                <Link to="/battle/history">
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Swords className="h-4 w-4" />
+                    View Full Battle History
+                  </Button>
+                </Link>
               </div>
             </div>
           </TabsContent>
