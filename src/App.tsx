@@ -54,6 +54,9 @@ import OAArena from "./pages/OAArena";
 import OAPacks from "./pages/OAPacks";
 import OAPackDetail from "./pages/OAPackDetail";
 import OAInstructions from "./pages/OAInstructions";
+import OARoom from "./pages/OARoom";
+import OASubmit from "./pages/OASubmit";
+import OAReport from "./pages/OAReport";
 import OAHistory from "./pages/OAHistory";
 
 // Phase 1: Student-focused app - mentor/clan features disabled
@@ -130,6 +133,9 @@ const App = () => {
               <Route path="/oa/packs" element={<OAPacks />} />
               <Route path="/oa/pack/:packId" element={<OAPackDetail />} />
               <Route path="/oa/start/:assessmentId" element={<OAInstructions />} />
+              <Route path="/oa/attempt/:attemptId" element={<OARoom />} />
+              <Route path="/oa/submit/:attemptId" element={<OASubmit />} />
+              <Route path="/oa/report/:attemptId" element={<OAReport />} />
               <Route path="/oa/history" element={<OAHistory />} />
               <Route path="*" element={<NotFound />} />
             </Route>

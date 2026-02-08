@@ -7,15 +7,28 @@ import { useAuth } from '@/contexts/AuthContext';
 // Routes that render full-screen without TopBar/sidebar
 const FULLSCREEN_ROUTES = ['/auth', '/login', '/register'];
 
+// Routes that hide sidebar but keep a minimal layout (exam/focus pages)
+const OA_EXAM_PREFIXES = ['/oa/attempt/', '/oa/submit/', '/oa/report/'];
+
 export function Layout() {
   const { isAuthenticated } = useAuth();
   const location = useLocation();
 
   const isFullscreen = FULLSCREEN_ROUTES.includes(location.pathname);
+  const isExamMode = OA_EXAM_PREFIXES.some(prefix => location.pathname.startsWith(prefix));
 
   // Full-screen layout (auth pages) — no TopBar, no padding
   if (isFullscreen) {
     return <Outlet />;
+  }
+
+  // Exam mode: no sidebar, no top bar — immersive focus layout
+  if (isExamMode && isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Outlet />
+      </div>
+    );
   }
 
   if (!isAuthenticated) {
