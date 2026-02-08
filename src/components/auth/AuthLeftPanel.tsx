@@ -8,7 +8,7 @@ interface AuthLeftPanelProps {
 const steps = [
   { id: 'create' as const, label: 'Create Account', icon: UserPlus },
   { id: 'preferences' as const, label: 'Choose Your Path', icon: Settings },
-  { id: 'challenges' as const, label: 'Start Challenges', icon: Swords },
+  { id: 'challenges' as const, label: 'Enter the Arena', icon: Swords },
 ];
 
 export function AuthLeftPanel({ activeStep }: AuthLeftPanelProps) {
