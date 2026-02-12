@@ -55,6 +55,7 @@ export default function BattleSessionPage() {
   const [problemStatuses, setProblemStatuses] = useState<Record<string, ProblemStatus>>({});
   const [events, setEvents] = useState<BattleEvent[]>([]);
   const [isEnding, setIsEnding] = useState(false);
+  const [isReturning, setIsReturning] = useState(false);
   const endingRef = useRef(false);
 
   // Fetch battle session (legacy system)
@@ -71,7 +72,11 @@ export default function BattleSessionPage() {
       return data as BattleSession;
     },
     enabled: !!sessionId && !!user,
-    refetchInterval: 5000,
+    refetchInterval: (query) => {
+      const data = query.state.data as BattleSession | undefined;
+      if (data?.status === 'completed') return false;
+      return 5000;
+    },
   });
 
   // Fetch opponent profile
@@ -279,6 +284,9 @@ export default function BattleSessionPage() {
       };
 
       if (result.success) {
+        queryClient.removeQueries({ queryKey: ['battle-session', sessionId] });
+        queryClient.removeQueries({ queryKey: ['battle-problems', sessionId] });
+        queryClient.removeQueries({ queryKey: ['active-battle-session'] });
         queryClient.invalidateQueries({ queryKey: ['user-battle-stats'] });
         if (result.is_draw) {
           toast.info(`Draw! +${result.xp_awarded} XP`);
@@ -287,7 +295,7 @@ export default function BattleSessionPage() {
         } else {
           toast.error(`Defeat. +${result.xp_awarded} XP`);
         }
-        setTimeout(() => navigate('/battle'), 2000);
+        setTimeout(() => navigate('/battle', { replace: true }), 2000);
       } else {
         toast.error(result.error || 'Failed to end battle');
         endingRef.current = false;
@@ -347,6 +355,19 @@ export default function BattleSessionPage() {
   if (session.status === 'completed') {
     const isWinner = session.winner_id === user?.id;
     const isDraw = !session.winner_id;
+
+    const handleReturnToLobby = () => {
+      if (isReturning) return;
+      setIsReturning(true);
+      // Clear all battle-related query cache
+      queryClient.removeQueries({ queryKey: ['battle-session', sessionId] });
+      queryClient.removeQueries({ queryKey: ['battle-problems', sessionId] });
+      queryClient.removeQueries({ queryKey: ['active-battle-session'] });
+      queryClient.invalidateQueries({ queryKey: ['user-battle-stats'] });
+      // Hard navigate with replace to prevent back-button loop
+      navigate('/battle', { replace: true });
+    };
+
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Card className="arena-card max-w-md w-full mx-4">
@@ -374,8 +395,17 @@ export default function BattleSessionPage() {
                 </p>
               </div>
             </div>
-            <Button variant="default" className="w-full" onClick={() => navigate('/battle')}>
-              Return to Battle Lobby
+            <Button
+              variant="default"
+              className="w-full"
+              onClick={handleReturnToLobby}
+              disabled={isReturning}
+            >
+              {isReturning ? (
+                <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Returning…</>
+              ) : (
+                'Return to Battle Lobby'
+              )}
             </Button>
           </CardContent>
         </Card>
