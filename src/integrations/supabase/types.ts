@@ -128,6 +128,283 @@ export type Database = {
         }
         Relationships: []
       }
+      battle_invites: {
+        Row: {
+          created_at: string
+          difficulty_mix: string[]
+          duration_minutes: number
+          expires_at: string
+          hints_enabled: boolean
+          id: string
+          is_rated: boolean
+          match_id: string | null
+          problem_count: number
+          receiver_id: string
+          responded_at: string | null
+          sender_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          difficulty_mix?: string[]
+          duration_minutes?: number
+          expires_at?: string
+          hints_enabled?: boolean
+          id?: string
+          is_rated?: boolean
+          match_id?: string | null
+          problem_count?: number
+          receiver_id: string
+          responded_at?: string | null
+          sender_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          difficulty_mix?: string[]
+          duration_minutes?: number
+          expires_at?: string
+          hints_enabled?: boolean
+          id?: string
+          is_rated?: boolean
+          match_id?: string | null
+          problem_count?: number
+          receiver_id?: string
+          responded_at?: string | null
+          sender_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "battle_invites_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "battle_matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      battle_match_problems: {
+        Row: {
+          challenge_id: string
+          created_at: string
+          id: string
+          match_id: string
+          order_index: number
+          points: number
+        }
+        Insert: {
+          challenge_id: string
+          created_at?: string
+          id?: string
+          match_id: string
+          order_index?: number
+          points?: number
+        }
+        Update: {
+          challenge_id?: string
+          created_at?: string
+          id?: string
+          match_id?: string
+          order_index?: number
+          points?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "battle_match_problems_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "battle_match_problems_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "battle_matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      battle_match_submissions: {
+        Row: {
+          code: string
+          id: string
+          language: string
+          match_id: string
+          memory_kb: number | null
+          problem_id: string
+          runtime_ms: number | null
+          score: number
+          status: string
+          submitted_at: string
+          testcases_passed: number | null
+          testcases_total: number | null
+          user_id: string
+        }
+        Insert: {
+          code?: string
+          id?: string
+          language?: string
+          match_id: string
+          memory_kb?: number | null
+          problem_id: string
+          runtime_ms?: number | null
+          score?: number
+          status?: string
+          submitted_at?: string
+          testcases_passed?: number | null
+          testcases_total?: number | null
+          user_id: string
+        }
+        Update: {
+          code?: string
+          id?: string
+          language?: string
+          match_id?: string
+          memory_kb?: number | null
+          problem_id?: string
+          runtime_ms?: number | null
+          score?: number
+          status?: string
+          submitted_at?: string
+          testcases_passed?: number | null
+          testcases_total?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "battle_match_submissions_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "battle_matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "battle_match_submissions_problem_id_fkey"
+            columns: ["problem_id"]
+            isOneToOne: false
+            referencedRelation: "battle_match_problems"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      battle_matches: {
+        Row: {
+          created_at: string
+          created_by: string
+          duration_minutes: number
+          ended_at: string | null
+          hints_enabled: boolean
+          id: string
+          invite_id: string | null
+          is_draw: boolean | null
+          is_rated: boolean
+          mode: string
+          problem_count: number
+          started_at: string | null
+          status: string
+          winner_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          duration_minutes?: number
+          ended_at?: string | null
+          hints_enabled?: boolean
+          id?: string
+          invite_id?: string | null
+          is_draw?: boolean | null
+          is_rated?: boolean
+          mode?: string
+          problem_count?: number
+          started_at?: string | null
+          status?: string
+          winner_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          duration_minutes?: number
+          ended_at?: string | null
+          hints_enabled?: boolean
+          id?: string
+          invite_id?: string | null
+          is_draw?: boolean | null
+          is_rated?: boolean
+          mode?: string
+          problem_count?: number
+          started_at?: string | null
+          status?: string
+          winner_id?: string | null
+        }
+        Relationships: []
+      }
+      battle_participants: {
+        Row: {
+          created_at: string
+          disconnected_at: string | null
+          elo_after: number | null
+          elo_before: number
+          elo_change: number | null
+          hints_used: number
+          id: string
+          is_forfeit: boolean
+          match_id: string
+          problems_solved: number
+          reconnected_at: string | null
+          score: number
+          total_solve_time_sec: number
+          user_id: string
+          wrong_submissions: number
+          xp_earned: number
+        }
+        Insert: {
+          created_at?: string
+          disconnected_at?: string | null
+          elo_after?: number | null
+          elo_before?: number
+          elo_change?: number | null
+          hints_used?: number
+          id?: string
+          is_forfeit?: boolean
+          match_id: string
+          problems_solved?: number
+          reconnected_at?: string | null
+          score?: number
+          total_solve_time_sec?: number
+          user_id: string
+          wrong_submissions?: number
+          xp_earned?: number
+        }
+        Update: {
+          created_at?: string
+          disconnected_at?: string | null
+          elo_after?: number | null
+          elo_before?: number
+          elo_change?: number | null
+          hints_used?: number
+          id?: string
+          is_forfeit?: boolean
+          match_id?: string
+          problems_solved?: number
+          reconnected_at?: string | null
+          score?: number
+          total_solve_time_sec?: number
+          user_id?: string
+          wrong_submissions?: number
+          xp_earned?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "battle_participants_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "battle_matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       battle_queue: {
         Row: {
           created_at: string
