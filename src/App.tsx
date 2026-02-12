@@ -31,6 +31,7 @@ import Battle from "./pages/Battle";
 import ClanVsClanBattle from "./pages/ClanVsClanBattle";
 import BattleHistory from "./pages/BattleHistory";
 import BattleSession from "./pages/BattleSession";
+import BattleResults from "./pages/BattleResults";
 import Roadmap from "./pages/Roadmap";
 import Planner from "./pages/Planner";
 import Doubts from "./pages/Doubts";
@@ -125,6 +126,7 @@ const App = () => {
               <Route path="/battle" element={<Battle />} />
               <Route path="/battle/clan/:id" element={<ClanVsClanBattle />} />
               <Route path="/battle/session/:sessionId" element={<BattleSession />} />
+              <Route path="/battle/results/:sessionId" element={<BattleResults />} />
               <Route path="/battle/history" element={<BattleHistory />} />
               {/* Lock-In Partner Program */}
               <Route path="/partner" element={<PartnerLanding />} />
