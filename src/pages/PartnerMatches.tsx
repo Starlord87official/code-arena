@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
 import { 
   Select,
   SelectContent,
@@ -15,25 +16,20 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
   Search, 
-  Filter, 
   Users, 
-  Clock, 
-  Target, 
   Zap,
-  ChevronRight,
   ArrowLeft,
   Star,
   Shield,
   Trophy
 } from 'lucide-react';
 import { 
-  mockMatchSuggestions, 
   getGoalLabel, 
-  getFocusLabel, 
+  getLanguageLabel, 
   getPaceLabel,
-  getLanguageLabel
 } from '@/lib/partnerData';
-import type { MatchSuggestion, ReliabilityTier } from '@/lib/partnerData';
+import type { ReliabilityTier } from '@/lib/partnerData';
+import { useMatchCandidates } from '@/hooks/usePartnerData';
 
 const reliabilityColors: Record<ReliabilityTier, string> = {
   platinum: 'bg-gradient-to-r from-slate-300 to-slate-100 text-slate-900',
@@ -53,34 +49,19 @@ const reliabilityIcons: Record<ReliabilityTier, React.ReactNode> = {
 
 const PartnerMatches = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [timeFilter, setTimeFilter] = useState('all');
   const [paceFilter, setPaceFilter] = useState('all');
   const [reliabilityFilter, setReliabilityFilter] = useState('all');
+  const { data: candidates = [], isLoading } = useMatchCandidates();
 
-  const filteredMatches = mockMatchSuggestions.filter(match => {
-    const card = match.partner.trainingCard;
-    if (!card) return false;
-
+  const filteredMatches = candidates.filter(match => {
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      if (!match.partner.username.toLowerCase().includes(query)) return false;
+      if (!match.username.toLowerCase().includes(query)) return false;
     }
-
-    if (paceFilter !== 'all' && card.pace !== paceFilter) return false;
-    if (reliabilityFilter !== 'all' && match.partner.reliabilityTier !== reliabilityFilter) return false;
-
+    if (paceFilter !== 'all' && match.card.pace !== paceFilter) return false;
+    if (reliabilityFilter !== 'all' && match.reliabilityTier !== reliabilityFilter) return false;
     return true;
   });
-
-  const getTimeAgo = (dateStr: string) => {
-    const diff = Date.now() - new Date(dateStr).getTime();
-    const mins = Math.floor(diff / 60000);
-    if (mins < 5) return 'Online now';
-    if (mins < 60) return `${mins}m ago`;
-    const hours = Math.floor(mins / 60);
-    if (hours < 24) return `${hours}h ago`;
-    return `${Math.floor(hours / 24)}d ago`;
-  };
 
   return (
     <div className="min-h-screen bg-background py-8 px-4">
@@ -91,11 +72,7 @@ const PartnerMatches = () => {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <Button
-            variant="ghost"
-            asChild
-            className="mb-4"
-          >
+          <Button variant="ghost" asChild className="mb-4">
             <Link to="/partner">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
@@ -115,9 +92,7 @@ const PartnerMatches = () => {
               </div>
             </div>
             <Button asChild variant="outline">
-              <Link to="/partner/training-card">
-                Edit My Card
-              </Link>
+              <Link to="/partner/training-card">Edit My Card</Link>
             </Button>
           </div>
         </motion.div>
@@ -169,29 +144,102 @@ const PartnerMatches = () => {
           </Card>
         </motion.div>
 
+        {/* Loading State */}
+        {isLoading && (
+          <div className="space-y-4">
+            {[1, 2, 3].map(i => (
+              <Card key={i} className="p-6 bg-card/50 backdrop-blur border-border/50">
+                <div className="flex items-center gap-4">
+                  <Skeleton className="w-16 h-16 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-5 w-32" />
+                    <Skeleton className="h-4 w-48" />
+                    <Skeleton className="h-4 w-40" />
+                  </div>
+                  <Skeleton className="w-16 h-16 rounded-full" />
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+
         {/* Match Cards */}
-        <div className="space-y-4">
-          {filteredMatches.map((match, index) => (
-            <MatchCard 
-              key={match.id} 
-              match={match} 
-              index={index}
-              getTimeAgo={getTimeAgo}
-            />
-          ))}
-        </div>
+        {!isLoading && (
+          <div className="space-y-4">
+            {filteredMatches.map((match, index) => (
+              <motion.div
+                key={match.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <Card className="p-6 bg-card/50 backdrop-blur border-border/50 hover:border-primary/30 transition-all duration-300 group">
+                  <div className="flex flex-col lg:flex-row lg:items-center gap-6">
+                    {/* Avatar & Basic Info */}
+                    <div className="flex items-center gap-4 flex-1">
+                      <Avatar className="w-16 h-16 border-2 border-border">
+                        <AvatarImage src={match.avatarUrl ?? undefined} />
+                        <AvatarFallback className="text-lg bg-primary/10 text-primary">
+                          {match.username.slice(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-semibold text-lg">{match.username}</span>
+                          <Badge className={`text-xs ${reliabilityColors[match.reliabilityTier]}`}>
+                            {reliabilityIcons[match.reliabilityTier]}
+                            <span className="ml-1 capitalize">{match.reliabilityTier}</span>
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <span>{match.card.solved_count} solved</span>
+                          <span>•</span>
+                          <span>{match.completedContracts}/{match.totalContracts} contracts</span>
+                        </div>
+                        <div className="flex items-center gap-2 mt-2">
+                          <Badge variant="outline" className="text-xs">
+                            {getGoalLabel(match.card.goal as any)}
+                          </Badge>
+                          <Badge variant="outline" className="text-xs">
+                            {getLanguageLabel(match.card.language as any)}
+                          </Badge>
+                          <Badge variant="outline" className="text-xs">
+                            {getPaceLabel(match.card.pace as any)}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex gap-2">
+                      <Button asChild variant="outline" size="sm">
+                        <Link to={`/partner/profile/${match.partnerId}`}>
+                          View Profile
+                        </Link>
+                      </Button>
+                      <Button size="sm" className="shadow-neon">
+                        <Zap className="w-4 h-4 mr-1" />
+                        Invite
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        )}
 
         {/* Empty State */}
-        {filteredMatches.length === 0 && (
+        {!isLoading && filteredMatches.length === 0 && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="text-center py-16"
           >
             <Users className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
-            <h3 className="text-xl font-semibold mb-2">No matches found</h3>
+            <h3 className="text-xl font-semibold mb-2">No matches available right now</h3>
             <p className="text-muted-foreground mb-6">
-              Try adjusting your filters or create a training card first.
+              No other users have created training cards yet. Be the first to start!
             </p>
             <Button asChild>
               <Link to="/partner/training-card">Create Training Card</Link>
@@ -200,134 +248,6 @@ const PartnerMatches = () => {
         )}
       </div>
     </div>
-  );
-};
-
-interface MatchCardProps {
-  match: MatchSuggestion;
-  index: number;
-  getTimeAgo: (date: string) => string;
-}
-
-const MatchCard = ({ match, index, getTimeAgo }: MatchCardProps) => {
-  const { partner, compatibilityScore, matchReasons, isOnline } = match;
-  const card = partner.trainingCard!;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.1 }}
-    >
-      <Card className="p-6 bg-card/50 backdrop-blur border-border/50 hover:border-primary/30 transition-all duration-300 group">
-        <div className="flex flex-col lg:flex-row lg:items-center gap-6">
-          {/* Avatar & Basic Info */}
-          <div className="flex items-center gap-4 flex-1">
-            <div className="relative">
-              <Avatar className="w-16 h-16 border-2 border-border">
-                <AvatarImage src={partner.avatarUrl} />
-                <AvatarFallback className="text-lg bg-primary/10 text-primary">
-                  {partner.username.slice(0, 2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              {isOnline && (
-                <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-green-500 border-2 border-background" />
-              )}
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="font-semibold text-lg">{partner.username}</span>
-                <Badge className={`text-xs ${reliabilityColors[partner.reliabilityTier]}`}>
-                  {reliabilityIcons[partner.reliabilityTier]}
-                  <span className="ml-1 capitalize">{partner.reliabilityTier}</span>
-                </Badge>
-              </div>
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                <span>{card.currentLevel.solvedCount} solved</span>
-                <span>•</span>
-                <span>{getTimeAgo(partner.lastActive)}</span>
-              </div>
-              <div className="flex items-center gap-2 mt-2">
-                <Badge variant="outline" className="text-xs">
-                  {getGoalLabel(card.goal)}
-                </Badge>
-                <Badge variant="outline" className="text-xs">
-                  {getLanguageLabel(card.language)}
-                </Badge>
-                <Badge variant="outline" className="text-xs">
-                  {getPaceLabel(card.pace)}
-                </Badge>
-              </div>
-            </div>
-          </div>
-
-          {/* Compatibility Score */}
-          <div className="flex flex-col items-center px-6 py-2">
-            <div className="relative w-16 h-16">
-              <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
-                <circle
-                  cx="18"
-                  cy="18"
-                  r="16"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  className="text-secondary"
-                />
-                <circle
-                  cx="18"
-                  cy="18"
-                  r="16"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeDasharray={`${compatibilityScore} 100`}
-                  className="text-primary"
-                  strokeLinecap="round"
-                />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-lg font-bold">{compatibilityScore}%</span>
-              </div>
-            </div>
-            <span className="text-xs text-muted-foreground mt-1">Match</span>
-          </div>
-
-          {/* Match Reasons */}
-          <div className="flex-1 lg:max-w-[200px]">
-            <div className="flex flex-wrap gap-1.5">
-              {matchReasons.slice(0, 3).map((reason, i) => (
-                <Badge 
-                  key={i} 
-                  variant="secondary" 
-                  className="text-xs bg-primary/10 text-primary border-0"
-                >
-                  {reason}
-                </Badge>
-              ))}
-              {matchReasons.length > 3 && (
-                <Badge variant="secondary" className="text-xs">
-                  +{matchReasons.length - 3}
-                </Badge>
-              )}
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="flex gap-2">
-            <Button asChild variant="outline" size="sm">
-              <Link to={`/partner/profile/${partner.id}`}>
-                View Profile
-              </Link>
-            </Button>
-            <Button size="sm" className="shadow-neon">
-              <Zap className="w-4 h-4 mr-1" />
-              Invite
-            </Button>
-          </div>
-        </div>
-      </Card>
-    </motion.div>
   );
 };
 

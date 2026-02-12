@@ -1692,6 +1692,343 @@ export type Database = {
         }
         Relationships: []
       }
+      lockin_contract_missions: {
+        Row: {
+          completed_at: string | null
+          contract_id: string
+          created_at: string
+          id: string
+          mission_date: string
+          problem_id: string | null
+          status: string
+          task_type: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          contract_id: string
+          created_at?: string
+          id?: string
+          mission_date?: string
+          problem_id?: string | null
+          status?: string
+          task_type: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          contract_id?: string
+          created_at?: string
+          id?: string
+          mission_date?: string
+          problem_id?: string | null
+          status?: string
+          task_type?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lockin_contract_missions_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "lockin_contracts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lockin_contracts: {
+        Row: {
+          accepted_by_a: boolean
+          accepted_by_b: boolean
+          created_at: string
+          daily_target: number
+          duo_streak: number
+          end_date: string | null
+          gap_list: string[]
+          id: string
+          next_trial_date: string | null
+          next_trial_format: string | null
+          partner_a_id: string
+          partner_b_id: string
+          start_date: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_by_a?: boolean
+          accepted_by_b?: boolean
+          created_at?: string
+          daily_target?: number
+          duo_streak?: number
+          end_date?: string | null
+          gap_list?: string[]
+          id?: string
+          next_trial_date?: string | null
+          next_trial_format?: string | null
+          partner_a_id: string
+          partner_b_id: string
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_by_a?: boolean
+          accepted_by_b?: boolean
+          created_at?: string
+          daily_target?: number
+          duo_streak?: number
+          end_date?: string | null
+          gap_list?: string[]
+          id?: string
+          next_trial_date?: string | null
+          next_trial_format?: string | null
+          partner_a_id?: string
+          partner_b_id?: string
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      lockin_partner_requests: {
+        Row: {
+          created_at: string
+          id: string
+          receiver_id: string
+          responded_at: string | null
+          sender_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          receiver_id: string
+          responded_at?: string | null
+          sender_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          receiver_id?: string
+          responded_at?: string | null
+          sender_id?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      lockin_partner_stats: {
+        Row: {
+          best_streak: number
+          chemistry_score: number
+          clutch_score: number
+          completed_contracts: number
+          created_at: string
+          current_streak: number
+          discipline_score: number
+          id: string
+          reliability_score: number
+          total_contracts: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          best_streak?: number
+          chemistry_score?: number
+          clutch_score?: number
+          completed_contracts?: number
+          created_at?: string
+          current_streak?: number
+          discipline_score?: number
+          id?: string
+          reliability_score?: number
+          total_contracts?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          best_streak?: number
+          chemistry_score?: number
+          clutch_score?: number
+          completed_contracts?: number
+          created_at?: string
+          current_streak?: number
+          discipline_score?: number
+          id?: string
+          reliability_score?: number
+          total_contracts?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      lockin_training_cards: {
+        Row: {
+          accountability_style: string
+          comm_style: string
+          contest_rating: string | null
+          created_at: string
+          daily_commitment: number
+          focus: string
+          goal: string
+          id: string
+          internal_rating: number
+          language: string
+          no_ghosting_rule: boolean
+          pace: string
+          preferred_slots: Json
+          solved_count: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accountability_style: string
+          comm_style: string
+          contest_rating?: string | null
+          created_at?: string
+          daily_commitment?: number
+          focus: string
+          goal: string
+          id?: string
+          internal_rating?: number
+          language: string
+          no_ghosting_rule?: boolean
+          pace: string
+          preferred_slots?: Json
+          solved_count?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accountability_style?: string
+          comm_style?: string
+          contest_rating?: string | null
+          created_at?: string
+          daily_commitment?: number
+          focus?: string
+          goal?: string
+          id?: string
+          internal_rating?: number
+          language?: string
+          no_ghosting_rule?: boolean
+          pace?: string
+          preferred_slots?: Json
+          solved_count?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      lockin_trial_reports: {
+        Row: {
+          contract_id: string
+          created_at: string
+          generated_at: string
+          id: string
+          next_week_plan: Json
+          qualified: boolean
+          revision_plan: Json
+          time_lost_breakdown: Json
+          trial_id: string
+          user_id: string
+          wrong_attempt_patterns: Json
+        }
+        Insert: {
+          contract_id: string
+          created_at?: string
+          generated_at?: string
+          id?: string
+          next_week_plan?: Json
+          qualified?: boolean
+          revision_plan?: Json
+          time_lost_breakdown?: Json
+          trial_id: string
+          user_id: string
+          wrong_attempt_patterns?: Json
+        }
+        Update: {
+          contract_id?: string
+          created_at?: string
+          generated_at?: string
+          id?: string
+          next_week_plan?: Json
+          qualified?: boolean
+          revision_plan?: Json
+          time_lost_breakdown?: Json
+          trial_id?: string
+          user_id?: string
+          wrong_attempt_patterns?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lockin_trial_reports_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "lockin_contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lockin_trial_reports_trial_id_fkey"
+            columns: ["trial_id"]
+            isOneToOne: false
+            referencedRelation: "lockin_trials"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lockin_trials: {
+        Row: {
+          contract_id: string
+          created_at: string
+          duration_minutes: number
+          ended_at: string | null
+          format: string
+          id: string
+          problems: Json
+          results: Json
+          scheduled_at: string
+          started_at: string | null
+          status: string
+        }
+        Insert: {
+          contract_id: string
+          created_at?: string
+          duration_minutes?: number
+          ended_at?: string | null
+          format: string
+          id?: string
+          problems?: Json
+          results?: Json
+          scheduled_at: string
+          started_at?: string | null
+          status?: string
+        }
+        Update: {
+          contract_id?: string
+          created_at?: string
+          duration_minutes?: number
+          ended_at?: string | null
+          format?: string
+          id?: string
+          problems?: Json
+          results?: Json
+          scheduled_at?: string
+          started_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lockin_trials_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "lockin_contracts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mentor_invites: {
         Row: {
           accepted_at: string | null
