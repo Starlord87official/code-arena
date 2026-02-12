@@ -68,13 +68,12 @@ export default function Battle() {
     activeSession,
   } = useMatchmaking();
 
-  // Redirect to battle when matched
+  // Redirect to battle ONLY when freshly matched AND session is active (not completed)
   useEffect(() => {
-    if (isMatched && matchmakingState.sessionId) {
-      // Navigate to the active battle session
+    if (isMatched && matchmakingState.sessionId && activeSession?.status === 'active') {
       navigate(`/battle/session/${matchmakingState.sessionId}`);
     }
-  }, [isMatched, matchmakingState.sessionId, navigate]);
+  }, [isMatched, matchmakingState.sessionId, activeSession?.status, navigate]);
 
   // Filter online warriors by search
   const filteredWarriors = onlineWarriors.filter(w => 

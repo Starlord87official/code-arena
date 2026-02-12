@@ -55,7 +55,6 @@ export default function BattleSessionPage() {
   const [problemStatuses, setProblemStatuses] = useState<Record<string, ProblemStatus>>({});
   const [events, setEvents] = useState<BattleEvent[]>([]);
   const [isEnding, setIsEnding] = useState(false);
-  const [isReturning, setIsReturning] = useState(false);
   const endingRef = useRef(false);
 
   // Fetch battle session (legacy system)
@@ -295,7 +294,8 @@ export default function BattleSessionPage() {
         } else {
           toast.error(`Defeat. +${result.xp_awarded} XP`);
         }
-        setTimeout(() => navigate('/battle', { replace: true }), 2000);
+        // Navigate to the dedicated results page
+        navigate(`/battle/results/${session.id}`, { replace: true });
       } else {
         toast.error(result.error || 'Failed to end battle');
         endingRef.current = false;
@@ -351,64 +351,13 @@ export default function BattleSessionPage() {
     );
   }
 
-  // ─── Completed ───
+  // ─── Completed → redirect to results route ───
   if (session.status === 'completed') {
-    const isWinner = session.winner_id === user?.id;
-    const isDraw = !session.winner_id;
-
-    const handleReturnToLobby = () => {
-      if (isReturning) return;
-      setIsReturning(true);
-      // Clear all battle-related query cache
-      queryClient.removeQueries({ queryKey: ['battle-session', sessionId] });
-      queryClient.removeQueries({ queryKey: ['battle-problems', sessionId] });
-      queryClient.removeQueries({ queryKey: ['active-battle-session'] });
-      queryClient.invalidateQueries({ queryKey: ['user-battle-stats'] });
-      // Hard navigate with replace to prevent back-button loop
-      navigate('/battle', { replace: true });
-    };
-
+    // Redirect to the dedicated results page — never render results here
+    navigate(`/battle/results/${sessionId}`, { replace: true });
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <Card className="arena-card max-w-md w-full mx-4">
-          <CardHeader className="text-center">
-            {isDraw ? <Shield className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              : isWinner ? <Crown className="h-16 w-16 text-status-warning mx-auto mb-4" />
-              : <Shield className="h-16 w-16 text-destructive mx-auto mb-4" />}
-            <CardTitle className="font-display text-2xl">
-              {isDraw ? 'Draw!' : isWinner ? 'Victory!' : 'Defeat'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex justify-between items-center p-4 bg-muted rounded-lg">
-              <div className="text-center">
-                <p className="text-sm text-muted-foreground">Your Score</p>
-                <p className="text-2xl font-bold text-foreground">
-                  {session.player_a_id === user?.id ? session.player_a_score : session.player_b_score}
-                </p>
-              </div>
-              <span className="text-muted-foreground font-display">VS</span>
-              <div className="text-center">
-                <p className="text-sm text-muted-foreground">Opponent</p>
-                <p className="text-2xl font-bold text-foreground">
-                  {session.player_a_id === user?.id ? session.player_b_score : session.player_a_score}
-                </p>
-              </div>
-            </div>
-            <Button
-              variant="default"
-              className="w-full"
-              onClick={handleReturnToLobby}
-              disabled={isReturning}
-            >
-              {isReturning ? (
-                <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Returning…</>
-              ) : (
-                'Return to Battle Lobby'
-              )}
-            </Button>
-          </CardContent>
-        </Card>
+        <Loader2 className="h-12 w-12 text-primary animate-spin" />
       </div>
     );
   }
