@@ -94,7 +94,7 @@ const TrainingCardBuilder = () => {
       toast.success('Training Card Created!', {
         description: 'You can now browse matches and find your Lock-In partner.'
       });
-      navigate('/partner/matches');
+      navigate('/partner');
     } catch (err: any) {
       toast.error('Failed to create training card', { description: err.message });
     }

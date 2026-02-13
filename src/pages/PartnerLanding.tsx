@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { 
   Users, 
   Target, 
@@ -14,8 +15,33 @@ import {
   Trophy,
   CheckCircle2
 } from 'lucide-react';
+import { useMyTrainingCard } from '@/hooks/usePartnerData';
+import { useAuth } from '@/contexts/AuthContext';
+import PartnerMatches from './PartnerMatches';
 
 const PartnerLanding = () => {
+  const { user } = useAuth();
+  const { data: myCard, isLoading } = useMyTrainingCard();
+
+  // While checking if user has a training card, show loading
+  if (user && isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="space-y-4 w-full max-w-md px-4">
+          <Skeleton className="h-8 w-48 mx-auto" />
+          <Skeleton className="h-4 w-64 mx-auto" />
+          <Skeleton className="h-12 w-full" />
+        </div>
+      </div>
+    );
+  }
+
+  // If user has an active training card, show matches view directly
+  if (user && myCard) {
+    return <PartnerMatches embedded />;
+  }
+
+  // Otherwise show the hero landing page
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
