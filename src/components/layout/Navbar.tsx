@@ -19,7 +19,10 @@ import {
   LayoutDashboard,
   MessageCircleQuestion,
   Building2,
-  CalendarDays
+  CalendarDays,
+  Zap,
+  AlertCircle,
+  Users
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -27,62 +30,33 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getDivisionColor } from '@/lib/mockData';
 import { formatDistanceToNow } from 'date-fns';
 import { useFriendRequests } from '@/hooks/useFriendRequests';
+import { useNotifications, type Notification } from '@/hooks/useNotifications';
 
-// Priority-based notification data for navbar dropdown
-const navbarNotifications = [
-  {
-    id: 'n-001',
-    priority: 'critical' as const,
-    title: 'RIVAL ALERT: You have been passed',
-    message: 'CodeNinja_X just overtook your rank.',
-    icon: Target,
-    iconColor: 'text-status-warning',
-    read: false,
-    createdAt: new Date(Date.now() - 15 * 60 * 1000),
-  },
-  {
-    id: 'n-002',
-    priority: 'critical' as const,
-    title: 'DEMOTION WARNING',
-    message: 'You are 3 positions from demotion zone.',
-    icon: TrendingDown,
-    iconColor: 'text-destructive',
-    read: false,
-    createdAt: new Date(Date.now() - 30 * 60 * 1000),
-  },
-  {
-    id: 'n-003',
-    priority: 'critical' as const,
-    title: 'STREAK EXPIRES IN 2 HOURS',
-    message: 'Complete a challenge or lose 12 days.',
-    icon: Flame,
-    iconColor: 'text-status-warning',
-    read: false,
-    createdAt: new Date(Date.now() - 45 * 60 * 1000),
-  },
-  {
-    id: 'n-004',
-    priority: 'important' as const,
-    title: 'SURVIVAL MATCH IN 1 HOUR',
-    message: 'Weekly Elimination #47 is mandatory.',
-    icon: Swords,
-    iconColor: 'text-primary',
-    read: false,
-    createdAt: new Date(Date.now() - 60 * 60 * 1000),
-  },
-];
+// Helper to get icon for notification type
+function getNotifIcon(type: string, severity: string) {
+  switch (type) {
+    case 'rival': return { Icon: Target, color: 'text-status-warning' };
+    case 'rank': return { Icon: TrendingDown, color: 'text-destructive' };
+    case 'streak': return { Icon: Flame, color: 'text-status-warning' };
+    case 'contest': return { Icon: Swords, color: 'text-primary' };
+    case 'friend': case 'lockin_request': return { Icon: Users, color: 'text-primary' };
+    default: return { Icon: AlertCircle, color: 'text-muted-foreground' };
+  }
+}
 
 export function Navbar() {
   const { profile, user, isAuthenticated, logout } = useAuth();
   const { incoming: friendRequests } = useFriendRequests();
+  const { data: realNotifications = [] } = useNotifications();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
 
-  // Combine notification counts with friend requests
-  const unreadCount = navbarNotifications.filter(n => !n.read).length + friendRequests.length;
-  const criticalCount = navbarNotifications.filter(n => n.priority === 'critical' && !n.read).length;
+  // Derive counts from real DB data + friend requests
+  const unreadDbCount = realNotifications.filter(n => !n.is_read).length;
+  const unreadCount = unreadDbCount + friendRequests.length;
+  const criticalCount = realNotifications.filter(n => n.severity === 'critical' && !n.is_read).length;
 
   // Phase 1: Student-focused navigation - Battle Mode always available
   const navLinks = isAuthenticated
@@ -206,26 +180,32 @@ export function Navbar() {
 
                       {/* Notification Items */}
                       <div className="max-h-80 overflow-y-auto">
-                        {navbarNotifications.map(notification => {
-                          const IconComponent = notification.icon;
+                        {realNotifications.length === 0 && friendRequests.length === 0 && (
+                          <div className="p-6 text-center text-muted-foreground text-sm">
+                            All clear, warrior
+                          </div>
+                        )}
+                        {realNotifications.slice(0, 5).map(notification => {
+                          const { Icon: IconComponent, color: iconColor } = getNotifIcon(notification.type, notification.severity);
+                          const priority = notification.severity === 'critical' ? 'critical' : notification.severity === 'warning' ? 'important' : 'info';
                           return (
                             <div
                               key={notification.id}
                               className={`p-4 border-b border-border hover:bg-secondary/50 transition-colors ${
-                                !notification.read ? getPriorityStyle(notification.priority) : ''
+                                !notification.is_read ? getPriorityStyle(priority as 'critical' | 'important') : ''
                               }`}
                             >
                               <div className="flex items-start gap-3">
                                 <div className={`p-2 rounded-lg ${
-                                  notification.priority === 'critical' ? 'bg-destructive/20' : 'bg-status-warning/20'
+                                  priority === 'critical' ? 'bg-destructive/20' : 'bg-status-warning/20'
                                 }`}>
-                                  <IconComponent className={`h-4 w-4 ${notification.iconColor} ${
-                                    notification.priority === 'critical' ? 'animate-pulse' : ''
+                                  <IconComponent className={`h-4 w-4 ${iconColor} ${
+                                    priority === 'critical' ? 'animate-pulse' : ''
                                   }`} />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <p className={`font-medium text-sm ${
-                                    notification.priority === 'critical' ? 'text-destructive' : 'text-status-warning'
+                                    priority === 'critical' ? 'text-destructive' : priority === 'important' ? 'text-status-warning' : 'text-foreground'
                                   }`}>
                                     {notification.title}
                                   </p>
@@ -233,12 +213,12 @@ export function Navbar() {
                                     {notification.message}
                                   </p>
                                   <p className="text-[10px] text-muted-foreground mt-1">
-                                    {formatDistanceToNow(notification.createdAt, { addSuffix: true })}
+                                    {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
                                   </p>
                                 </div>
-                                {!notification.read && (
+                                {!notification.is_read && (
                                   <div className={`h-2 w-2 rounded-full flex-shrink-0 mt-2 ${
-                                    notification.priority === 'critical' ? 'bg-destructive animate-pulse' : 'bg-status-warning'
+                                    priority === 'critical' ? 'bg-destructive animate-pulse' : 'bg-status-warning'
                                   }`} />
                                 )}
                               </div>
