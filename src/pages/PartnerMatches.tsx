@@ -47,7 +47,7 @@ const reliabilityIcons: Record<ReliabilityTier, React.ReactNode> = {
   unranked: null
 };
 
-const PartnerMatches = () => {
+const PartnerMatches = ({ embedded = false }: { embedded?: boolean }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [paceFilter, setPaceFilter] = useState('all');
   const [reliabilityFilter, setReliabilityFilter] = useState('all');
@@ -72,12 +72,14 @@ const PartnerMatches = () => {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <Button variant="ghost" asChild className="mb-4">
-            <Link to="/partner">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back
-            </Link>
-          </Button>
+          {!embedded && (
+            <Button variant="ghost" asChild className="mb-4">
+              <Link to="/partner">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back
+              </Link>
+            </Button>
+          )}
           
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
