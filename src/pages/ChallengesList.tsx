@@ -3,7 +3,8 @@ import { Link, Navigate, useParams, useNavigate } from 'react-router-dom';
 import { 
   Search, Zap, Users, ChevronRight, ChevronLeft,
   ChevronsUp, Swords, BookOpen, Sparkles, Check, Loader2, 
-  Clock, Shield, AlertTriangle, Flame, Crown, Network, Server, Code2
+  Clock, Shield, AlertTriangle, Flame, Crown, Network, Server, Code2,
+  Layers, FileCode, Table2
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -79,6 +80,33 @@ const categoryConfig: Record<string, {
     glowColor: 'drop-shadow-[0_0_15px_hsl(var(--accent))]',
     challengeType: 'coding',
     emptyMessage: 'Coding practice challenges are coming soon.',
+  },
+  lld: {
+    title: 'LLD',
+    subtitle: 'Low-Level Design Problems',
+    icon: <Layers className="h-8 w-8" />,
+    color: 'text-accent',
+    glowColor: 'drop-shadow-[0_0_15px_hsl(var(--accent))]',
+    challengeType: 'lld' as ChallengeType,
+    emptyMessage: 'LLD challenges are unlocking daily during beta.',
+  },
+  'machine-coding': {
+    title: 'Machine Coding',
+    subtitle: 'Real-World Coding Rounds',
+    icon: <FileCode className="h-8 w-8" />,
+    color: 'text-teal-400',
+    glowColor: 'drop-shadow-[0_0_15px_hsl(175,70%,45%)]',
+    challengeType: 'machine_coding' as ChallengeType,
+    emptyMessage: 'Machine Coding challenges are unlocking daily during beta.',
+  },
+  sql: {
+    title: 'SQL',
+    subtitle: 'Queries & Database Logic',
+    icon: <Table2 className="h-8 w-8" />,
+    color: 'text-emerald-400',
+    glowColor: 'drop-shadow-[0_0_15px_hsl(160,70%,45%)]',
+    challengeType: 'sql' as ChallengeType,
+    emptyMessage: 'SQL challenges are unlocking daily during beta.',
   },
 };
 
