@@ -59,8 +59,7 @@ export default function ContestDetail() {
   const { data: regs } = useContestRegistrations(id);
   const registerMut = useRegisterForContest();
 
-  const seedContests = getSeedContests();
-  const contest = dbContest || seedContests.find(c => c.id === id);
+  const contest = dbContest;
 
   if (isLoading) {
     return (

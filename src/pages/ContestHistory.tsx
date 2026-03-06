@@ -19,7 +19,7 @@ const EMPTY_RATING = { rating: 1200, max_rating: 1200, contests_played: 0, best_
 
 export default function ContestHistory() {
   const { data: dbRating } = useUserContestRating();
-  const rating = dbRating || SEED_USER_RATING;
+  const rating = dbRating || EMPTY_RATING;
 
   // Simple rating graph data points
   const graphPoints = HISTORY.slice().reverse().map(h => h.newRating);

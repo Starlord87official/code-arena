@@ -17,7 +17,7 @@ export default function ContestLobby() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { data: dbContest } = useContest(id);
-  const contest = dbContest || getSeedContests().find(c => c.id === id);
+  const contest = dbContest;
   const [language, setLanguage] = useState('cpp');
   const [timeLeft, setTimeLeft] = useState({ minutes: 0, seconds: 0 });
   const [canEnter, setCanEnter] = useState(false);
