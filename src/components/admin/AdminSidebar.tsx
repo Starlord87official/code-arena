@@ -19,6 +19,7 @@ const adminNavItems = [
   { path: '/admin/battles', label: 'Battles', icon: Swords },
   { path: '/admin/notifications', label: 'Notifications', icon: Bell },
   { path: '/admin/championship', label: 'Championship', icon: Crown },
+  { path: '/admin/oa', label: 'OA Arena', icon: FileText },
   { path: '/admin/system', label: 'System', icon: Settings },
 ];
 

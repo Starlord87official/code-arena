@@ -182,6 +182,7 @@ const App = () => {
               <Route path="/admin/battles" element={<AdminBattles />} />
               <Route path="/admin/notifications" element={<AdminNotifications />} />
               <Route path="/admin/championship" element={<AdminChampionship />} />
+              <Route path="/admin/oa" element={<AdminOA />} />
               <Route path="/admin/system" element={<AdminSystem />} />
             </Route>
           </Routes>
