@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useContests, useUserContestRating } from '@/hooks/useContests';
-import { getSeedContests, SEED_USER_RATING } from '@/lib/contestSeedData';
+
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
