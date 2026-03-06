@@ -2470,6 +2470,7 @@ export type Database = {
           occupation_type: string | null
           onboarding_completed: boolean
           primary_roadmap: string | null
+          role: string
           streak: number | null
           updated_at: string
           username: string | null
@@ -2488,6 +2489,7 @@ export type Database = {
           occupation_type?: string | null
           onboarding_completed?: boolean
           primary_roadmap?: string | null
+          role?: string
           streak?: number | null
           updated_at?: string
           username?: string | null
@@ -2506,6 +2508,7 @@ export type Database = {
           occupation_type?: string | null
           onboarding_completed?: boolean
           primary_roadmap?: string | null
+          role?: string
           streak?: number | null
           updated_at?: string
           username?: string | null
@@ -3179,6 +3182,7 @@ export type Database = {
         Returns: boolean
       }
       hash_invite_code: { Args: { p_code: string }; Returns: string }
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_challenge_unlocked: {
         Args: { p_challenge_id: string; p_user_id: string }
         Returns: boolean

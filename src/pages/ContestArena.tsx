@@ -202,25 +202,9 @@ export default function ContestArena() {
             </TabsContent>
 
             <TabsContent value="leaderboard" className="flex-1 overflow-auto p-4 mt-0">
-              <div className="space-y-2">
-                {SEED_LEADERBOARD.map((entry) => (
-                  <div key={entry.rank} className={cn(
-                    "flex items-center gap-3 p-2.5 rounded-lg",
-                    entry.rank === 1 && "bg-status-warning/10",
-                    entry.rank === 2 && "bg-muted/30",
-                    entry.rank === 3 && "bg-rank-bronze/10"
-                  )}>
-                    <span className={cn(
-                      "w-6 text-center font-display font-bold text-sm",
-                      entry.rank === 1 && "text-status-warning",
-                      entry.rank === 2 && "text-rank-silver",
-                      entry.rank === 3 && "text-rank-bronze"
-                    )}>{entry.rank}</span>
-                    <span className="flex-1 text-sm font-medium">{entry.username}</span>
-                    <span className="text-sm font-display text-primary">{entry.score}</span>
-                    <span className="text-xs text-muted-foreground w-16 text-right">{entry.penalty}m</span>
-                  </div>
-                ))}
+              <div className="text-center py-8">
+                <Trophy className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+                <p className="text-sm text-muted-foreground">Leaderboard will appear once the contest begins.</p>
               </div>
             </TabsContent>
 
