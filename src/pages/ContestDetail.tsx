@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useContest, useMyRegistration, useRegisterForContest, useContestRegistrations } from '@/hooks/useContests';
-import { getSeedContests } from '@/lib/contestSeedData';
+
 import { format, formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
@@ -59,8 +59,7 @@ export default function ContestDetail() {
   const { data: regs } = useContestRegistrations(id);
   const registerMut = useRegisterForContest();
 
-  const seedContests = getSeedContests();
-  const contest = dbContest || seedContests.find(c => c.id === id);
+  const contest = dbContest;
 
   if (isLoading) {
     return (

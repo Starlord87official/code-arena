@@ -12,17 +12,24 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AvatarWithFrame, AvatarWithCrown } from "@/components/championship/AvatarWithFrame";
 import { 
-  MOCK_USER_STATUS, 
-  MOCK_SOLO_STANDINGS,
   TRACKS,
   TrackType,
   UserTrackStatus,
   getStageStatusLabel,
   getUserStatusLabel,
   getRefreshedSeasonData,
-  getNextPhaseForCountdown
+  getNextPhaseForCountdown,
+  UserChampionshipStatus
 } from "@/lib/championshipData";
 import { cn } from "@/lib/utils";
+
+// Default empty user status
+const EMPTY_USER_STATUS: UserChampionshipStatus = {
+  seasonId: 'india-2026',
+  verificationLane: 'open',
+  phoneVerified: false,
+  tracks: {}
+};
 
 // Countdown Timer Component
 function CountdownTimer({ targetDate }: { targetDate: string }) {
@@ -283,10 +290,8 @@ function StageTimeline() {
   );
 }
 
-// Live Standings Preview
+// Live Standings Preview - Empty state (no mock data)
 function LiveStandingsPreview() {
-  const topStandings = MOCK_SOLO_STANDINGS.slice(0, 5);
-
   return (
     <Card className="bg-card/80 backdrop-blur-sm border-border/50">
       <CardHeader className="flex flex-row items-center justify-between">
@@ -301,59 +306,21 @@ function LiveStandingsPreview() {
         </Link>
       </CardHeader>
       <CardContent>
-        <div className="space-y-2">
-          {topStandings.map((entry) => (
-            <div 
-              key={entry.userId}
-              className={cn(
-                "flex items-center gap-3 py-2 px-3 rounded-lg",
-                entry.rank === 1 && "bg-yellow-500/10",
-                entry.rank === 2 && "bg-slate-400/10",
-                entry.rank === 3 && "bg-amber-600/10"
-              )}
-            >
-              <span className={cn(
-                "w-6 text-center font-display font-bold",
-                entry.rank === 1 && "text-yellow-400",
-                entry.rank === 2 && "text-slate-400",
-                entry.rank === 3 && "text-amber-600"
-              )}>
-                {entry.rank}
-              </span>
-              <AvatarWithCrown 
-                username={entry.username}
-                isPastChampion={entry.isPastChampion}
-                size="sm"
-              />
-              <span className="flex-1 text-sm font-medium truncate">{entry.username}</span>
-              {entry.verified && (
-                <Verified className="h-3.5 w-3.5 text-primary" />
-              )}
-              <span className="text-sm font-display text-primary">{entry.score}</span>
-            </div>
-          ))}
+        <div className="text-center py-6">
+          <Trophy className="h-10 w-10 mx-auto text-muted-foreground/30 mb-3" />
+          <p className="text-sm text-muted-foreground">
+            Standings will appear once competitions begin.
+          </p>
         </div>
       </CardContent>
     </Card>
   );
 }
 
-// User Status Panel
+// User Status Panel - uses real empty state
 function UserStatusPanel() {
-  const status = MOCK_USER_STATUS;
+  const status = EMPTY_USER_STATUS;
   const navigate = useNavigate();
-
-  const getNextAction = () => {
-    if (!status.phoneVerified) {
-      return { label: 'Verify Phone Number', action: () => {}, icon: AlertCircle, urgent: true };
-    }
-    if (!status.tracks.duo?.partner) {
-      return { label: 'Pick Duo Partner', action: () => navigate('/partner/matches'), icon: Users };
-    }
-    return { label: 'Start Practice Set', action: () => navigate('/challenges'), icon: Target };
-  };
-
-  const nextAction = getNextAction();
 
   return (
     <Card className="bg-card/80 backdrop-blur-sm border-border/50">
@@ -364,42 +331,24 @@ function UserStatusPanel() {
         {/* Verification Lane */}
         <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-secondary/30">
           <div className="flex items-center gap-2">
-            {status.verificationLane === 'crown' ? (
-              <Crown className="h-4 w-4 text-yellow-400" />
-            ) : (
-              <User className="h-4 w-4 text-muted-foreground" />
-            )}
-            <span className="text-sm">
-              {status.verificationLane === 'crown' ? 'Crown Lane' : 'Open Lane'}
-            </span>
+            <User className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm">Open Lane</span>
           </div>
-          {status.phoneVerified ? (
-            <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-              <CheckCircle2 className="h-3 w-3 mr-1" />
-              Verified
-            </Badge>
-          ) : (
-            <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
-              Pending
-            </Badge>
-          )}
+          <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
+            Pending
+          </Badge>
         </div>
 
         {/* Tracks Joined */}
         <div className="flex gap-2">
           {(['solo', 'duo', 'clan'] as TrackType[]).map((track) => {
-            const joined = !!status.tracks[track];
             return (
               <Badge 
                 key={track}
-                variant={joined ? 'default' : 'outline'}
-                className={cn(
-                  "capitalize",
-                  joined && "bg-primary/20 text-primary border-primary/30"
-                )}
+                variant="outline"
+                className="capitalize"
               >
                 {track}
-                {joined && <CheckCircle2 className="h-3 w-3 ml-1" />}
               </Badge>
             );
           })}
@@ -408,11 +357,11 @@ function UserStatusPanel() {
         {/* Next Action */}
         <Button 
           className="w-full group"
-          variant={nextAction.urgent ? 'destructive' : 'default'}
-          onClick={nextAction.action}
+          variant="default"
+          onClick={() => navigate('/challenges')}
         >
-          <nextAction.icon className="mr-2 h-4 w-4" />
-          {nextAction.label}
+          <Target className="mr-2 h-4 w-4" />
+          Start Practice Set
           <ChevronRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
         </Button>
       </CardContent>
@@ -424,7 +373,7 @@ function UserStatusPanel() {
 export default function Championship() {
   // Get refreshed season data with current stage statuses
   const season = getRefreshedSeasonData();
-  const userStatus = MOCK_USER_STATUS;
+  const userStatus = EMPTY_USER_STATUS;
   
   // Get countdown target dynamically
   const nextPhase = getNextPhaseForCountdown(season);

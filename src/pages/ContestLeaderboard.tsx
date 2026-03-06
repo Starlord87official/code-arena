@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useContest, useContestRatingChanges } from '@/hooks/useContests';
-import { getSeedContests, SEED_LEADERBOARD } from '@/lib/contestSeedData';
+
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 
@@ -13,12 +13,10 @@ export default function ContestLeaderboard() {
   const { id } = useParams();
   const { data: dbContest } = useContest(id);
   const { data: ratingChanges } = useContestRatingChanges(id);
-  const contest = dbContest || getSeedContests().find(c => c.id === id);
+  const contest = dbContest;
   const [search, setSearch] = useState('');
 
-  const leaderboard = SEED_LEADERBOARD.filter(e =>
-    !search || e.username.toLowerCase().includes(search.toLowerCase())
-  );
+  const leaderboard: { rank: number; username: string; score: number; penalty: number; problems_solved: number; rating_delta: number }[] = [];
 
   return (
     <div className="container mx-auto px-4 max-w-4xl py-6 space-y-6">

@@ -10,14 +10,14 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useContest } from '@/hooks/useContests';
-import { getSeedContests } from '@/lib/contestSeedData';
+
 import { cn } from '@/lib/utils';
 
 export default function ContestLobby() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { data: dbContest } = useContest(id);
-  const contest = dbContest || getSeedContests().find(c => c.id === id);
+  const contest = dbContest;
   const [language, setLanguage] = useState('cpp');
   const [timeLeft, setTimeLeft] = useState({ minutes: 0, seconds: 0 });
   const [canEnter, setCanEnter] = useState(false);

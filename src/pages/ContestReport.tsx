@@ -9,20 +9,20 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { useContest } from '@/hooks/useContests';
-import { getSeedContests, SEED_PROBLEMS, SEED_USER_RATING } from '@/lib/contestSeedData';
+import { SEED_PROBLEMS } from '@/lib/contestSeedData';
 import { cn } from '@/lib/utils';
 
 export default function ContestReport() {
   const { id } = useParams();
   const { data: dbContest } = useContest(id);
-  const contest = dbContest || getSeedContests().find(c => c.id === id);
+  const contest = dbContest;
 
   const reportData = {
-    rank: 5,
-    score: 400,
-    ratingDelta: -10,
-    oldRating: SEED_USER_RATING.rating + 10,
-    newRating: SEED_USER_RATING.rating,
+    rank: 0,
+    score: 0,
+    ratingDelta: 0,
+    oldRating: 1200,
+    newRating: 1200,
     timeSpent: [12, 28, 0, 0], // per problem minutes
     attempts: [1, 3, 0, 0],
     mistakes: ['Wrong Answer on B (edge case with empty tokens)', 'TLE on B attempt 2'],

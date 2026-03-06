@@ -17,7 +17,7 @@ import {
 } from '@/hooks/useClans';
 import { BattleHistoryList } from '@/components/clan/BattleHistoryList';
 import { ClanRankBadge } from '@/components/clans/ClanRankBadge';
-import { SEED_CLANS } from '@/lib/clanSeedData';
+
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -36,9 +36,7 @@ export default function ClanDashboard() {
   const applyToClan = useApplyToClan();
   const leaveClan = useLeaveClanV2();
 
-  // Fallback to seed data for demo
-  const seedClan = SEED_CLANS.find((c) => c.id === id);
-  const displayClan = clan || seedClan;
+  const displayClan = clan;
   const isMember = membership?.clan_id === id;
   const myRole = isMember ? membership?.role : null;
   const isLeaderOrCo = myRole === 'leader' || myRole === 'co_leader';

@@ -11,11 +11,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ContestCardNew } from '@/components/contests/ContestCardNew';
 import { useContests, useUserContestRating } from '@/hooks/useContests';
-import { getSeedContests, SEED_USER_RATING } from '@/lib/contestSeedData';
 import { cn } from '@/lib/utils';
 
 const difficultyFilters = ['all', 'beginner', 'intermediate', 'elite'] as const;
 const modeFilters = ['all', 'solo', 'duo', 'clan'] as const;
+
+// Default empty rating stats
+const EMPTY_RATING = {
+  rating: 1200,
+  max_rating: 1200,
+  contests_played: 0,
+  best_rank: 0,
+  current_streak: 0,
+};
 
 export default function ContestsHome() {
   const [diffFilter, setDiffFilter] = useState('all');
@@ -23,13 +31,9 @@ export default function ContestsHome() {
   const { data: dbContests, isLoading } = useContests();
   const { data: dbRating } = useUserContestRating();
 
-  // Use DB data if available, else seed data
-  const seedContests = useMemo(() => getSeedContests(), []);
-  const contests = dbContests && dbContests.length > 0
-    ? dbContests.map(c => ({ ...c, registered_count: 0 }))
-    : seedContests;
-
-  const rating = dbRating || SEED_USER_RATING;
+  // Use real DB data only — no seed/fake fallback
+  const contests = (dbContests || []).map(c => ({ ...c, registered_count: 0 }));
+  const rating = dbRating || EMPTY_RATING;
 
   const filtered = contests.filter(c => {
     if (diffFilter !== 'all' && c.difficulty !== diffFilter) return false;
@@ -151,7 +155,7 @@ export default function ContestsHome() {
               <Card className="bg-card/80 border-border/50">
                 <CardContent className="py-8 text-center">
                   <Clock className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-                  <p className="text-muted-foreground text-sm">No upcoming contests match your filters.</p>
+                  <p className="text-muted-foreground text-sm">No upcoming contests right now.</p>
                 </CardContent>
               </Card>
             )}
@@ -201,7 +205,9 @@ export default function ContestsHome() {
                 </div>
                 <div className="p-3 rounded-lg bg-secondary/30 text-center">
                   <p className="text-[10px] uppercase text-muted-foreground tracking-widest">Best Rank</p>
-                  <p className="text-xl font-display font-bold text-status-warning">#{rating.best_rank}</p>
+                  <p className="text-xl font-display font-bold text-status-warning">
+                    {rating.best_rank > 0 ? `#${rating.best_rank}` : '—'}
+                  </p>
                 </div>
               </div>
 
