@@ -68,6 +68,17 @@ import OAHistory from "./pages/OAHistory";
 import ClansHome from "./pages/ClansHome";
 import ClansCreate from "./pages/ClansCreate";
 import ClanDashboard from "./pages/ClanDashboard";
+// Admin Pages
+import { AdminLayout } from "./components/admin/AdminLayout";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminProblems from "./pages/admin/AdminProblems";
+import AdminContests from "./pages/admin/AdminContests";
+import AdminClans from "./pages/admin/AdminClans";
+import AdminBattles from "./pages/admin/AdminBattles";
+import AdminNotifications from "./pages/admin/AdminNotifications";
+import AdminChampionship from "./pages/admin/AdminChampionship";
+import AdminSystem from "./pages/admin/AdminSystem";
 
 // Phase 1: Student-focused app - mentor/clan features disabled
 // Battle Mode is always available to all authenticated users
