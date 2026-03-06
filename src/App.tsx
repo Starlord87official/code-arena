@@ -79,6 +79,7 @@ import AdminBattles from "./pages/admin/AdminBattles";
 import AdminNotifications from "./pages/admin/AdminNotifications";
 import AdminChampionship from "./pages/admin/AdminChampionship";
 import AdminSystem from "./pages/admin/AdminSystem";
+import AdminOA from "./pages/admin/AdminOA";
 
 // Phase 1: Student-focused app - mentor/clan features disabled
 // Battle Mode is always available to all authenticated users
@@ -181,6 +182,7 @@ const App = () => {
               <Route path="/admin/battles" element={<AdminBattles />} />
               <Route path="/admin/notifications" element={<AdminNotifications />} />
               <Route path="/admin/championship" element={<AdminChampionship />} />
+              <Route path="/admin/oa" element={<AdminOA />} />
               <Route path="/admin/system" element={<AdminSystem />} />
             </Route>
           </Routes>
