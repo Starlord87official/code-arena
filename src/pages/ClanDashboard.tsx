@@ -17,7 +17,7 @@ import {
 } from '@/hooks/useClans';
 import { BattleHistoryList } from '@/components/clan/BattleHistoryList';
 import { ClanRankBadge } from '@/components/clans/ClanRankBadge';
-import { SEED_CLANS } from '@/lib/clanSeedData';
+
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 
