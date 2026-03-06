@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 export default function ContestArena() {
   const { id } = useParams();
   const { data: dbContest } = useContest(id);
-  const contest = dbContest || getSeedContests().find(c => c.id === id);
+  const contest = dbContest;
   
   const [activeProblem, setActiveProblem] = useState(0);
   const [code, setCode] = useState('// Write your solution here\n\n');
