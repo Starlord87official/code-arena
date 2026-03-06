@@ -170,6 +170,19 @@ const App = () => {
               <Route path="/clans/:id" element={<ClanDashboard />} />
               <Route path="*" element={<NotFound />} />
             </Route>
+            {/* Admin Panel — separate layout, role-gated */}
+            <Route element={<AdminLayout />}>
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/dashboard" element={<AdminDashboard />} />
+              <Route path="/admin/users" element={<AdminUsers />} />
+              <Route path="/admin/problems" element={<AdminProblems />} />
+              <Route path="/admin/contests" element={<AdminContests />} />
+              <Route path="/admin/clans" element={<AdminClans />} />
+              <Route path="/admin/battles" element={<AdminBattles />} />
+              <Route path="/admin/notifications" element={<AdminNotifications />} />
+              <Route path="/admin/championship" element={<AdminChampionship />} />
+              <Route path="/admin/system" element={<AdminSystem />} />
+            </Route>
           </Routes>
         </BrowserRouter>
         </TooltipProvider>
