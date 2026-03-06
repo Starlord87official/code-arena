@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { useContest } from '@/hooks/useContests';
-import { getSeedContests, SEED_PROBLEMS, SEED_USER_RATING } from '@/lib/contestSeedData';
+import { SEED_PROBLEMS } from '@/lib/contestSeedData';
 import { cn } from '@/lib/utils';
 
 export default function ContestReport() {
