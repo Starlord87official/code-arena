@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useContest, useContestRatingChanges } from '@/hooks/useContests';
-import { getSeedContests, SEED_LEADERBOARD } from '@/lib/contestSeedData';
+
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 
