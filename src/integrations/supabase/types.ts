@@ -2297,41 +2297,62 @@ export type Database = {
       oa_questions: {
         Row: {
           assessment_id: string
+          company: string | null
           config_json: Json
+          constraints_text: string | null
           created_at: string
           difficulty: string
           id: string
+          input_format: string | null
+          output_format: string | null
           points: number
           question_order: number
+          sample_input: string | null
+          sample_output: string | null
           section_index: number
           statement: string
           tags: string[] | null
+          topic: string | null
           type: string
         }
         Insert: {
           assessment_id: string
+          company?: string | null
           config_json?: Json
+          constraints_text?: string | null
           created_at?: string
           difficulty?: string
           id?: string
+          input_format?: string | null
+          output_format?: string | null
           points?: number
           question_order?: number
+          sample_input?: string | null
+          sample_output?: string | null
           section_index?: number
           statement: string
           tags?: string[] | null
+          topic?: string | null
           type: string
         }
         Update: {
           assessment_id?: string
+          company?: string | null
           config_json?: Json
+          constraints_text?: string | null
           created_at?: string
           difficulty?: string
           id?: string
+          input_format?: string | null
+          output_format?: string | null
           points?: number
           question_order?: number
+          sample_input?: string | null
+          sample_output?: string | null
           section_index?: number
           statement?: string
           tags?: string[] | null
+          topic?: string | null
           type?: string
         }
         Relationships: [
@@ -2376,6 +2397,107 @@ export type Database = {
           weak_topics?: string[] | null
         }
         Relationships: []
+      }
+      oa_set_problems: {
+        Row: {
+          created_at: string
+          id: string
+          question_id: string
+          set_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          question_id: string
+          set_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          question_id?: string
+          set_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "oa_set_problems_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "oa_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "oa_set_problems_set_id_fkey"
+            columns: ["set_id"]
+            isOneToOne: false
+            referencedRelation: "oa_sets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      oa_sets: {
+        Row: {
+          company: string
+          created_at: string
+          difficulty: string
+          duration_minutes: number
+          id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          company?: string
+          created_at?: string
+          difficulty?: string
+          duration_minutes?: number
+          id?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          company?: string
+          created_at?: string
+          difficulty?: string
+          duration_minutes?: number
+          id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      oa_testcases: {
+        Row: {
+          created_at: string
+          id: string
+          input: string
+          is_hidden: boolean
+          output: string
+          question_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          input?: string
+          is_hidden?: boolean
+          output?: string
+          question_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          input?: string
+          is_hidden?: boolean
+          output?: string
+          question_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "oa_testcases_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "oa_questions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       planner_events: {
         Row: {
