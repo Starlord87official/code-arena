@@ -13,16 +13,24 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AvatarWithFrame } from "@/components/championship/AvatarWithFrame";
 import { 
-  MOCK_USER_STATUS, 
   TRACKS,
   FRAMES,
   TrackType,
   UserTrackProgress,
+  UserChampionshipStatus,
   getUserStatusLabel,
   formatTimeMs,
   getRefreshedSeasonData
 } from "@/lib/championshipData";
 import { cn } from "@/lib/utils";
+
+// Default empty user status
+const EMPTY_USER_STATUS: UserChampionshipStatus = {
+  seasonId: 'india-2026',
+  verificationLane: 'open',
+  phoneVerified: false,
+  tracks: {}
+};
 
 // Track Progress Panel
 function TrackProgressPanel({ 
@@ -237,11 +245,11 @@ function TrackProgressPanel({
 
 // Verification Checklist
 function VerificationChecklist() {
-  const status = MOCK_USER_STATUS;
+  const status = EMPTY_USER_STATUS;
 
   const checks = [
     { id: 'phone', label: 'Phone Verified', completed: status.phoneVerified, required: true },
-    { id: 'profile', label: 'Profile Complete', completed: true, required: true },
+    { id: 'profile', label: 'Profile Complete', completed: false, required: true },
     { id: 'identity', label: 'ID Verification (Optional)', completed: false, required: false },
   ];
 
@@ -280,22 +288,11 @@ function VerificationChecklist() {
 
         <div className="pt-3 mt-3 border-t border-border/50">
           <div className="flex items-center gap-2">
-            {status.verificationLane === 'crown' ? (
-              <>
-                <Crown className="h-5 w-5 text-yellow-400" />
-                <span className="font-semibold text-yellow-400">Crown Lane Eligible</span>
-              </>
-            ) : (
-              <>
-                <User className="h-5 w-5 text-muted-foreground" />
-                <span className="font-semibold text-muted-foreground">Open Lane</span>
-              </>
-            )}
+            <User className="h-5 w-5 text-muted-foreground" />
+            <span className="font-semibold text-muted-foreground">Open Lane</span>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            {status.verificationLane === 'crown' 
-              ? 'Your results will appear in verified standings.'
-              : 'Complete verification to join Crown Lane.'}
+            Complete verification to join Crown Lane.
           </p>
         </div>
       </CardContent>
@@ -305,7 +302,7 @@ function VerificationChecklist() {
 
 // Shareable Progress Card
 function ShareableProgressCard() {
-  const status = MOCK_USER_STATUS;
+  const status = EMPTY_USER_STATUS;
   
   return (
     <Card className="bg-gradient-to-br from-primary/10 to-cyan-500/5 border-primary/20">
@@ -314,7 +311,6 @@ function ShareableProgressCard() {
           <AvatarWithFrame
             username="You"
             size="xl"
-            frame={status.tracks.solo?.framesEarned[0]}
             showHoverCard={false}
           />
           <h3 className="font-display font-semibold mt-3">Your Championship Card</h3>
@@ -331,7 +327,7 @@ function ShareableProgressCard() {
               >
                 <span className="text-[10px] uppercase text-muted-foreground">{track}</span>
                 <p className="text-xs font-semibold mt-0.5">
-                  {trackProgress ? getUserStatusLabel(trackProgress.status) : 'N/A'}
+                  {trackProgress ? getUserStatusLabel(trackProgress.status) : 'Not Registered'}
                 </p>
               </div>
             );
@@ -353,57 +349,14 @@ function ShareableProgressCard() {
   );
 }
 
-// Training Recommendations (for eliminated users)
-function TrainingRecommendations() {
-  const recommendations = [
-    { topic: 'Dynamic Programming', weakness: 'State transitions', problems: 15 },
-    { topic: 'Graph Algorithms', weakness: 'BFS/DFS variations', problems: 12 },
-    { topic: 'Binary Search', weakness: 'Boundary conditions', problems: 8 },
-  ];
-
-  return (
-    <Card className="bg-card/80 backdrop-blur-sm border-border/50">
-      <CardHeader>
-        <CardTitle className="text-lg font-display flex items-center gap-2">
-          <BookOpen className="h-5 w-5 text-cyan-400" />
-          Training Recommendations
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <p className="text-sm text-muted-foreground">
-          Based on your performance, focus on these areas:
-        </p>
-        {recommendations.map((rec, idx) => (
-          <div 
-            key={idx}
-            className="flex items-center justify-between py-3 px-4 rounded-lg bg-secondary/20 hover:bg-secondary/30 transition-colors cursor-pointer"
-          >
-            <div>
-              <p className="font-medium text-sm">{rec.topic}</p>
-              <p className="text-xs text-muted-foreground">{rec.weakness}</p>
-            </div>
-            <Badge variant="outline">{rec.problems} problems</Badge>
-          </div>
-        ))}
-        <Link to="/challenges">
-          <Button className="w-full mt-2">
-            Start Training <ChevronRight className="ml-2 h-4 w-4" />
-          </Button>
-        </Link>
-      </CardContent>
-    </Card>
-  );
-}
-
 // Main My Progress Page
 export default function ChampionshipProgress() {
   const [activeTrack, setActiveTrack] = useState<TrackType>('solo');
-  const status = MOCK_USER_STATUS;
+  const status = EMPTY_USER_STATUS;
   // Get refreshed season data with current stage statuses
   const season = getRefreshedSeasonData();
   
   const nextStage = season.stages.find(s => s.status === 'upcoming' || s.status === 'locked');
-  const hasEliminated = Object.values(status.tracks).some(t => t?.status === 'eliminated');
 
   return (
     <div className="min-h-screen pb-12">
@@ -480,13 +433,6 @@ export default function ChampionshipProgress() {
               <TabsContent value="clan" className="mt-0">
                 <TrackProgressPanel track="clan" progress={status.tracks.clan} />
               </TabsContent>
-
-              {/* Training Recommendations (shown if eliminated) */}
-              {hasEliminated && (
-                <div className="mt-6">
-                  <TrainingRecommendations />
-                </div>
-              )}
             </div>
 
             {/* Sidebar */}

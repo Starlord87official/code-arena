@@ -13,15 +13,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AvatarWithFrame, AvatarWithCrown } from "@/components/championship/AvatarWithFrame";
 import { 
-  MOCK_SEASON_2026, 
-  MOCK_SOLO_STANDINGS,
-  MOCK_DUO_STANDINGS,
-  MOCK_CLAN_STANDINGS,
   TRACKS,
   FRAMES,
   TrackType,
   StandingEntry,
-  formatTimeMs
+  formatTimeMs,
+  getRefreshedSeasonData
 } from "@/lib/championshipData";
 import { cn } from "@/lib/utils";
 
@@ -49,166 +46,12 @@ function StandingsTable({
         <div className="col-span-3 text-right">Time</div>
       </div>
 
-      {/* Rows */}
-      {filteredEntries.map((entry, idx) => {
-        const frameConfig = entry.frame ? FRAMES[entry.frame] : null;
-        const isTop3 = entry.rank <= 3;
-        
-        return (
-          <motion.div
-            key={entry.userId}
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: idx * 0.02 }}
-            className={cn(
-              "grid grid-cols-12 gap-2 items-center px-4 py-3 rounded-lg transition-colors",
-              "hover:bg-secondary/30",
-              entry.rank === 1 && "bg-yellow-500/10 border border-yellow-500/20",
-              entry.rank === 2 && "bg-slate-400/10 border border-slate-400/20",
-              entry.rank === 3 && "bg-amber-600/10 border border-amber-600/20",
-              !isTop3 && "bg-secondary/10"
-            )}
-          >
-            {/* Rank */}
-            <div className="col-span-1">
-              <span className={cn(
-                "font-display font-bold text-lg",
-                entry.rank === 1 && "text-yellow-400",
-                entry.rank === 2 && "text-slate-400",
-                entry.rank === 3 && "text-amber-600",
-                !isTop3 && "text-muted-foreground"
-              )}>
-                {entry.rank}
-              </span>
-            </div>
-
-            {/* Player Info */}
-            <div className="col-span-5 flex items-center gap-3">
-              <AvatarWithFrame
-                username={entry.username}
-                size="sm"
-                frame={entry.frame}
-                crown={entry.isPastChampion ? { track, year: entry.championYears?.[0] || 2025 } : undefined}
-                showHoverCard={true}
-              />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-sm truncate">{entry.username}</span>
-                  {entry.verified && (
-                    <Verified className="h-3.5 w-3.5 text-primary flex-shrink-0" />
-                  )}
-                </div>
-                {track === 'duo' && entry.partnerUsername && (
-                  <p className="text-xs text-muted-foreground truncate">
-                    + {entry.partnerUsername}
-                  </p>
-                )}
-                {track === 'clan' && entry.clanName && (
-                  <p className="text-xs text-muted-foreground truncate">
-                    {entry.clanName}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Score */}
-            <div className="col-span-3 text-right">
-              <span className="font-display font-bold text-primary">
-                {entry.score.toLocaleString()}
-              </span>
-            </div>
-
-            {/* Time */}
-            <div className="col-span-3 text-right text-sm text-muted-foreground">
-              {formatTimeMs(entry.timeMs)}
-            </div>
-          </motion.div>
-        );
-      })}
-
       {filteredEntries.length === 0 && (
         <div className="text-center py-12 text-muted-foreground">
           <Trophy className="h-12 w-12 mx-auto mb-4 opacity-30" />
-          <p>No standings to display yet.</p>
+          <p>Leaderboard will appear once competitions begin.</p>
         </div>
       )}
-    </div>
-  );
-}
-
-// Top 3 Podium Component
-function TopPodium({ entries, track }: { entries: StandingEntry[]; track: TrackType }) {
-  const top3 = entries.slice(0, 3);
-  if (top3.length < 3) return null;
-
-  const podiumOrder = [top3[1], top3[0], top3[2]]; // 2nd, 1st, 3rd
-
-  return (
-    <div className="flex items-end justify-center gap-4 mb-8 pt-8">
-      {podiumOrder.map((entry, idx) => {
-        const isFirst = idx === 1;
-        const rank = entry.rank;
-        
-        return (
-          <motion.div
-            key={entry.userId}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: idx * 0.1 }}
-            className={cn(
-              "flex flex-col items-center",
-              isFirst && "order-2",
-              idx === 0 && "order-1",
-              idx === 2 && "order-3"
-            )}
-          >
-            {/* Avatar with Crown for #1 */}
-            <div className="relative mb-3">
-              {isFirst && (
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: 0.3, type: "spring" }}
-                  className="absolute -top-6 left-1/2 -translate-x-1/2"
-                >
-                  <Crown className="h-8 w-8 text-yellow-400 fill-yellow-400 drop-shadow-[0_0_10px_hsla(45,90%,55%,0.8)]" />
-                </motion.div>
-              )}
-              <AvatarWithFrame
-                username={entry.username}
-                size={isFirst ? "xl" : "lg"}
-                frame={entry.frame}
-                showHoverCard={true}
-              />
-            </div>
-
-            {/* Name */}
-            <p className={cn(
-              "font-semibold text-center truncate max-w-[100px]",
-              isFirst && "text-yellow-400"
-            )}>
-              {entry.username}
-            </p>
-
-            {/* Score */}
-            <p className="text-sm text-primary font-display font-bold">
-              {entry.score.toLocaleString()}
-            </p>
-
-            {/* Podium Block */}
-            <div 
-              className={cn(
-                "mt-3 rounded-t-lg flex items-center justify-center font-display font-bold text-2xl",
-                isFirst && "w-24 h-24 bg-gradient-to-t from-yellow-600 to-yellow-400 text-yellow-900",
-                rank === 2 && "w-20 h-16 bg-gradient-to-t from-slate-500 to-slate-400 text-slate-900",
-                rank === 3 && "w-20 h-12 bg-gradient-to-t from-amber-700 to-amber-600 text-amber-900"
-              )}
-            >
-              {rank}
-            </div>
-          </motion.div>
-        );
-      })}
     </div>
   );
 }
@@ -219,25 +62,13 @@ export default function ChampionshipStandings() {
   const [filter, setFilter] = useState<'all' | 'verified'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   
-  const season = MOCK_SEASON_2026;
+  const season = getRefreshedSeasonData();
   const activeStage = season.stages.find(s => s.status === 'active');
   
-  const getStandings = () => {
-    switch (activeTrack) {
-      case 'solo': return MOCK_SOLO_STANDINGS;
-      case 'duo': return MOCK_DUO_STANDINGS;
-      case 'clan': return MOCK_CLAN_STANDINGS;
-      default: return [];
-    }
-  };
+  // No mock data — real standings will come from Supabase
+  const standings: StandingEntry[] = [];
 
-  const standings = getStandings().filter(entry => 
-    entry.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    entry.partnerUsername?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    entry.clanName?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const isFrozen = false; // Would be true near finals end
+  const isFrozen = false;
 
   return (
     <div className="min-h-screen pb-12">
@@ -325,15 +156,10 @@ export default function ChampionshipStandings() {
       {/* Main Content */}
       <div className="container mx-auto px-4">
         <Card className="bg-card/80 backdrop-blur-sm border-border/50 overflow-hidden">
-          {/* Top 3 Podium */}
-          <div className="border-b border-border/50 bg-gradient-to-b from-yellow-500/5 to-transparent">
-            <TopPodium entries={standings} track={activeTrack} />
-          </div>
-
-          {/* Full Standings */}
+          {/* Full Standings — empty */}
           <CardContent className="pt-6">
             <StandingsTable 
-              entries={standings.slice(3)} 
+              entries={standings} 
               track={activeTrack}
               showVerifiedOnly={filter === 'verified'}
             />

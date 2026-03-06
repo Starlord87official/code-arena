@@ -12,7 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useAllClans, useMyMembership } from '@/hooks/useClans';
 import { ClanCard } from '@/components/clans/ClanCard';
 import { ClanRankBadge } from '@/components/clans/ClanRankBadge';
-import { SEED_CLANS, CLAN_BENEFITS } from '@/lib/clanSeedData';
+import { CLAN_BENEFITS } from '@/lib/clanSeedData';
 
 const BENEFIT_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   TrendingUp, Target, Swords, ClipboardCheck, Crown,
@@ -27,8 +27,8 @@ export default function ClansHome() {
   const [searchQuery, setSearchQuery] = useState('');
   const [privacyFilter, setPrivacyFilter] = useState<'all' | 'public' | 'private'>('all');
 
-  // Use real data if available, else seed data
-  const displayClans = (clans && clans.length > 0 ? clans : SEED_CLANS);
+  // Use real data only — no seed/fake fallback
+  const displayClans = clans || [];
   const filteredClans = displayClans.filter((c) => {
     const matchesSearch =
       !searchQuery ||
@@ -117,18 +117,30 @@ export default function ClansHome() {
             <Crown className="h-6 w-6 text-[hsl(var(--rank-gold))]" />
             Weekly Top Clans
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {topClans.map((clan, i) => (
-              <div key={clan.id} className="relative">
-                {i < 3 && (
-                  <div className="absolute -top-2 -left-2 z-10 h-7 w-7 rounded-full bg-[hsl(var(--rank-gold))] flex items-center justify-center font-display text-xs font-bold text-background">
-                    #{i + 1}
-                  </div>
-                )}
-                <ClanCard {...clan} member_count={(clan as any).member_count ?? undefined} />
-              </div>
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : topClans.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {topClans.map((clan, i) => (
+                <div key={clan.id} className="relative">
+                  {i < 3 && (
+                    <div className="absolute -top-2 -left-2 z-10 h-7 w-7 rounded-full bg-[hsl(var(--rank-gold))] flex items-center justify-center font-display text-xs font-bold text-background">
+                      #{i + 1}
+                    </div>
+                  )}
+                  <ClanCard {...clan} member_count={(clan as any).member_count ?? undefined} />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 border border-dashed border-border rounded-xl">
+              <Crown className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
+              <p className="text-muted-foreground font-heading">No clans yet</p>
+              <p className="text-sm text-muted-foreground mt-1">Be the first to build your squad.</p>
+            </div>
+          )}
         </section>
 
         {/* Browse Section */}
@@ -162,8 +174,8 @@ export default function ClansHome() {
           ) : filteredClans.length === 0 ? (
             <div className="text-center py-12 border border-dashed border-border rounded-xl">
               <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
-              <p className="text-muted-foreground font-heading">No clans found</p>
-              <p className="text-sm text-muted-foreground mt-1">Try a different search or create your own!</p>
+              <p className="text-muted-foreground font-heading">No clans yet. Be the first to build your squad.</p>
+              <p className="text-sm text-muted-foreground mt-1">Create a clan and start recruiting members!</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
