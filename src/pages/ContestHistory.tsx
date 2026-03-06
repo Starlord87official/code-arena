@@ -12,14 +12,10 @@ import { useContests, useUserContestRating } from '@/hooks/useContests';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
-// Mock history entries
-const HISTORY = [
-  { contestId: 'a1b2c3d4-e5f6-4a7b-8c9d-000000000004', title: 'Weekly Blitz #11', date: new Date(Date.now() - 7 * 86400000), rank: 5, score: 400, ratingDelta: -10, oldRating: 1295, newRating: 1285 },
-  { contestId: 'a1b2c3d4-e5f6-4a7b-8c9d-000000000005', title: 'Clan Championship Qualifier', date: new Date(Date.now() - 14 * 86400000), rank: 3, score: 800, ratingDelta: 35, oldRating: 1260, newRating: 1295 },
-  { contestId: 'mock-3', title: 'Weekly Blitz #10', date: new Date(Date.now() - 21 * 86400000), rank: 8, score: 200, ratingDelta: -20, oldRating: 1280, newRating: 1260 },
-  { contestId: 'mock-4', title: 'Sprint Beta', date: new Date(Date.now() - 28 * 86400000), rank: 2, score: 300, ratingDelta: 50, oldRating: 1230, newRating: 1280 },
-  { contestId: 'mock-5', title: 'Weekly Blitz #9', date: new Date(Date.now() - 35 * 86400000), rank: 12, score: 100, ratingDelta: -30, oldRating: 1260, newRating: 1230 },
-];
+// Empty history — will be populated from real contest data
+const HISTORY: { contestId: string; title: string; date: Date; rank: number; score: number; ratingDelta: number; oldRating: number; newRating: number }[] = [];
+
+const EMPTY_RATING = { rating: 1200, max_rating: 1200, contests_played: 0, best_rank: 0, current_streak: 0 };
 
 export default function ContestHistory() {
   const { data: dbRating } = useUserContestRating();
