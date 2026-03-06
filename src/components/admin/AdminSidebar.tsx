@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Code2, Trophy, Shield, Swords,
-  Bell, Crown, Settings, ChevronLeft, ChevronRight, ShieldAlert,
+  Bell, Crown, Settings, ChevronLeft, ChevronRight, ShieldAlert, FileText,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
