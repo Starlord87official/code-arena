@@ -217,10 +217,10 @@ export default function BattleSessionPage() {
         user_id: user.id,
         code,
         language,
-        status: 'accepted', // Simulated - real judging would be server-side
-        score: problem.points,
-        testcases_passed: 2,
-        testcases_total: 2,
+        status: 'pending',
+        score: 0,
+        testcases_passed: 0,
+        testcases_total: 0,
       });
 
     if (error) {
