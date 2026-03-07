@@ -5,7 +5,7 @@ import { TopBar } from './TopBar';
 import { useAuth } from '@/contexts/AuthContext';
 
 // Routes that render full-screen without TopBar/sidebar
-const FULLSCREEN_ROUTES = ['/auth', '/login', '/register'];
+const FULLSCREEN_ROUTES = ['/', '/auth', '/login', '/register'];
 
 // Routes that hide sidebar but keep a minimal layout (exam/focus pages)
 const OA_EXAM_PREFIXES = ['/oa/attempt/', '/oa/submit/', '/oa/report/'];
