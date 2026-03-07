@@ -303,7 +303,7 @@ export default function BattleSessionPage() {
       endingRef.current = false;
       setIsEnding(false);
     }
-  }, [session, user, myScore, opponentScore, queryClient, navigate]);
+  }, [session, user, queryClient, navigate]);
 
   // Format time
   const formatTime = (seconds: number) => {
