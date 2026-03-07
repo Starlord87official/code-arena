@@ -271,8 +271,6 @@ export default function BattleSessionPage() {
     try {
       const { data, error } = await supabase.rpc('complete_duo_battle', {
         p_session_id: session.id,
-        p_player_a_score: isPlayerA ? myScore : opponentScore,
-        p_player_b_score: isPlayerA ? opponentScore : myScore,
       });
 
       if (error) throw error;
