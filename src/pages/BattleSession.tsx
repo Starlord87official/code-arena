@@ -217,10 +217,10 @@ export default function BattleSessionPage() {
         user_id: user.id,
         code,
         language,
-        status: 'accepted', // Simulated - real judging would be server-side
-        score: problem.points,
-        testcases_passed: 2,
-        testcases_total: 2,
+        status: 'pending',
+        score: 0,
+        testcases_passed: 0,
+        testcases_total: 0,
       });
 
     if (error) {
@@ -266,13 +266,9 @@ export default function BattleSessionPage() {
     endingRef.current = true;
     setIsEnding(true);
 
-    const isPlayerA = session.player_a_id === user.id;
-
     try {
       const { data, error } = await supabase.rpc('complete_duo_battle', {
         p_session_id: session.id,
-        p_player_a_score: isPlayerA ? myScore : opponentScore,
-        p_player_b_score: isPlayerA ? opponentScore : myScore,
       });
 
       if (error) throw error;
@@ -307,7 +303,7 @@ export default function BattleSessionPage() {
       endingRef.current = false;
       setIsEnding(false);
     }
-  }, [session, user, myScore, opponentScore, queryClient, navigate]);
+  }, [session, user, queryClient, navigate]);
 
   // Format time
   const formatTime = (seconds: number) => {
