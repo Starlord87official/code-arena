@@ -266,8 +266,6 @@ export default function BattleSessionPage() {
     endingRef.current = true;
     setIsEnding(true);
 
-    const isPlayerA = session.player_a_id === user.id;
-
     try {
       const { data, error } = await supabase.rpc('complete_duo_battle', {
         p_session_id: session.id,
