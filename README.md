@@ -1,73 +1,221 @@
-# Welcome to your Lovable project
+⚡ CodeLock
 
-## Project info
+Train like a competitor. Think like a champion.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+Codelock is a modern competitive coding and interview preparation platform designed to help developers master Data Structures, System Design, Machine Coding, and real interview scenarios.
 
-## How can I edit this code?
+Built with a premium cyber interface, the platform combines practice, competition, and collaboration into one ecosystem.
 
-There are several ways of editing your application.
+⸻
 
-**Use Lovable**
+🚀 Platform Vision
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+Most coding platforms only provide practice.
 
-Changes made via Lovable will be committed automatically to this repo.
+CodeTrackX goes further by combining:
+	•	Structured learning paths
+	•	Competitive contests
+	•	Clan-based collaboration
+	•	Real-time coding battles
+	•	Interview-style challenges
 
-**Use your preferred IDE**
+The goal is to simulate real hiring environments while keeping the experience engaging and competitive.
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+⸻
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+🧩 Core Modules
 
-Follow these steps:
+🧠 Challenge Arena
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+Structured training paths for mastering core interview topics.
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+Tracks include:
+	•	Data Structures & Algorithms (DSA)
+	•	System Design
+	•	Low-Level Design (LLD)
+	•	Machine Coding
+	•	SQL & Database Logic
 
-# Step 3: Install the necessary dependencies.
-npm i
+⸻
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+🏆 Championship
+
+A seasonal competitive ladder where developers compete for the CodeLock Crown.
+
+Modes:
+	•	Solo Championship
+	•	Duo Championship
+	•	Clan Championship
+
+Top performers earn prestige, rankings, and crown badges.
+
+⸻
+
+⚔️ Battle Mode
+
+Real-time coding duels.
+
+Features:
+	•	Quick Match
+	•	Ranked Battle
+	•	Custom Duel
+
+Players solve problems under time pressure while competing head-to-head.
+
+⸻
+
+🏁 Contests
+
+Timed competitions inspired by real competitive programming events.
+
+Formats include:
+	•	ICPC style
+	•	IOI style
+	•	Weekly arenas
+	•	Championship qualifiers
+
+⸻
+
+🛡 Clan Arena
+
+Build a squad and compete together.
+
+Features:
+	•	Clan creation
+	•	Weekly clan wars
+	•	Shared XP
+	•	Clan rankings
+
+⸻
+
+🤝 Lock-In Partner
+
+Find a serious coding partner and train together for 7 days of focused preparation.
+
+No random chat.
+No spam.
+Only structured accountability.
+
+⸻
+
+🔔 Command Center
+
+A centralized notification system that tracks:
+	•	Contest alerts
+	•	Rank changes
+	•	Streak warnings
+	•	Clan activity
+
+⸻
+
+🎯 Key Features
+	•	Competitive coding environment
+	•	Interview preparation system
+	•	Clan-based learning
+	•	Real-time battles
+	•	Anti-cheat contest integrity
+	•	Cyber-glass UI design
+	•	Admin management dashboard
+
+⸻
+
+🧰 Tech Stack
+
+Frontend
+	•	React / Next.js
+	•	TailwindCSS
+	•	Custom Cyber UI System
+
+Backend
+	•	Supabase
+	•	PostgreSQL
+	•	Supabase Realtime
+
+Infrastructure
+	•	Cloudflare Pages (Hosting)
+	•	Supabase Storage
+	•	Supabase Edge Functions
+
+⸻
+
+🗄 Database
+
+Key tables include:
+
+profiles
+problems
+contest
+contest_submissions
+battle_matches
+clans
+notifications
+championship_results
+
+The platform uses Supabase Row Level Security (RLS) for secure access control.
+
+⸻
+
+🛠 Development Setup
+
+1️⃣ Clone the repository
+git clone https://github.com/Starlord87official/code-arena.git
+cd codetrackx
+2️⃣ Install dependencies
+npm install
+3️⃣ Setup environment variables
+Create a .env.local file:
+NEXT_PUBLIC_SUPABASE_URL=your_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_key
+4️⃣ Run development server
 npm run dev
-```
+🧪 Admin Panel
 
-**Edit a file directly in GitHub**
+The platform includes an internal Admin Dashboard to manage:
+	•	Users
+	•	Problems
+	•	Contests
+	•	Clans
+	•	Battles
+	•	Notifications
+	•	Championship seasons
+	•	OA question sets
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Admin access is controlled through the profiles.role field.
 
-**Use GitHub Codespaces**
+⸻
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+🏗 Roadmap
 
-## What technologies are used for this project?
+Upcoming features:
+	•	AI-powered code feedback
+	•	Company interview simulation
+	•	Problem recommendation engine
+	•	Global leaderboard seasons
+	•	Mobile app support
 
-This project is built with:
+⸻
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+🤝 Contributing
 
-## How can I deploy this project?
+Contributions are welcome.
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+If you would like to contribute:
+	1.	Fork the repository
+	2.	Create a feature branch
+	3.	Submit a pull request
 
-## Can I connect a custom domain to my Lovable project?
+⸻
 
-Yes, you can!
+📜 License
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+MIT License
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+⸻
+
+⚡ Built For
+
+Developers who want to train seriously, compete globally, and prepare for real technical interviews.
+:::
+
+⸻
+
