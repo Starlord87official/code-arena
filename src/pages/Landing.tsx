@@ -1173,7 +1173,7 @@ function FinalCTA() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link to="/register">
               <Button variant="arena" size="xl" className="group shadow-neon-strong shimmer-sweep text-base">
-                Start Free
+                Start
                 <ChevronRight className="h-5 w-5 group-hover:translate-x-1.5 transition-transform duration-300" />
               </Button>
             </Link>
