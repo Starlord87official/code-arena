@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/banner.jpeg" alt="CodeTrackX Banner">
+  <img src="assets/banner.png" alt="CodeTrackX Banner">
 </p>
 
 <p align="center">
