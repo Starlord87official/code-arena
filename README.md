@@ -297,3 +297,10 @@ CodeTrackX aims to build a global competitive coding ecosystem where developers 
 * grow
 
 together.
+
+## Why CodeTrackX is Open Source
+
+We believe competitive programming infrastructure should be open and transparent.
+
+Most platforms in this space are closed systems.  
+CodeTrackX aims to build an open ecosystem where developers can contribute to the future of coding competitions and interview preparation.
