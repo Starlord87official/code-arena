@@ -56,7 +56,7 @@ export function useMatchmaking() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [matchmakingState, setMatchmakingState] = useState<MatchmakingState>({ status: 'idle' });
-  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Check queue status
   const checkQueueStatus = useCallback(async () => {
