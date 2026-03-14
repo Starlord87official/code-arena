@@ -217,7 +217,7 @@ function PremiumNavbar() {
               <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground font-heading hover:bg-secondary/40">Sign In</Button>
             </Link>
             <Link to="/register">
-              <Button variant="arena" size="sm" className="shadow-neon shimmer-sweep">Start Free</Button>
+              <Button variant="arena" size="sm" className="shadow-neon shimmer-sweep">Start </Button>
             </Link>
             <button onClick={() => setMobileOpen(!mobileOpen)} className="lg:hidden p-2 text-muted-foreground hover:text-foreground transition-colors">
               {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
