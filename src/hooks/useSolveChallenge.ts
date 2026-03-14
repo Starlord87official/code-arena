@@ -51,7 +51,7 @@ export function useSolveChallenge(slugOrId: string) {
   // Timer state
   const [timeElapsed, setTimeElapsed] = useState(0);
   const [timerStopped, setTimerStopped] = useState(false);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Submission state
   const [isSubmitting, setIsSubmitting] = useState(false);

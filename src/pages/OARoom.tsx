@@ -40,8 +40,8 @@ export default function OARoom() {
   const [statuses, setStatuses] = useState<Record<string, QuestionStatus>>({});
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [integrityData, setIntegrityData] = useState({ tabSwitches: 0, fullscreenExits: 0, copyPasteCount: 0 });
-  const autoSaveRef = useRef<NodeJS.Timeout | null>(null);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const autoSaveRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Fetch questions for the assessment
   useEffect(() => {
