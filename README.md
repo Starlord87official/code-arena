@@ -280,6 +280,25 @@ Steps:
 See **CONTRIBUTING.md** for full guidelines.
 
 ---
+## Maintainer Workflow
+
+CodeTrackX is actively maintained and receives feature updates regularly.
+
+Typical maintainer tasks include:
+
+- reviewing pull requests
+- debugging issues across multiple modules
+- maintaining Supabase database migrations
+- writing documentation
+- refactoring contest and battle systems
+
+AI-assisted tooling like Codex can significantly improve this workflow by:
+- automating code review suggestions
+- identifying potential bugs early
+- generating documentation for new modules
+- assisting contributors during development
+
+---
 
 # 📜 License
 
