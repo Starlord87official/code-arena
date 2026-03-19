@@ -74,6 +74,13 @@
     --shadow-neon-strong: 0 0 40px hsla(199, 100%, 50%, 0.5);
     --shadow-card: 0 4px 20px hsla(0, 0%, 0%, 0.3);
 
+    /* Activity Heatmap tokens */
+    --tile-empty-bg: rgba(255, 255, 255, 0.06);
+    --tile-border: rgba(255, 255, 255, 0.10);
+    --ring-hover: hsla(199, 100%, 50%, 0.45);
+    --ring-selected: hsla(199, 100%, 50%, 0.85);
+    --trend-color: hsl(199, 100%, 60%);
+
     --sidebar-background: 222 47% 6%;
     --sidebar-foreground: 210 40% 98%;
     --sidebar-primary: 199 100% 50%;

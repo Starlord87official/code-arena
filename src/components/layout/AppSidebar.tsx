@@ -54,7 +54,7 @@ const primaryNavItems: NavItem[] = [
 ];
 
 const secondaryNavItems: NavItem[] = [
-  { path: '/analytics/glyph-heatmap', label: 'Glyph Heatmap', icon: BarChart3, highlight: true },
+  { path: '/analytics/glyph-heatmap', label: 'Activity Heatmap', icon: BarChart3, highlight: true },
   { path: '/partner', label: 'Lock-In Partner', icon: Users },
   { path: '/hall-of-champions', label: 'Hall of Champions', icon: Crown },
   { path: '/battle/history', label: 'Battle History', icon: FileBarChart },
