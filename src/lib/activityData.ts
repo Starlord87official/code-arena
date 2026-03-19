@@ -26,78 +26,8 @@ export const GRID_ROWS = 7;
 export const GRID_W = GRID_COLS * (TILE_W + GAP) - GAP;
 export const GRID_H = GRID_ROWS * (TILE_H + GAP) - GAP;
 
-// ── Seeded RNG ─────────────────────────────────────────────────
-function seededRandom(seed: number): () => number {
-  let s = seed;
-  return () => {
-    s = (s * 16807) % 2147483647;
-    return (s - 1) / 2147483646;
-  };
-}
-
-// ── Mock data ──────────────────────────────────────────────────
-export function generateMockData(): DayData[] {
-  const rand = seededRandom(42);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const currentDow = today.getDay();
-  const thisSunday = new Date(today);
-  thisSunday.setDate(today.getDate() - currentDow);
-
-  const startDate = new Date(thisSunday);
-  startDate.setDate(startDate.getDate() - 51 * 7);
-
-  const data: DayData[] = [];
-
-  for (let week = 0; week < 52; week++) {
-    for (let day = 0; day < 7; day++) {
-      const date = new Date(startDate);
-      date.setDate(startDate.getDate() + week * 7 + day);
-      date.setHours(0, 0, 0, 0);
-
-      const isFuture = date > today;
-      if (isFuture) {
-        data.push(emptyDay(date, week, day));
-        continue;
-      }
-
-      const isWeekday = day >= 1 && day <= 5;
-      const activityChance = isWeekday ? 0.62 : 0.3;
-      const weekPhase = Math.sin((week / 52) * Math.PI * 3.5);
-      const streakBoost = weekPhase > 0.2 ? 1.6 : 1;
-
-      if (rand() > activityChance * streakBoost * 0.7) {
-        data.push(emptyDay(date, week, day));
-        continue;
-      }
-
-      const submissions = Math.max(1, Math.round((rand() * 10 + 1) * streakBoost));
-      const acceptanceRate = 0.25 + rand() * 0.7;
-      const accepted = Math.max(0, Math.round(submissions * acceptanceRate));
-      const wrong = submissions - accepted;
-      const solved = Math.min(accepted, Math.round(accepted * (0.5 + rand() * 0.5)));
-      const hardSolved = rand() < 0.14 ? Math.max(1, Math.round(rand() * 2)) : 0;
-      const timeSpent = Math.round(submissions * (12 + rand() * 35));
-
-      data.push({
-        date,
-        dateStr: fmtISO(date),
-        submissions,
-        accepted,
-        wrong,
-        solved,
-        hardSolved,
-        timeSpent,
-        weekIndex: week,
-        dayIndex: day,
-      });
-    }
-  }
-  return data;
-}
-
-function emptyDay(date: Date, week: number, day: number): DayData {
+// ── Empty day helper (used by useHeatmapData) ─────────────────
+export function emptyDay(date: Date, week: number, day: number): DayData {
   return {
     date,
     dateStr: fmtISO(date),

@@ -50,17 +50,17 @@ export default function GlyphHeatmapPage() {
             value={stats.totalXP.toLocaleString()}
           />
           <StatCard
-            icon={<Flame className="h-4 w-4 text-orange-400" />}
+            icon={<Flame className="h-4 w-4" style={{ color: 'hsl(25, 95%, 53%)' }} />}
             label="Current Streak"
             value={`${stats.currentStreak} days`}
           />
           <StatCard
-            icon={<Trophy className="h-4 w-4 text-yellow-400" />}
+            icon={<Trophy className="h-4 w-4" style={{ color: 'hsl(48, 96%, 53%)' }} />}
             label="Longest Streak"
             value={`${stats.longestStreak} days`}
           />
           <StatCard
-            icon={<TrendingUp className="h-4 w-4 text-emerald-400" />}
+            icon={<TrendingUp className="h-4 w-4" style={{ color: 'hsl(160, 84%, 39%)' }} />}
             label="Total Solved"
             value={stats.totalSolved.toLocaleString()}
           />
