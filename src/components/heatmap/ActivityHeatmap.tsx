@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import {
-  generateMockData,
   generateInsights,
   type Metric,
+  type DayData,
 } from "@/lib/activityData";
 import { useActivitySelection } from "@/hooks/useActivitySelection";
 import GlyphGrid from "./GlyphGrid";
@@ -18,8 +18,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-export default function ActivityHeatmap() {
-  const data = useMemo(() => generateMockData(), []);
+interface ActivityHeatmapProps {
+  data: DayData[];
+}
+
+export default function ActivityHeatmap({ data }: ActivityHeatmapProps) {
   const insights = useMemo(() => generateInsights(data), [data]);
   const [metric, setMetric] = useState<Metric>("submissions");
   const [showTrend, setShowTrend] = useState(true);
