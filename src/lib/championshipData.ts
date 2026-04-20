@@ -475,7 +475,7 @@ export const MOCK_USER_STATUS: UserChampionshipStatus = {
 
 // Mock Standings Data
 export const MOCK_SOLO_STANDINGS: StandingEntry[] = [
-  { rank: 1, userId: 'champion-1', username: 'ByteKing_Pro', score: 6000, timeMs: 5832000, verified: true, isPastChampion: true, championYears: [2025], frame: 'champion' },
+  { rank: 1, userId: 'champion-1', username: 'ByteKing_Pro', score: 6000, timeMs: 5832000, verified: true, isPastChampion: true, championYears: [2026], frame: 'champion' },
   { rank: 2, userId: 'user-2', username: 'AlgorithmAce', score: 5950, timeMs: 6120000, verified: true, isPastChampion: false, frame: 'finalist' },
   { rank: 3, userId: 'user-3', username: 'CodeNinja_X', score: 5900, timeMs: 6300000, verified: true, isPastChampion: false, frame: 'semi_finalist' },
   { rank: 4, userId: 'user-4', username: 'DSA_Destroyer', score: 5850, timeMs: 6480000, verified: true, isPastChampion: false, frame: 'qualified' },
@@ -494,15 +494,15 @@ export const MOCK_DUO_STANDINGS: StandingEntry[] = [
 ];
 
 export const MOCK_CLAN_STANDINGS: StandingEntry[] = [
-  { rank: 1, userId: 'clan-1', username: 'Elite Coders', clanName: 'Elite Coders Guild', score: 28500, timeMs: 18000000, verified: true, isPastChampion: true, championYears: [2025], frame: 'champion' },
+  { rank: 1, userId: 'clan-1', username: 'Elite Coders', clanName: 'Elite Coders Guild', score: 28500, timeMs: 18000000, verified: true, isPastChampion: true, championYears: [2026], frame: 'champion' },
   { rank: 2, userId: 'clan-2', username: 'Algorithm Army', clanName: 'Algorithm Army', score: 27800, timeMs: 19200000, verified: true, isPastChampion: false, frame: 'finalist' },
   { rank: 3, userId: 'clan-3', username: 'Binary Brigade', clanName: 'Binary Brigade', score: 27200, timeMs: 19800000, verified: true, isPastChampion: false },
 ];
 
 // Mock Champions (Hall of Champions)
-export const MOCK_CHAMPIONS_2025: Champion[] = [
+export const MOCK_CHAMPIONS_2026: Champion[] = [
   {
-    year: 2025,
+    year: 2026,
     track: 'solo',
     userId: 'champion-1',
     username: 'ByteKing_Pro',
@@ -523,7 +523,7 @@ export const MOCK_CHAMPIONS_2025: Champion[] = [
     ]
   },
   {
-    year: 2025,
+    year: 2026,
     track: 'duo',
     userId: 'duo-champ-1a',
     username: 'SyncMasters',
@@ -545,7 +545,7 @@ export const MOCK_CHAMPIONS_2025: Champion[] = [
     ]
   },
   {
-    year: 2025,
+    year: 2026,
     track: 'clan',
     userId: 'clan-1',
     username: 'Elite Coders Guild',
