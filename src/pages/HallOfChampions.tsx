@@ -19,10 +19,10 @@ import { cn } from "@/lib/utils";
 
 // Main Hall of Champions Page
 export default function HallOfChampions() {
-  const [selectedYear, setSelectedYear] = useState<number>(2025);
+  const [selectedYear, setSelectedYear] = useState<number>(2026);
   const [activeTrack, setActiveTrack] = useState<TrackType>('solo');
   
-  const availableYears = [2025];
+  const availableYears = [2026];
 
   return (
     <div className="min-h-screen pb-12">
