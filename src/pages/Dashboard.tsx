@@ -1,48 +1,49 @@
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { PlayerCard } from '@/components/cards/PlayerCard';
 import { RivalsSection } from '@/components/dashboard/RivalsSection';
 import { LiveActivityFeed } from '@/components/dashboard/LiveActivityFeed';
 import { DivisionProgress } from '@/components/dashboard/DivisionProgress';
 import { RoadmapCard } from '@/components/roadmap/RoadmapCard';
 import { RevisionSummaryCard } from '@/components/revision/RevisionSummaryCard';
 import { TargetCard } from '@/components/dashboard/TargetCard';
-// ActivityHeatmap removed - replaced by Glyph Heatmap at /analytics/glyph-heatmap
 import { RevisionQueueCard } from '@/components/dashboard/RevisionQueueCard';
 import { AreasToImproveCard } from '@/components/dashboard/AreasToImproveCard';
 import { InterviewReadinessCard } from '@/components/dashboard/InterviewReadinessCard';
 import { getXpProgress, User as MockUser } from '@/lib/mockData';
-import { ChevronRight, Flame, Target, Trophy, Zap, Clock, AlertTriangle, TrendingUp, Loader2, Swords, BookOpen, Sparkles } from 'lucide-react';
+import {
+  ChevronRight,
+  Flame,
+  Target,
+  Trophy,
+  Zap,
+  AlertTriangle,
+  TrendingUp,
+  Loader2,
+  Swords,
+  BookOpen,
+  Sparkles,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { PageHeader } from '@/components/bl/PageHeader';
+import { StatTile } from '@/components/bl/StatTile';
+import { GlassPanel } from '@/components/bl/GlassPanel';
+import { SectionHeader } from '@/components/bl/SectionHeader';
 
-// Dashboard: Navigation and data aggregation layer only
-// - No business logic (role checks, feature gating)
-// - All features handle their own access internally
-// - Battle Mode always visible to all authenticated users
 export default function Dashboard() {
-  const { profile, user, isAuthenticated, isLoading } = useAuth();
-  
-  // Show loading while auth is in progress
+  const { profile, isAuthenticated, isLoading } = useAuth();
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="h-8 w-8 animate-spin text-neon" />
       </div>
     );
   }
 
-  // Redirect unauthenticated users
-  if (!isAuthenticated) {
-    return <Navigate to="/auth" replace />;
-  }
+  if (!isAuthenticated) return <Navigate to="/auth" replace />;
+  if (profile && !profile.onboarding_completed) return <Navigate to="/onboarding" replace />;
 
-  // Redirect to onboarding if not completed
-  if (profile && !profile.onboarding_completed) {
-    return <Navigate to="/onboarding" replace />;
-  }
-
-  // Create a compatible user object from profile for existing components
   const userForComponents: MockUser = {
     uid: profile?.id || '',
     username: profile?.username || 'User',
@@ -51,7 +52,7 @@ export default function Dashboard() {
     xp: profile?.xp || 0,
     level: Math.floor((profile?.xp || 0) / 500) + 1,
     streak: profile?.streak || 0,
-    rank: 0, // Real rank not yet implemented
+    rank: 0,
     division: (profile?.division as any) || 'bronze',
     elo: 1200,
     joinedAt: new Date(profile?.created_at || Date.now()),
@@ -59,251 +60,247 @@ export default function Dashboard() {
   };
 
   const xpProgress = getXpProgress(userForComponents.xp, userForComponents.level);
-  const xpToNextLevel = (userForComponents.level * 500) - userForComponents.xp;
-  const streakAtRisk = new Date().getHours() >= 20; // After 8 PM
+  const xpToNextLevel = userForComponents.level * 500 - userForComponents.xp;
+  const streakAtRisk = new Date().getHours() >= 20;
 
   return (
     <div className="min-h-screen py-8">
-      <div className="container mx-auto px-4">
-        {/* Arena Header with Live Status */}
-        <div className="mb-8 relative">
-          <div className="absolute -top-4 -left-4 w-32 h-32 bg-primary/20 rounded-full blur-3xl" />
-          <div className="absolute -top-4 -right-4 w-24 h-24 bg-accent/20 rounded-full blur-3xl" />
-          
-          <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <h1 className="font-display text-3xl font-bold">
-                  Welcome to the arena, <span className="text-gradient-electric">{profile?.username || 'Warrior'}</span>
-                </h1>
-                <Badge className="bg-primary/10 text-primary border-primary/30">
-                  <Sparkles className="h-3 w-3 mr-1" />
-                  EARLY ADOPTER
-                </Badge>
-              </div>
-              <p className="text-muted-foreground">You're among the first warriors. Build your foundation and rise.</p>
-            </div>
-            <div className="flex items-center gap-4">
+      <div className="container mx-auto px-4 max-w-7xl">
+        {/* Hero header */}
+        <PageHeader
+          sector="001"
+          title={
+            <>
+              Welcome to the arena,{' '}
+              <span className="relative inline-block text-neon text-glow bl-glitch">
+                {profile?.username || 'Warrior'}
+                <span className="absolute -bottom-1 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-neon to-transparent" />
+              </span>
+            </>
+          }
+          tag="DASHBOARD"
+          subtitle="You're among the first warriors. Build your foundation and rise. Every challenge is another kill. Only the Egoists make it to the top."
+          right={
+            <>
+              <Badge className="bg-neon/10 text-neon border-neon/40 font-display tracking-[0.2em] text-[11px]">
+                <Sparkles className="h-3 w-3 mr-1" />
+                EARLY ADOPTER
+              </Badge>
               {streakAtRisk && userForComponents.streak > 0 && (
-                <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-destructive/10 border border-destructive/30 animate-pulse">
+                <div className="flex items-center gap-2 px-3 py-1.5 border border-destructive/40 bg-destructive/10 animate-pulse">
                   <AlertTriangle className="h-4 w-4 text-destructive" />
-                  <span className="text-sm font-semibold text-destructive">Streak expires soon!</span>
+                  <span className="text-xs font-semibold text-destructive">Streak expires soon</span>
                 </div>
               )}
-            </div>
-          </div>
+            </>
+          }
+        />
+
+        {/* Stats row */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <StatTile
+            label="Total XP"
+            value={userForComponents.xp.toLocaleString()}
+            sub={xpToNextLevel > 0 ? `${xpToNextLevel} to Level ${userForComponents.level + 1}` : 'Keep going!'}
+            icon={Zap}
+            accent="neon"
+            index={0}
+          />
+          <StatTile
+            label="Streak"
+            value={userForComponents.streak}
+            sub={
+              userForComponents.streak === 0
+                ? 'Complete a challenge to ignite'
+                : streakAtRisk
+                  ? 'Complete 1 today!'
+                  : 'Keep it burning'
+            }
+            icon={Flame}
+            accent="ember"
+            index={1}
+          />
+          <StatTile
+            label="Level"
+            value={String(userForComponents.level).padStart(2, '0')}
+            sub="Keep solving to rank up"
+            icon={Trophy}
+            accent="gold"
+            index={2}
+          />
+          <StatTile
+            label="Division"
+            value={userForComponents.division.toUpperCase()}
+            sub="Climb with consistent kills"
+            icon={TrendingUp}
+            accent="electric"
+            index={3}
+            compact
+          />
         </div>
 
-        {/* Stats Bar - Real data from profile */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          {[
-            { 
-              icon: Zap, 
-              label: 'Total XP', 
-              value: userForComponents.xp.toLocaleString(), 
-              subtext: xpToNextLevel > 0 ? `${xpToNextLevel} to level ${userForComponents.level + 1}` : 'Keep going!',
-              color: 'text-primary',
-              urgent: false 
-            },
-            { 
-              icon: Flame, 
-              label: 'Streak', 
-              value: userForComponents.streak, 
-              subtext: userForComponents.streak === 0 ? 'Complete a challenge to start' : (streakAtRisk ? 'Complete 1 challenge!' : 'Keep it burning'),
-              color: 'text-status-warning',
-              urgent: streakAtRisk && userForComponents.streak > 0
-            },
-            { 
-              icon: Trophy, 
-              label: 'Level', 
-              value: userForComponents.level, 
-              subtext: 'Keep solving to level up',
-              color: 'text-rank-diamond',
-              urgent: false
-            },
-            { 
-              icon: TrendingUp, 
-              label: 'Division', 
-              value: userForComponents.division.toUpperCase(), 
-              subtext: 'Climb with consistent practice',
-              color: 'text-rank-master',
-              urgent: false
-            },
-          ].map(({ icon: Icon, label, value, subtext, color, urgent }) => (
-            <div 
-              key={label} 
-              className={`arena-card p-4 rounded-xl relative overflow-hidden ${urgent ? 'border-destructive/50 pressure-high' : ''}`}
-            >
-              {urgent && (
-                <div className="absolute inset-0 bg-gradient-to-r from-destructive/10 to-transparent animate-pulse" />
-              )}
-              <div className="relative flex items-start justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">{label}</p>
-                  <p className={`font-display text-2xl font-bold ${color}`}>{value}</p>
-                </div>
-                <Icon className={`h-5 w-5 ${color} ${urgent ? 'animate-pulse' : ''}`} />
-              </div>
-              <p className={`text-xs mt-2 ${urgent ? 'text-destructive font-semibold' : 'text-muted-foreground'}`}>
-                {subtext}
-              </p>
-            </div>
-          ))}
-        </div>
-
-        {/* First-Time Guidance Card */}
-        <div className="mb-8 p-4 rounded-xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20">
-          <div className="flex items-start gap-3">
-            <div className="p-2 rounded-lg bg-primary/20 flex-shrink-0">
-              <BookOpen className="h-5 w-5 text-primary" />
+        {/* Recommendation banner */}
+        <GlassPanel padding="md" className="mb-8 bl-side-stripe">
+          <div className="flex items-start gap-3 pl-2">
+            <div className="p-2 bg-neon/15 border border-neon/30 flex-shrink-0">
+              <BookOpen className="h-5 w-5 text-neon" />
             </div>
             <div>
-              <h3 className="font-display font-semibold text-sm mb-1">Recommended Next Step</h3>
-              <p className="text-sm text-muted-foreground">
+              <h3 className="font-display font-semibold text-sm text-text mb-1 tracking-wide">
+                RECOMMENDED NEXT STEP
+              </h3>
+              <p className="text-sm text-text-dim">
                 Start with the first unlocked topic in your roadmap to begin building strong fundamentals.
               </p>
             </div>
           </div>
-        </div>
+        </GlassPanel>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
+          {/* Main column */}
           <div className="lg:col-span-2 space-y-8">
-            {/* XP Progress - Real data */}
-            <div className="arena-card p-6 rounded-xl relative overflow-hidden">
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-accent to-primary" />
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-primary/20">
-                    <Zap className="h-6 w-6 text-primary" />
+            {/* Level / XP progress */}
+            <GlassPanel padding="lg" className="overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-neon to-transparent" />
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-neon/30 blur-lg" />
+                    <div className="relative flex h-12 w-12 items-center justify-center bg-gradient-to-br from-neon/20 to-electric/20 border border-neon/50 bl-clip-notch">
+                      <Zap className="h-5 w-5 text-neon" />
+                    </div>
                   </div>
                   <div>
-                    <h3 className="font-display font-bold text-xl">Level {userForComponents.level}</h3>
-                    <p className="text-sm text-muted-foreground">{userForComponents.xp.toLocaleString()} XP Total</p>
+                    <span className="font-display text-[10px] font-bold tracking-[0.3em] text-neon/80">
+                      RANK PROGRESS
+                    </span>
+                    <h3 className="font-display text-3xl font-bold tracking-tight leading-none mt-1 text-text">
+                      Level <span className="text-neon text-glow">{String(userForComponents.level).padStart(2, '0')}</span>
+                    </h3>
+                    <p className="mt-1.5 font-mono text-[12px] text-text-dim">
+                      {userForComponents.xp.toLocaleString()} XP total
+                    </p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-display font-bold text-2xl text-primary">{Math.round(xpProgress)}%</p>
-                  <p className="text-xs text-muted-foreground">to Level {userForComponents.level + 1}</p>
+                  <div className="font-display text-4xl md:text-5xl font-bold leading-none tabular-nums text-neon text-glow">
+                    {Math.round(xpProgress)}%
+                  </div>
+                  <div className="mt-2 font-display text-[11px] font-bold tracking-[0.2em] text-text-dim">
+                    TO LEVEL {String(userForComponents.level + 1).padStart(2, '0')}
+                  </div>
                 </div>
               </div>
-              <div className="xp-bar-intense">
-                <div className="xp-bar-fill" style={{ width: `${xpProgress}%` }} />
-              </div>
-              <div className="mt-3 flex justify-between text-xs text-muted-foreground">
-                <span>Current: {userForComponents.xp.toLocaleString()} XP</span>
-                <span>Next: {(userForComponents.level * 500).toLocaleString()} XP</span>
-              </div>
-            </div>
 
-            {/* DSA Roadmap Progress */}
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <BookOpen className="h-5 w-5 text-primary" />
-                <h2 className="font-display text-xl font-bold">Your Learning Path</h2>
+              <div className="mt-6 relative">
+                <div className="h-3 bl-bar-track overflow-hidden">
+                  <div className="relative h-full bl-shimmer" style={{ width: `${xpProgress}%` }}>
+                    <div className="absolute inset-y-0 right-0 w-1 bg-white shadow-[0_0_16px_#ffffff,0_0_32px_hsl(var(--neon))]" />
+                  </div>
+                </div>
+                <div className="absolute inset-0 flex items-center pointer-events-none">
+                  {[25, 50, 75].map((m) => (
+                    <div key={m} className="absolute h-3 w-px bg-void/80" style={{ left: `${m}%` }} />
+                  ))}
+                </div>
               </div>
+
+              <div className="mt-3 flex items-center justify-between font-mono text-[11px]">
+                <span className="text-text-mute">CURRENT: <span className="text-neon">{userForComponents.xp.toLocaleString()} XP</span></span>
+                <span className="text-text-mute">NEXT: <span className="text-neon">{(userForComponents.level * 500).toLocaleString()} XP</span></span>
+              </div>
+            </GlassPanel>
+
+            {/* Roadmap */}
+            <div>
+              <SectionHeader tag="LEARNING PATH ACTIVE" />
               <RoadmapCard roadmapId="dsa" />
             </div>
 
-            {/* Rivals Section - Shows empty state in beta */}
+            {/* Rivals */}
             <RivalsSection currentUser={userForComponents} rivals={[]} />
 
-            {/* Challenges CTA - No mock data */}
+            {/* Practice CTA */}
             <div>
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <Target className="h-5 w-5 text-primary" />
-                  <h2 className="font-display text-xl font-bold">Start Solving</h2>
+              <SectionHeader
+                tag="PRACTICE GROUNDS"
+                right={
+                  <Link to="/challenges" className="text-xs text-neon hover:text-neon-soft flex items-center gap-1 font-display tracking-wide">
+                    BROWSE ALL <ChevronRight className="h-3 w-3" />
+                  </Link>
+                }
+              />
+              <GlassPanel padding="lg" className="text-center">
+                <div className="inline-flex items-center justify-center p-3 bg-neon/10 border border-neon/30 bl-clip-notch mb-3">
+                  <Target className="h-6 w-6 text-neon" />
                 </div>
-                <Link to="/challenges" className="text-sm text-primary hover:underline flex items-center gap-1">
-                  Browse All <ChevronRight className="h-4 w-4" />
-                </Link>
-              </div>
-              <div className="arena-card p-6 text-center">
-                <div className="inline-flex items-center justify-center p-3 rounded-full bg-primary/10 border border-primary/20 mb-3">
-                  <Target className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="font-display font-semibold mb-2">Ready to Practice?</h3>
-                <p className="text-muted-foreground text-sm mb-4">
+                <h3 className="font-display font-semibold text-text mb-2 tracking-wide">READY TO PRACTICE?</h3>
+                <p className="text-text-dim text-sm mb-4">
                   Follow your roadmap and solve challenges to earn XP and build your skills.
                 </p>
                 <Link to="/roadmap">
-                  <Button variant="arena">
-                    <BookOpen className="h-4 w-4 mr-2" />
+                  <Button variant="egoist">
+                    <BookOpen className="h-4 w-4" />
                     Continue Learning Path
                   </Button>
                 </Link>
-              </div>
+              </GlassPanel>
             </div>
 
-            {/* Contests CTA - No mock data */}
+            {/* Contests CTA */}
             <div>
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <Trophy className="h-5 w-5 text-status-warning" />
-                  <h2 className="font-display text-xl font-bold">Contests</h2>
-                </div>
-                <Link to="/contests" className="text-sm text-primary hover:underline flex items-center gap-1">
-                  View All <ChevronRight className="h-4 w-4" />
-                </Link>
-              </div>
-              <div className="arena-card p-6 text-center">
-                <Badge className="mb-3 bg-status-warning/10 text-status-warning border-status-warning/30">
+              <SectionHeader
+                tag="CONTESTS"
+                right={
+                  <Link to="/contests" className="text-xs text-neon hover:text-neon-soft flex items-center gap-1 font-display tracking-wide">
+                    VIEW ALL <ChevronRight className="h-3 w-3" />
+                  </Link>
+                }
+              />
+              <GlassPanel padding="lg" className="text-center">
+                <Badge className="mb-3 bg-ember/15 text-ember border-ember/40 font-display tracking-[0.2em] text-[10px]">
                   COMING SOON
                 </Badge>
-                <h3 className="font-display font-semibold mb-2">Contests Are Brewing</h3>
-                <p className="text-muted-foreground text-sm">
+                <h3 className="font-display font-semibold text-text mb-2 tracking-wide">CONTESTS ARE BREWING</h3>
+                <p className="text-text-dim text-sm">
                   Weekly contests will be announced soon. Focus on your roadmap for now!
                 </p>
-              </div>
+              </GlassPanel>
             </div>
           </div>
 
-          {/* Sidebar */}
+          {/* Sidebar column */}
           <div className="space-y-6">
-            {/* Interview Readiness Score */}
             <InterviewReadinessCard />
-
-            {/* Target & Streak Card */}
             <TargetCard />
-
-            {/* Revision Summary */}
             <RevisionSummaryCard />
-
-            {/* Areas to Improve */}
             <AreasToImproveCard />
-
-            {/* Revision Queue */}
             <RevisionQueueCard />
-
-            {/* Division Progress */}
             <DivisionProgress user={userForComponents} />
-            
-            {/* Live Activity Feed */}
             <LiveActivityFeed />
-            
-            {/* Quick Actions */}
+
+            {/* Quick actions */}
             <div className="space-y-3">
               <div>
                 <Link to="/battle">
-                  <Button variant="arena" className="w-full h-12">
-                    <Swords className="h-5 w-5 mr-2" />
-                    ENTER BATTLE MODE
+                  <Button variant="egoist" className="w-full h-12">
+                    <Swords className="h-5 w-5" />
+                    Enter Battle Mode
                   </Button>
                 </Link>
-                <p className="text-xs text-muted-foreground text-center mt-1.5">
+                <p className="text-xs text-text-mute text-center mt-1.5 font-mono">
                   Practice under pressure — optional and for fun
                 </p>
               </div>
               <Link to="/roadmap">
-                <Button variant="outline" className="w-full">
-                  <BookOpen className="h-4 w-4 mr-2" />
+                <Button variant="egoistGhost" className="w-full">
+                  <BookOpen className="h-4 w-4" />
                   Continue Roadmap
                 </Button>
               </Link>
               <Link to="/leaderboard">
-                <Button variant="outline" className="w-full">
-                  <Trophy className="h-4 w-4 mr-2" />
+                <Button variant="egoistGhost" className="w-full">
+                  <Trophy className="h-4 w-4" />
                   View Leaderboard
                 </Button>
               </Link>

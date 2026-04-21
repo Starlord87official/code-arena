@@ -59,9 +59,11 @@ export default {
         },
         // CodeLock Custom Colors
         neon: {
+          DEFAULT: "hsl(var(--neon))",
           blue: "hsl(var(--neon-blue))",
           cyan: "hsl(var(--neon-cyan))",
           purple: "hsl(var(--neon-purple))",
+          soft: "hsl(var(--neon-soft))",
         },
         arena: {
           dark: "hsl(var(--arena-dark))",
@@ -82,11 +84,37 @@ export default {
           warning: "hsl(var(--warning))",
           info: "hsl(var(--info))",
         },
+        // Blue Lock — Egoist Command Center palette
+        void: "hsl(var(--void))",
+        deep: "hsl(var(--deep))",
+        panel: {
+          DEFAULT: "hsl(var(--panel))",
+          2: "hsl(var(--panel-2))",
+        },
+        line: {
+          DEFAULT: "hsl(var(--line))",
+          bright: "hsl(var(--line-bright))",
+        },
+        electric: "hsl(var(--electric))",
+        "blue-mid": "hsl(var(--blue-mid))",
+        "blue-deep": "hsl(var(--blue-deep))",
+        ember: {
+          DEFAULT: "hsl(var(--ember))",
+          soft: "hsl(var(--ember-soft))",
+        },
+        blood: "hsl(var(--blood))",
+        gold: "hsl(var(--gold))",
+        text: {
+          DEFAULT: "hsl(var(--text))",
+          dim: "hsl(var(--text-dim))",
+          mute: "hsl(var(--text-mute))",
+        },
       },
       fontFamily: {
-        display: ['Orbitron', 'sans-serif'],
-        heading: ['Rajdhani', 'sans-serif'],
-        sans: ['Space Grotesk', 'sans-serif'],
+        display: ['Space Grotesk', 'Orbitron', 'sans-serif'],
+        heading: ['Space Grotesk', 'Rajdhani', 'sans-serif'],
+        sans: ['Inter', 'Space Grotesk', 'sans-serif'],
+        mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
       },
       borderRadius: {
         lg: "var(--radius)",
