@@ -3697,6 +3697,10 @@ export type Database = {
       cancel_battle_queue: { Args: never; Returns: number }
       check_battle_queue_status: { Args: never; Returns: Json }
       check_daily_streak: { Args: never; Returns: Json }
+      check_match_completion_for_user: {
+        Args: { p_match_id: string; p_user_id: string }
+        Returns: undefined
+      }
       claim_invite_code: {
         Args: { p_code: string; p_user_id: string }
         Returns: Json
@@ -3726,6 +3730,15 @@ export type Database = {
           }
       complete_revision: { Args: { p_topic_id: string }; Returns: Json }
       complete_revision_item: { Args: { p_id: string }; Returns: Json }
+      compute_elo_delta: {
+        Args: {
+          p_k?: number
+          p_rating_a: number
+          p_rating_b: number
+          p_score_a: number
+        }
+        Returns: number
+      }
       create_clan: {
         Args: {
           p_description?: string
@@ -3778,7 +3791,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      finalize_match: { Args: { _match_id: string }; Returns: Json }
+      finalize_match:
+        | { Args: { _match_id: string }; Returns: Json }
+        | { Args: { p_match_id: string; p_reason?: string }; Returns: Json }
+      forfeit_match: { Args: { p_match_id: string }; Returns: Json }
       get_activity_summary: { Args: never; Returns: Json }
       get_ai_usage_today: { Args: never; Returns: Json }
       get_battle_opponent_profile: {
@@ -4040,13 +4056,7 @@ export type Database = {
         }
         Returns: undefined
       }
-      score_match: {
-        Args: { _match_id: string }
-        Returns: {
-          is_draw: boolean
-          winner_id: string
-        }[]
-      }
+      score_match: { Args: { p_match_id: string }; Returns: undefined }
       score_problem: {
         Args: {
           _base: number
@@ -4068,6 +4078,7 @@ export type Database = {
         }
         Returns: string
       }
+      tick_active_matches: { Args: never; Returns: number }
       transfer_clan_leadership: {
         Args: { p_new_leader_id: string }
         Returns: Json
