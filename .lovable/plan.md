@@ -1,131 +1,78 @@
 
 
-# Step 9 — Wire Battle V2 Frontend to Backend (End-to-End)
+# Step 10 — Competitive Framework: Bring the Blueprint Online
 
-## Goal
-Replace remaining mock/static data across all four battle V2 component groups (`entry/`, `pre-battle/`, `workspace/`, `post-battle/`) with live backend data via the RPCs and realtime channels built in Steps 1–8. Result: every screen the user touches in a duo battle reflects real database state — no hardcoded names, scores, problems, or stats.
+The blueprint defines a tournament-grade ladder (9 tiers, LP, promos, decay, streaks, dynamic K, anti-cheat, seasons, leaderboards). Step 9 finished the duo battle plumbing. **Most of the deeper competitive systems are either missing or only stubbed.** This step closes the gap in five sub-phases — each one shippable on its own so we can verify before moving on.
 
-## Audit (current wiring gaps)
+## What's already built (skip)
 
-After reading every file in `src/components/battle-v2/**`, here is what is still mock-driven vs. already live:
+- DB schema: `rank_states` (mmr / lp / tier / division / streaks / shield / decay), `seasons`, `promotion_series`, `rank_tier` + `rank_division` enums.
+- Helpers: `current_season_id`, `ensure_rank_state`, `re_tier_from_lp`, `re_apply_match`, `re_decay_inactive`, `get_rank_snapshot`, `get_leaderboard`.
+- Duo battle pipeline (queue → lobby → workspace → post-battle → judge worker → integrity scan).
+- ELO base formula + finalize_match + season-aware rank state writes.
 
-### `entry/` — Battle landing screen
-- `EntryHero.tsx` ✅ prop-driven (no change).
-- `GlobalStatsStrip.tsx` ❌ accepts props but `Battle.tsx` doesn't pass real numbers.
-- `ModeGrid.tsx` / `ModeSelector.tsx` ✅ static config, fine.
-- `OnlineWarriorsList.tsx` ❌ currently uses `useBattleData` mock seed.
-- `RecentBattlesList.tsx` ❌ uses mock seed; should pull from `battle_history` for the user.
-- `StatsPanel.tsx` ❌ shows stubbed ELO / win rate.
-- `LoadoutBar.tsx`, `FormatSelector.tsx`, `RegionSelector.tsx`, `CombatantProfile.tsx` ✅ presentational.
-- `QueueButton.tsx` ✅ already wired to `useMatchmaking`.
+## What's missing (this step builds)
 
-### `pre-battle/` — Lobby + countdown
-- `LobbyHeader.tsx` ❌ hardcoded match ID/format strings.
-- `ReadyRoster.tsx` ❌ static two-player mock.
-- `MatchBriefing.tsx` ❌ static problem list.
-- `CountdownLauncher.tsx` ✅ countdown-only, prop-driven.
+### Phase A — Rating engine v2 (server)
+1. **Dynamic K-factor**: rewrite `re_apply_match` to pick K from `(games_played, mmr)` per blueprint table (48 / 32 / 24 / 16 / 12).
+2. **Rating Deviation (RD)**: add `mmr_deviation` decay on play (toward 50) and growth on idle (+5/day, max 150). Effective K = K × clamp(RD/50, 0.5, 2.0).
+3. **Performance bonus**: at finalize, compute speed bonus (% time remaining), first-attempt bonus, hard-problem bonus → cap at +25% of base ELO change.
+4. **Streak modifiers**: read `win_streak`/`loss_streak`, apply LP bonuses (+2/+5/+8/+12) and loss-protection (-15/-25/-35%) per blueprint.
+5. **Tilt cooldown**: insert a `queue_lockouts` row when 5 losses occur in 2 hours; matchmaking RPC honors it.
+6. **LP smoothing**: derive LP delta from ELO delta with banked/deflated multipliers (hidden MMR vs displayed tier).
 
-### `workspace/` — Live battle UI
-- `WorkspaceHud.tsx` ❌ shows hardcoded scores & timer.
-- `OpponentTicker.tsx` ✅ wired (Step 6) but `BattleSession.tsx` doesn't pass opponent name/avatar from real participant.
-- `ProblemPanel.tsx` ❌ accepts props but `BattleSession.tsx` passes only the first problem; needs full list with switching.
-- `EditorToolbar.tsx` ✅ language + run/submit handlers; needs real submit wiring.
-- `CodeEditor.tsx` ✅ wired (Steps 7 & 8).
-- `ConsolePanel.tsx` ❌ shows mock stdout; should render `latestSubmission.verdict_payload`.
-- `VerdictOverlay.tsx` ✅ wired (Step 7).
-- `StatusBar.tsx` ✅ wired (Step 8).
+### Phase B — Promotion series + demotion shield
+1. New table `promotion_attempts` (per-game record inside an open series).
+2. RPC `start_promotion_series(user_id)` triggered when LP hits 100; Bo3 for division, Bo5 for tier.
+3. RPC `record_promotion_result(match_id, won)` updates wins/losses, closes series with promote/fail (retain 50–75 LP).
+4. Demotion shield: 5-game counter on tier entry; block tier demotion while > 0.
+5. Iron IV floor: clamp LP at 0 when tier=iron AND division=IV.
 
-### `post-battle/` — Results screen
-- `ResultBanner.tsx` ❌ hardcoded "VICTORY" string.
-- `FinalScoreboard.tsx` ❌ static rounds array.
-- `LpSummary.tsx` ❌ hardcoded LP delta.
-- `PlayerStatsTable.tsx` ❌ mock player stats.
-- `PostActions.tsx` ✅ pure handlers.
+### Phase C — Matchmaking widening + anti-snipe
+1. Expand `mm_enqueue` to record start time and a `search_window_elo` field that widens by tier (50→100→150→250→400) on each `matchmaking-tick` pass.
+2. **Repeat opponent prevention**: skip pairings where the same two users played within 30 minutes (query `battle_participants`).
+3. **Dodge penalty**: if user declines an accepted match, apply -3 LP and a 5-min `queue_lockouts` row, escalating on repeats.
+4. **Queue ghosting**: in `get_online_warriors`, mask handle when caller MMR ≥ Master tier.
 
-## Backend changes
+### Phase D — Decay + season jobs
+1. Cron edge function `rank-decay-tick` (every 6h) → calls `re_decay_inactive` with blueprint-correct grace periods (Plat 21d, Diamond 14d, Master 10d, GM 7d) and weekly LP loss (-25 / -35 / -50 / -75).
+2. **Bank system**: `decay_bank_days` int on `rank_states`; +1 per ranked game played (capped per tier), consumed before LP loss starts.
+3. New edge function `season-reset` (admin-triggered) → applies soft reset `(elo + 1200) / 2`, resets placements_remaining=5, demotion_shield=5, archives prior season into `season_history` (new table).
+4. Add cron entry to `supabase/config.toml` for the decay tick.
 
-### 1. New RPCs (read-side aggregations)
+### Phase E — Frontend surfaces
+1. **`useRankState` hook** → wraps `get_rank_snapshot` with realtime subscription on `rank_states` changes.
+2. **`RankBadge` component** → shows tier color + roman division + LP bar; reused everywhere `division` chips currently appear.
+3. **Replace mock `DivisionProgress`** in dashboard with the real rank state. Remove dependence on `mockData.getDivisionColor`.
+4. **Battle entry `StatsPanel`** → show real rank, LP toward next division, demotion shield count, streak indicator (🔥 / 🛡️), placement progress bar when `placements_remaining > 0`.
+5. **Post-battle `LpSummary`** → swap the fake `Math.floor(elo/200)*200` math for the real LP delta and tier-up/down visualization. Add cinematic for promotion-series win and tier-up.
+6. **`ReadyRoster` & lobby** → topic ban/pick phase UI (server-tracked picks via `battle_event_log` payload `topic_ban` / `topic_pick`, 30s timer, auto-skip). Backend filter applies bans when generating `battle_match_problems` (currently random — patch `mm_create_match`).
+7. **Global Leaderboard page** (`/leaderboard/ranked`) wired to `get_leaderboard`: tabs for Global / Friends / Tier / Regional; rank distribution chart; daily movers list. Reuse existing `Leaderboard` page shell.
+8. **Penalty toasts** for tilt cooldown, dodge penalty, decay warnings.
 
-- **`get_user_battle_summary(p_user_id uuid)`** — returns `{ elo, rank_label, total_matches, wins, losses, win_rate, current_streak, mvp_count }` for the entry stats panel. Reads `battle_history` + `rank_states`.
-- **`get_recent_battles(p_user_id uuid, p_limit int default 5)`** — returns rows joined from `battle_matches` + `battle_participants` for the user's last N matches: `{ match_id, mode, ended_at, opponent_handle, result, score_self, score_opp, elo_change }`.
-- **`get_online_warriors(p_limit int default 12)`** — returns recent active queue/match participants: `{ user_id, handle, elo, rank_label, status }` (status ∈ `queueing` / `in_match`). Excludes caller.
-- **`get_global_battle_stats()`** — returns `{ live_matches, players_online, matches_today }` for the GlobalStatsStrip.
-- **`get_match_briefing(p_match_id uuid)`** — returns full match config + participants + problem list for pre-battle/lobby and workspace: `{ match: {…}, participants: [{user_id, handle, avatar, elo, rank_label}], problems: [{id, title, difficulty, points, order_index}] }`. Caller-only (must be a participant).
-- **`get_match_result(p_match_id uuid)`** — post-battle aggregation: `{ winner_id, is_draw, duration_sec, players: [{user_id, handle, score, problems_solved, wrong_submissions, total_solve_time_sec, elo_before, elo_after, elo_change, xp_earned, integrity_score}], rounds: [{problem_id, title, difficulty, winner_user_id, time_a, time_b}] }`.
+## Files touched (high-level)
 
-All `SECURITY DEFINER`, RLS-safe, return JSON.
+- **New migrations** (one per phase): rating engine v2, promotion series, matchmaking guards, decay/season, supporting indexes.
+- **New edge functions**: `rank-decay-tick`, `season-reset`.
+- **New hooks**: `useRankState`, `usePromotionSeries`, `useTopicBanPick`.
+- **New components**: `RankBadge`, `PromoSeriesTracker`, `TopicBanPickPanel`, `RankDistributionChart`.
+- **Updated**: `mm_enqueue`, `mm_create_match`, `re_apply_match`, `finalize_match`, `LpSummary`, `StatsPanel`, `ReadyRoster`, `DivisionProgress`, `Leaderboard.tsx`, `BattleSession.tsx` (mounts ban/pick during `ban_pick` state).
+- **Removed**: `getDivisionColor` mock import sites — replaced by `RankBadge`.
 
-## Frontend changes
+## Execution order & verification
 
-### 1. New hooks
+1. **Phase A merges first** — verify by playing a duo match: K should be 48 for placement, ELO delta should match formula, LP should now be derived (not raw ELO), streak bonus should appear in `LpSummary`.
+2. **Phase B** — hit 100 LP, see promo series modal, win 2/3, observe tier bump on the badge in real time.
+3. **Phase C** — second match with the same opponent within 30m should not repeat-pair; cancelling an accepted match should produce the dodge toast.
+4. **Phase D** — run `rank-decay-tick` manually, confirm a Platinum+ user with `last_match_at > grace` loses LP; admin runs `season-reset`, all rank states recalibrate.
+5. **Phase E** — entry page shows live tier/LP/streak; `/leaderboard/ranked` shows the live `get_leaderboard` payload with no mock fallbacks.
 
-- **`src/hooks/useBattleEntryData.ts`** — wraps `get_user_battle_summary`, `get_recent_battles`, `get_online_warriors`, `get_global_battle_stats`. Auto-refetches every 30s. Returns `{ summary, recent, online, global, isLoading }`.
-- **`src/hooks/useBattleBriefing.ts`** — calls `get_match_briefing(matchId)`; stable across pre-battle and workspace mounts.
-- **`src/hooks/useBattleResult.ts`** — calls `get_match_result(matchId)` once match state is `completed`.
+## Out of scope (deferred to Step 11+)
 
-### 2. `src/pages/Battle.tsx` (entry)
-- Mount `useBattleEntryData()`.
-- Replace `useBattleData` mock pipeline. Pass real props into:
-  - `GlobalStatsStrip` → `global`.
-  - `StatsPanel` → `summary`.
-  - `RecentBattlesList` → `recent` (rename mock fields to match RPC shape; show empty state when zero).
-  - `OnlineWarriorsList` → `online` (empty state when none).
-- `CombatantProfile` → reads `summary` for caller's ELO/rank.
-
-### 3. `src/pages/BattleSession.tsx` (pre-battle + workspace)
-- Mount `useBattleBriefing(matchId)` once participant load completes.
-- During `state ∈ {ready_check, ban_pick}`:
-  - `LobbyHeader` ← `{ matchId, mode, format }` from briefing.
-  - `ReadyRoster` ← `briefing.participants` with ready-state from `battle_event_log` last `participant_ready` event.
-  - `MatchBriefing` ← `briefing.problems`.
-- During `state === 'active'`:
-  - `WorkspaceHud` ← live `participants` from `useBattleRealtime` (scores, problems_solved, time remaining via `match.started_at + duration_minutes`).
-  - `ProblemPanel` ← `briefing.problems`, with current selection in local state, switching updates the editor's `time_since_problem_open_sec` baseline (existing Step 8 wiring).
-  - `OpponentTicker` ← opponent participant + handle from `briefing.participants`.
-  - `ConsolePanel` ← parses `latestSubmission.verdict_payload` (`{ stdout, stderr, runtime_ms, testcases }`).
-
-### 4. `src/pages/BattleSession.tsx` post-battle redirect
-- Already redirects on `state === 'completed'` (Step 6). On the post-battle page (separate route), mount `useBattleResult(matchId)` and feed:
-  - `ResultBanner` ← `{ outcome: win/loss/draw, winnerName, callerWon }`.
-  - `FinalScoreboard` ← `result.players`.
-  - `LpSummary` ← `players[caller].elo_change` + `xp_earned`.
-  - `PlayerStatsTable` ← `result.players`.
-  - `PostActions` `onRematch` → re-enqueues caller with same config; `onShare` → existing share dialog.
-
-### 5. Empty states
-- All four sections must render empty placeholders (no fake data) when backend returns zero rows. Reuse `bl-glass` panels with a single line of `// no data yet` styling consistent with the BL aesthetic.
-
-## Files touched
-
-- `supabase/migrations/<new>.sql` — six new RPCs above.
-- `src/hooks/useBattleEntryData.ts` — new.
-- `src/hooks/useBattleBriefing.ts` — new.
-- `src/hooks/useBattleResult.ts` — new.
-- `src/pages/Battle.tsx` — swap mock pipeline → real hook.
-- `src/pages/BattleSession.tsx` — wire briefing + workspace props.
-- `src/components/battle-v2/pre-battle/LobbyHeader.tsx` — accept real props.
-- `src/components/battle-v2/pre-battle/ReadyRoster.tsx` — accept participants.
-- `src/components/battle-v2/pre-battle/MatchBriefing.tsx` — accept problems.
-- `src/components/battle-v2/workspace/WorkspaceHud.tsx` — read live participants/timer.
-- `src/components/battle-v2/workspace/ProblemPanel.tsx` — list of problems + switching.
-- `src/components/battle-v2/workspace/ConsolePanel.tsx` — render verdict payload.
-- `src/components/battle-v2/post-battle/ResultBanner.tsx` — derive from result.
-- `src/components/battle-v2/post-battle/FinalScoreboard.tsx` — render players.
-- `src/components/battle-v2/post-battle/LpSummary.tsx` — read elo/xp delta.
-- `src/components/battle-v2/post-battle/PlayerStatsTable.tsx` — render players.
-- `src/components/battle-v2/entry/StatsPanel.tsx`, `GlobalStatsStrip.tsx`, `RecentBattlesList.tsx`, `OnlineWarriorsList.tsx` — accept real RPC shapes; render empty states.
-
-## Verification
-
-1. New user with zero history → entry page shows empty states for "Recent Battles" and "Online Warriors", real `0` stats — no fabricated numbers.
-2. Two test users queue → on match found, lobby shows real handles + selected problem list pulled from `battle_match_problems`.
-3. During active match → opponent score in `OpponentTicker` and HUD updates within ~200ms of opponent's accepted submission (uses Step 6 realtime).
-4. After completion → post-battle page shows real ELO delta, MVP from result, integrity score per player, rematch button re-enters queue with same config.
-
-## Out of scope (deferred)
-
-- Spectator entry to in-progress matches.
-- Replay/timeline scrubber on the post-battle screen.
-- Friend/clan-aware "Online Warriors" prioritization.
-- Animated transitions between phases (cosmetic-only, separate pass).
+- AI-generated code detection (needs an ML model).
+- Behavioral biometrics / multi-account fingerprinting (privacy review needed).
+- Cosmetic unlocks (borders, emotes, themes) — not gameplay-critical.
+- Achievement engine — depends on cosmetics + season retrospective.
+- Replay/timeline scrubber and spectator entry (still deferred from Step 9).
+- Regional / country leaderboards (need user country capture in profile).
 
