@@ -1,4 +1,4 @@
-import { Coins, Lock, ScrollText, Swords, Timer, Trophy, Zap } from "lucide-react";
+import { Ban, Coins, Lock, ScrollText, Sparkles, Swords, Timer, Trophy, Zap } from "lucide-react";
 import type { BriefingProblem } from "@/hooks/useBattleBriefing";
 
 interface Props {
@@ -7,6 +7,8 @@ interface Props {
   modeLabel?: string;
   totalPoints?: number;
   isRated?: boolean;
+  bannedTopics?: string[];
+  pickedTopics?: string[];
 }
 
 export function MatchBriefing({
@@ -15,6 +17,8 @@ export function MatchBriefing({
   modeLabel = "Duo Battle",
   totalPoints,
   isRated,
+  bannedTopics = [],
+  pickedTopics = [],
 }: Props) {
   const points = totalPoints ?? problems.reduce((s, p) => s + (p.points ?? 0), 0);
 
@@ -33,6 +37,21 @@ export function MatchBriefing({
             {problems.length} PROBLEMS
           </span>
         </header>
+
+        {(bannedTopics.length > 0 || pickedTopics.length > 0) && (
+          <div className="flex flex-wrap items-center gap-2 border-b border-line/60 px-5 py-3">
+            {bannedTopics.map((t) => (
+              <span key={`b-${t}`} className="inline-flex items-center gap-1 border border-blood/40 bg-blood/10 px-2 py-0.5 font-mono text-[10px] text-blood line-through">
+                <Ban className="h-2.5 w-2.5" /> {t}
+              </span>
+            ))}
+            {pickedTopics.map((t) => (
+              <span key={`p-${t}`} className="inline-flex items-center gap-1 border border-neon/40 bg-neon/10 px-2 py-0.5 font-mono text-[10px] text-neon shadow-[0_0_8px_rgba(0,255,200,0.2)]">
+                <Sparkles className="h-2.5 w-2.5" /> {t}
+              </span>
+            ))}
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-px bg-line/30 md:grid-cols-4">
           <Tile icon={Swords} label="MODE" value={modeLabel} sub={isRated ? "Rated" : "Unrated"} />

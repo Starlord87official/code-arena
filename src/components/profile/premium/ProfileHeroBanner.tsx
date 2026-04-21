@@ -246,3 +246,9 @@ export function ProfileHeroBanner({
     </div>
   );
 }
+
+function ProfileRankBadge({ userId }: { userId?: string }) {
+  const { rank } = useRankState(userId);
+  if (!rank) return null;
+  return <RankBadge tier={rank.tier} division={rank.division} lp={rank.lp} size="md" />;
+}
