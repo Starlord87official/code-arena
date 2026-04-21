@@ -164,7 +164,8 @@ export function useMatchmaking() {
         if (stateRef.current.sessionId) return;
 
         if (result.status === 'matched' || result.status === 'in_battle') {
-          const liveSession = await getLiveSession(result.session_id);
+          const sid = result.match_id ?? result.session_id;
+          const liveSession = await getLiveSession(sid);
           if (!liveSession) return;
 
           safeSetState({
