@@ -354,9 +354,21 @@ export default function BattleSessionPage() {
     if (!session || isEndingRef.current) return;
     isEndingRef.current = true;
     try {
-      const { data, error } = await supabase.rpc("complete_duo_battle", { p_session_id: session.id });
-      if (error) throw error;
-      const result = data as any;
+      // Try new forfeit_match RPC first; fall back to legacy complete_duo_battle.
+      let result: any = null;
+      const forfeit = await (supabase.rpc as any)("forfeit_match", { p_match_id: session.id });
+      if (!forfeit.error && forfeit.data) {
+        result = forfeit.data;
+      } else {
+        const legacy = await (supabase.rpc as any)("complete_duo_battle", {
+          p_session_id: session.id,
+          p_player_a_score: 0,
+          p_player_b_score: 0,
+        });
+        if (legacy.error) throw legacy.error;
+        result = legacy.data;
+      }
+
       if (result?.success) {
         queryClient.removeQueries({ queryKey: ["battle-session", sessionId] });
         navigate(`/battle?completed=${session.id}`, { replace: true });
