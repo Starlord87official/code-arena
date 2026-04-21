@@ -480,23 +480,30 @@ export default function BattleSessionPage() {
       if (!forfeit.error && forfeit.data) {
         result = forfeit.data;
       } else {
+        if (forfeit.error) {
+          console.error("forfeit_match failed, falling back to complete_duo_battle:", forfeit.error);
+        }
         const legacy = await (supabase.rpc as any)("complete_duo_battle", {
           p_session_id: session.id,
           p_player_a_score: 0,
           p_player_b_score: 0,
         });
-        if (legacy.error) throw legacy.error;
+        if (legacy.error) {
+          console.error("complete_duo_battle failed:", legacy.error);
+          throw legacy.error;
+        }
         result = legacy.data;
       }
 
-      if (result?.success) {
+      if (result?.success || result?.already_completed) {
         queryClient.removeQueries({ queryKey: ["battle-session", sessionId] });
         navigate(`/battle?completed=${session.id}`, { replace: true });
       } else {
         toast.error(result?.error || "Failed to end battle");
         isEndingRef.current = false;
       }
-    } catch {
+    } catch (e) {
+      console.error("handleForfeit fatal:", e);
       toast.error("Failed to end battle");
       isEndingRef.current = false;
     }
