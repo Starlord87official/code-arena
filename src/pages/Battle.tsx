@@ -13,6 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useBattleData } from '@/hooks/useBattleData';
 import { useMatchmaking, BattleMode } from '@/hooks/useMatchmaking';
 import { useAuth } from '@/contexts/AuthContext';
+import { PageHeader } from '@/components/bl/PageHeader';
 
 // Division color helper - kept for UI consistency
 const getDivisionColor = (division: string): string => {
@@ -89,21 +90,15 @@ export default function Battle() {
   };
 
   return (
-    <div className="min-h-screen bg-background py-8 px-4">
+    <div className="min-h-screen py-6 px-4">
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center gap-3 mb-4">
-            <Swords className="h-10 w-10 text-destructive" />
-            <h1 className="font-display text-4xl font-bold text-foreground">
-              DUO <span className="text-destructive">BATTLE</span>
-            </h1>
-            <Swords className="h-10 w-10 text-destructive transform scale-x-[-1]" />
-          </div>
-          <p className="text-muted-foreground">
-            Challenge opponents. Prove your superiority. Only one survives.
-          </p>
-        </div>
+        <PageHeader
+          sector="005"
+          tag="DUO_BATTLE"
+          title={<>DUO <span className="text-ember text-glow-ember">BATTLE</span></>}
+          subtitle="Challenge opponents. Prove your superiority. Only one survives."
+        />
+
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Battle Modes */}

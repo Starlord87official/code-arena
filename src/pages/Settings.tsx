@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useTheme } from 'next-themes';
+import { PageHeader } from '@/components/bl/PageHeader';
 
 export default function Settings() {
   const { toast } = useToast();
@@ -126,17 +127,14 @@ export default function Settings() {
   };
 
   return (
-    <div className="min-h-screen bg-background py-8 px-4">
+    <div className="min-h-screen py-6 px-4">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="font-display text-3xl font-bold text-foreground mb-2">
-            SETTINGS
-          </h1>
-          <p className="text-muted-foreground">
-            Configure your CodeTrackX experience
-          </p>
-        </div>
+        <PageHeader
+          sector="017"
+          tag="SETTINGS"
+          title="Settings"
+          subtitle="Configure your CodeTrackX experience"
+        />
 
         <Tabs defaultValue="profile" className="space-y-8">
           <TabsList className="w-full justify-start bg-card border border-border p-1">

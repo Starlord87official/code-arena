@@ -20,6 +20,8 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAllBattleHistory, useBattleById, BattleHistoryRecord } from '@/hooks/useBattleHistory';
 import { format, formatDistanceToNow } from 'date-fns';
+import { PageHeader } from '@/components/bl/PageHeader';
+import { StatTile } from '@/components/bl/StatTile';
 
 type FilterType = 'all' | 'wins' | 'losses' | 'ties';
 
@@ -312,35 +314,20 @@ export default function BattleHistory() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <Swords className="h-8 w-8 text-primary" />
-          <h1 className="font-display text-3xl font-bold">Battle History</h1>
-        </div>
-        <p className="text-muted-foreground">Review past clan battles and relive your victories</p>
-      </div>
+    <div className="container mx-auto px-4 py-6 max-w-4xl">
+      <PageHeader
+        sector="006"
+        tag="BATTLE_HISTORY"
+        title="Battle History"
+        subtitle="Review past clan battles and relive your victories"
+      />
 
-      {/* Stats Summary */}
       {!isLoading && battles && battles.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="arena-card p-4 text-center">
-            <div className="font-display text-3xl font-bold text-status-success">{stats.wins}</div>
-            <p className="text-xs text-muted-foreground uppercase tracking-wider">Victories</p>
-          </div>
-          <div className="arena-card p-4 text-center">
-            <div className="font-display text-3xl font-bold text-destructive">{stats.losses}</div>
-            <p className="text-xs text-muted-foreground uppercase tracking-wider">Defeats</p>
-          </div>
-          <div className="arena-card p-4 text-center">
-            <div className="font-display text-3xl font-bold text-status-warning">{stats.ties}</div>
-            <p className="text-xs text-muted-foreground uppercase tracking-wider">Draws</p>
-          </div>
-          <div className="arena-card p-4 text-center">
-            <div className="font-display text-3xl font-bold text-primary">{stats.winRate}%</div>
-            <p className="text-xs text-muted-foreground uppercase tracking-wider">Win Rate</p>
-          </div>
+          <StatTile label="Victories" value={stats.wins} icon={Trophy} accent="neon" index={0} />
+          <StatTile label="Defeats" value={stats.losses} icon={TrendingDown} accent="ember" index={1} />
+          <StatTile label="Draws" value={stats.ties} icon={Minus} accent="gold" index={2} />
+          <StatTile label="Win Rate" value={`${stats.winRate}%`} icon={TrendingUp} accent="electric" index={3} />
         </div>
       )}
 

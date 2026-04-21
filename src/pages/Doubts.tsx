@@ -16,6 +16,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useDoubts, useEligibleTopics, DoubtCategory, DoubtDifficulty } from '@/hooks/useDoubts';
 import { AskDoubtDialog } from '@/components/doubts/AskDoubtDialog';
 import { DoubtCard } from '@/components/doubts/DoubtCard';
+import { PageHeader } from '@/components/bl/PageHeader';
 
 const CATEGORIES: { value: DoubtCategory | 'all'; label: string }[] = [
   { value: 'all', label: 'All Categories' },
@@ -70,20 +71,15 @@ export default function Doubts() {
   const solvedCount = doubts.filter(d => d.is_solved).length;
 
   return (
-    <div className="min-h-screen bg-background py-8 px-4">
+    <div className="min-h-screen py-6 px-4">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="font-display text-3xl font-bold text-foreground mb-2">
-              Doubt <span className="text-gradient-electric">Forum</span>
-            </h1>
-            <p className="text-muted-foreground">
-              Ask questions, help others, and grow together
-            </p>
-          </div>
-          <AskDoubtDialog />
-        </div>
+        <PageHeader
+          sector="014"
+          tag="DOUBT_FORUM"
+          title={<>Doubt <span className="text-neon text-glow">Forum</span></>}
+          subtitle="Ask questions, help others, and grow together"
+          right={<AskDoubtDialog />}
+        />
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'unsolved' | 'solved')}>

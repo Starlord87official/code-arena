@@ -7,6 +7,7 @@ import { PlannerCalendar } from '@/components/planner/PlannerCalendar';
 import { DayEventsPanel } from '@/components/planner/DayEventsPanel';
 import { CategoryFilters, CategoryLegend } from '@/components/planner/CategoryFilters';
 import { AddEventDialog } from '@/components/planner/AddEventDialog';
+import { PageHeader } from '@/components/bl/PageHeader';
 
 const ALL_CATEGORIES: EventCategory[] = ['internship', 'revision', 'contest', 'study', 'career', 'personal'];
 
@@ -38,23 +39,15 @@ export default function Planner() {
   }
 
   return (
-    <div className="min-h-screen py-8">
+    <div className="min-h-screen py-6">
       <div className="container mx-auto px-4">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/20">
-                <Calendar className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <h1 className="font-display text-3xl font-bold">Planner</h1>
-                <p className="text-muted-foreground">Organize your study goals and deadlines</p>
-              </div>
-            </div>
-            <AddEventDialog />
-          </div>
-        </div>
+        <PageHeader
+          sector="015"
+          tag="PLANNER"
+          title="Planner"
+          subtitle="Organize your study goals and deadlines"
+          right={<AddEventDialog />}
+        />
 
         {/* Filters */}
         <div className="mb-6">

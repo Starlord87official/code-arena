@@ -10,6 +10,7 @@ import { useLeaderboard, LeaderboardUser, Division } from '@/hooks/useLeaderboar
 import { Skeleton } from '@/components/ui/skeleton';
 import { UsernameLink } from '@/components/social/UsernameLink';
 import { TopThreePodium } from '@/components/leaderboard/TopThreePodium';
+import { PageHeader } from '@/components/bl/PageHeader';
 
 const divisions = ['all', 'legend', 'master', 'diamond', 'platinum', 'gold', 'silver', 'bronze'] as const;
 
@@ -333,45 +334,30 @@ export default function Leaderboard() {
   const hasEnoughUsers = leaderboardUsers.length >= 1;
 
   return (
-    <div className="min-h-screen bg-background py-8 px-4">
+    <div className="min-h-screen py-6 px-4">
       <div className="max-w-6xl mx-auto">
-        {/* Elite Arena Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-4 mb-4">
-            <div className="flex items-center gap-1">
-              <ChevronsUp className="h-6 w-6 text-primary animate-pulse" />
-              <div className="w-12 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent"></div>
+        <PageHeader
+          sector="009"
+          tag="LEADERBOARD"
+          title={<>THE <span className="text-neon text-glow">ARENA</span></>}
+          subtitle="Only the elite rise. Prove your dominance."
+        />
+        {stats && stats.totalUsers > 0 && (
+          <div className="flex items-center justify-center gap-4 mb-6 text-sm">
+            <div className="flex items-center gap-1 text-text-dim">
+              <Users className="h-4 w-4" />
+              <span>{stats.totalUsers} Active Warriors</span>
             </div>
-            <Crown className="h-10 w-10 text-rank-gold drop-shadow-[0_0_10px_hsl(var(--rank-gold))]" />
-            <h1 className="font-display text-4xl font-bold text-foreground">
-              THE <span className="text-primary neon-text">ARENA</span>
-            </h1>
-            <Crown className="h-10 w-10 text-rank-gold drop-shadow-[0_0_10px_hsl(var(--rank-gold))]" />
-            <div className="flex items-center gap-1">
-              <div className="w-12 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent"></div>
-              <ChevronsUp className="h-6 w-6 text-primary animate-pulse" />
+            <div className="flex items-center gap-1 text-status-success">
+              <TrendingUp className="h-4 w-4" />
+              <span>Top {stats.promotionThreshold} Promote</span>
+            </div>
+            <div className="flex items-center gap-1 text-destructive">
+              <TrendingDown className="h-4 w-4" />
+              <span>Bottom {stats.demotionThreshold} Demote</span>
             </div>
           </div>
-          <p className="text-muted-foreground text-lg">
-            Only the <span className="text-primary font-bold">elite</span> rise. Prove your dominance.
-          </p>
-          {stats && stats.totalUsers > 0 && (
-            <div className="flex items-center justify-center gap-4 mt-4 text-sm">
-              <div className="flex items-center gap-1 text-muted-foreground">
-                <Users className="h-4 w-4" />
-                <span>{stats.totalUsers} Active Warriors</span>
-              </div>
-              <div className="flex items-center gap-1 text-status-success">
-                <TrendingUp className="h-4 w-4" />
-                <span>Top {stats.promotionThreshold} Promote</span>
-              </div>
-              <div className="flex items-center gap-1 text-destructive">
-                <TrendingDown className="h-4 w-4" />
-                <span>Bottom {stats.demotionThreshold} Demote</span>
-              </div>
-            </div>
-          )}
-        </div>
+        )}
 
         {/* Division Filter */}
         <div className="flex flex-wrap gap-2 mb-6 justify-center">
