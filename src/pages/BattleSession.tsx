@@ -68,6 +68,21 @@ export default function BattleSessionPage() {
 
   const isEndingRef = useRef(false);
 
+  // Defensive validation: detect zombie sessions before mounting workspace
+  const { data: validation, isLoading: validationLoading } = useQuery({
+    queryKey: ["battle-session-validate", sessionId],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("validate_battle_session", { p_session_id: sessionId });
+      if (error) return { valid: false, reason: "no_match" } as { valid: boolean; reason: string };
+      return (data ?? { valid: false, reason: "no_match" }) as { valid: boolean; reason: string };
+    },
+    enabled: !!sessionId && !!user,
+    staleTime: 30_000,
+    retry: false,
+  });
+
+  const isSessionValid = validation?.valid === true;
+
   // Session
   const { data: session, isLoading: sessionLoading, error: sessionError } = useQuery({
     queryKey: ["battle-session", sessionId],
