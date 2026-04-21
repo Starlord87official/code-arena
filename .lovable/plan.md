@@ -1,110 +1,131 @@
 
 
-# Step 8 — Anti-Cheat + Integrity Layer
+# Step 9 — Wire Battle V2 Frontend to Backend (End-to-End)
 
 ## Goal
-Detect and act on suspicious behavior during ranked battles: tab switches, paste storms, impossible solve times, code similarity across opponents, and submission flooding. Flags surface to admins via `anticheat_flags` (table already exists) and can auto-invalidate matches when severity is high.
+Replace remaining mock/static data across all four battle V2 component groups (`entry/`, `pre-battle/`, `workspace/`, `post-battle/`) with live backend data via the RPCs and realtime channels built in Steps 1–8. Result: every screen the user touches in a duo battle reflects real database state — no hardcoded names, scores, problems, or stats.
+
+## Audit (current wiring gaps)
+
+After reading every file in `src/components/battle-v2/**`, here is what is still mock-driven vs. already live:
+
+### `entry/` — Battle landing screen
+- `EntryHero.tsx` ✅ prop-driven (no change).
+- `GlobalStatsStrip.tsx` ❌ accepts props but `Battle.tsx` doesn't pass real numbers.
+- `ModeGrid.tsx` / `ModeSelector.tsx` ✅ static config, fine.
+- `OnlineWarriorsList.tsx` ❌ currently uses `useBattleData` mock seed.
+- `RecentBattlesList.tsx` ❌ uses mock seed; should pull from `battle_history` for the user.
+- `StatsPanel.tsx` ❌ shows stubbed ELO / win rate.
+- `LoadoutBar.tsx`, `FormatSelector.tsx`, `RegionSelector.tsx`, `CombatantProfile.tsx` ✅ presentational.
+- `QueueButton.tsx` ✅ already wired to `useMatchmaking`.
+
+### `pre-battle/` — Lobby + countdown
+- `LobbyHeader.tsx` ❌ hardcoded match ID/format strings.
+- `ReadyRoster.tsx` ❌ static two-player mock.
+- `MatchBriefing.tsx` ❌ static problem list.
+- `CountdownLauncher.tsx` ✅ countdown-only, prop-driven.
+
+### `workspace/` — Live battle UI
+- `WorkspaceHud.tsx` ❌ shows hardcoded scores & timer.
+- `OpponentTicker.tsx` ✅ wired (Step 6) but `BattleSession.tsx` doesn't pass opponent name/avatar from real participant.
+- `ProblemPanel.tsx` ❌ accepts props but `BattleSession.tsx` passes only the first problem; needs full list with switching.
+- `EditorToolbar.tsx` ✅ language + run/submit handlers; needs real submit wiring.
+- `CodeEditor.tsx` ✅ wired (Steps 7 & 8).
+- `ConsolePanel.tsx` ❌ shows mock stdout; should render `latestSubmission.verdict_payload`.
+- `VerdictOverlay.tsx` ✅ wired (Step 7).
+- `StatusBar.tsx` ✅ wired (Step 8).
+
+### `post-battle/` — Results screen
+- `ResultBanner.tsx` ❌ hardcoded "VICTORY" string.
+- `FinalScoreboard.tsx` ❌ static rounds array.
+- `LpSummary.tsx` ❌ hardcoded LP delta.
+- `PlayerStatsTable.tsx` ❌ mock player stats.
+- `PostActions.tsx` ✅ pure handlers.
 
 ## Backend changes
 
-### 1. Migration: integrity tracking + similarity hashing
+### 1. New RPCs (read-side aggregations)
 
-**Extend `battle_participants`** (additive):
-- `tab_switches int not null default 0`
-- `paste_count int not null default 0`
-- `paste_chars_total int not null default 0`
-- `focus_lost_ms bigint not null default 0`
-- `integrity_score int not null default 100` (drops as flags accumulate)
+- **`get_user_battle_summary(p_user_id uuid)`** — returns `{ elo, rank_label, total_matches, wins, losses, win_rate, current_streak, mvp_count }` for the entry stats panel. Reads `battle_history` + `rank_states`.
+- **`get_recent_battles(p_user_id uuid, p_limit int default 5)`** — returns rows joined from `battle_matches` + `battle_participants` for the user's last N matches: `{ match_id, mode, ended_at, opponent_handle, result, score_self, score_opp, elo_change }`.
+- **`get_online_warriors(p_limit int default 12)`** — returns recent active queue/match participants: `{ user_id, handle, elo, rank_label, status }` (status ∈ `queueing` / `in_match`). Excludes caller.
+- **`get_global_battle_stats()`** — returns `{ live_matches, players_online, matches_today }` for the GlobalStatsStrip.
+- **`get_match_briefing(p_match_id uuid)`** — returns full match config + participants + problem list for pre-battle/lobby and workspace: `{ match: {…}, participants: [{user_id, handle, avatar, elo, rank_label}], problems: [{id, title, difficulty, points, order_index}] }`. Caller-only (must be a participant).
+- **`get_match_result(p_match_id uuid)`** — post-battle aggregation: `{ winner_id, is_draw, duration_sec, players: [{user_id, handle, score, problems_solved, wrong_submissions, total_solve_time_sec, elo_before, elo_after, elo_change, xp_earned, integrity_score}], rounds: [{problem_id, title, difficulty, winner_user_id, time_a, time_b}] }`.
 
-**Extend `battle_match_submissions`** (additive):
-- `code_normalized_hash text` (whitespace/identifier-stripped hash for cross-user similarity)
-- `paste_ratio numeric(4,3)` (pasted chars / total chars at submit time)
-- `time_since_problem_open_sec int` (suspiciously low → flag)
-
-**New table `submission_similarity`** (pairs of suspicious matches):
-- `id uuid pk`, `match_id uuid`, `submission_a uuid`, `submission_b uuid`
-- `similarity numeric(4,3)`, `algorithm text default 'token-jaccard'`
-- `created_at timestamptz default now()`
-- RLS: admin read only.
-
-### 2. RPCs
-
-- **`record_integrity_event(p_match_id uuid, p_kind text, p_payload jsonb)`** — caller-only, throttled (max 30/min/user via in-function check). Updates the participant counters atomically based on `p_kind`:
-  - `tab_switch` → increments `tab_switches`, accumulates `focus_lost_ms`.
-  - `paste` → increments `paste_count`, adds chars to `paste_chars_total`.
-  - `devtools_open`, `fullscreen_exit` → counters + immediate `anticheat_flags` insert at severity 2.
-  - Recomputes `integrity_score = greatest(0, 100 - tab_switches*5 - paste_count*2 - (focus_lost_ms/60000)*3)`.
-  - When score crosses 50, inserts a `pending_review` flag of kind `behavioral`. When ≤ 20, inserts severity-4 flag and notifies via `pg_notify('anticheat', match_id)`.
-
-- **`scan_submission_integrity(p_submission_id uuid)`** — `SECURITY DEFINER`, called by `finalize_judge_job` after a verdict is written.
-  - Computes normalized code hash (strip comments/whitespace, lowercase identifiers via simple regex pass).
-  - Compares against opponent submissions in same match for same problem; if Jaccard token similarity ≥ 0.85, inserts row in `submission_similarity` and a severity-3 `code_similarity` flag for both users.
-  - Checks `time_since_problem_open_sec`: if `verdict='accepted'` AND `< 20` for medium, `< 60` for hard → severity-2 `impossible_solve_time` flag.
-  - Checks paste-driven solves: `paste_ratio > 0.7` AND `verdict='accepted'` → severity-3 `paste_solution` flag.
-
-- **`apply_integrity_review(p_flag_id uuid, p_action text)`** — admin-only.
-  - `p_action` ∈ `dismiss` | `warn` | `invalidate_match` | `forfeit_user`.
-  - On `invalidate_match` → sets `battle_matches.invalidated_reason`, calls `finalize_match(match_id, 'integrity_invalidated')` with no rating change (skips ELO step via flag).
-  - On `forfeit_user` → marks participant `is_forfeit=true`, calls `finalize_match(match_id, 'integrity_forfeit')`.
-  - Logs decision into `battle_event_log` and updates flag `status='actioned'/'dismissed'`.
-
-### 3. `finalize_match` patch
-
-- Accept new internal arg `p_skip_rating boolean default false`. When true (integrity invalidation), skip ELO updates and XP, still write `battle_history` row marked `winner='invalidated'`.
-
-### 4. Edge function: `match-ticker` extension
-
-- After `tick_active_matches`, run `auto_action_critical_flags()` (new helper): for any `pending_review` flag with `severity >= 4` older than 60s with no admin action, auto-invalidate the match. Returns count actioned.
+All `SECURITY DEFINER`, RLS-safe, return JSON.
 
 ## Frontend changes
 
-### 1. New hook: `src/hooks/useBattleIntegrity.ts`
-- Mounted in `BattleSession.tsx` for active matches only.
-- Listens to:
-  - `document.visibilitychange` → on hidden, start timer; on visible, post `tab_switch` with `focus_lost_ms`.
-  - `paste` event on the editor container → captures pasted char count, posts `paste`.
-  - `fullscreenchange` (when match config requires fullscreen) → posts `fullscreen_exit`.
-  - Heuristic devtools detection via `window` size delta (best-effort).
-- Calls `record_integrity_event` (debounced 500ms per event kind).
-- Surfaces local toast warnings at `integrity_score` thresholds (80, 50, 20) so the user sees the consequence before being flagged.
+### 1. New hooks
 
-### 2. `src/components/battle-v2/workspace/CodeEditor.tsx`
-- Wire `onPaste` → forwards `{chars, source}` to `useBattleIntegrity`.
-- Track `time_since_problem_open_sec` per problem (timestamp on first focus) and pass into `submit_match_solution` payload (added param).
+- **`src/hooks/useBattleEntryData.ts`** — wraps `get_user_battle_summary`, `get_recent_battles`, `get_online_warriors`, `get_global_battle_stats`. Auto-refetches every 30s. Returns `{ summary, recent, online, global, isLoading }`.
+- **`src/hooks/useBattleBriefing.ts`** — calls `get_match_briefing(matchId)`; stable across pre-battle and workspace mounts.
+- **`src/hooks/useBattleResult.ts`** — calls `get_match_result(matchId)` once match state is `completed`.
 
-### 3. `src/components/battle-v2/workspace/StatusBar.tsx`
-- Add a small "INTEGRITY: 100" indicator that turns ember below 50 and crimson below 20. Read from `participants` returned by `useBattleRealtime` (already streams the new column).
+### 2. `src/pages/Battle.tsx` (entry)
+- Mount `useBattleEntryData()`.
+- Replace `useBattleData` mock pipeline. Pass real props into:
+  - `GlobalStatsStrip` → `global`.
+  - `StatsPanel` → `summary`.
+  - `RecentBattlesList` → `recent` (rename mock fields to match RPC shape; show empty state when zero).
+  - `OnlineWarriorsList` → `online` (empty state when none).
+- `CombatantProfile` → reads `summary` for caller's ELO/rank.
 
-### 4. Admin: `src/pages/admin/AdminBattles.tsx`
-- New tab "Integrity Flags" listing `anticheat_flags` joined with match + user. Per-row actions: Dismiss / Warn / Invalidate / Forfeit, calling `apply_integrity_review`.
-- Read-only table for `submission_similarity` showing the two side-by-side code blobs.
+### 3. `src/pages/BattleSession.tsx` (pre-battle + workspace)
+- Mount `useBattleBriefing(matchId)` once participant load completes.
+- During `state ∈ {ready_check, ban_pick}`:
+  - `LobbyHeader` ← `{ matchId, mode, format }` from briefing.
+  - `ReadyRoster` ← `briefing.participants` with ready-state from `battle_event_log` last `participant_ready` event.
+  - `MatchBriefing` ← `briefing.problems`.
+- During `state === 'active'`:
+  - `WorkspaceHud` ← live `participants` from `useBattleRealtime` (scores, problems_solved, time remaining via `match.started_at + duration_minutes`).
+  - `ProblemPanel` ← `briefing.problems`, with current selection in local state, switching updates the editor's `time_since_problem_open_sec` baseline (existing Step 8 wiring).
+  - `OpponentTicker` ← opponent participant + handle from `briefing.participants`.
+  - `ConsolePanel` ← parses `latestSubmission.verdict_payload` (`{ stdout, stderr, runtime_ms, testcases }`).
 
-### 5. `submit_match_solution` signature
-- Add params `p_paste_ratio numeric`, `p_time_since_open_sec int`. CodeEditor passes them; server stores into the new submission columns and uses them in `scan_submission_integrity`.
+### 4. `src/pages/BattleSession.tsx` post-battle redirect
+- Already redirects on `state === 'completed'` (Step 6). On the post-battle page (separate route), mount `useBattleResult(matchId)` and feed:
+  - `ResultBanner` ← `{ outcome: win/loss/draw, winnerName, callerWon }`.
+  - `FinalScoreboard` ← `result.players`.
+  - `LpSummary` ← `players[caller].elo_change` + `xp_earned`.
+  - `PlayerStatsTable` ← `result.players`.
+  - `PostActions` `onRematch` → re-enqueues caller with same config; `onShare` → existing share dialog.
+
+### 5. Empty states
+- All four sections must render empty placeholders (no fake data) when backend returns zero rows. Reuse `bl-glass` panels with a single line of `// no data yet` styling consistent with the BL aesthetic.
 
 ## Files touched
 
-- `supabase/migrations/<new>.sql` — column adds, `submission_similarity`, `record_integrity_event`, `scan_submission_integrity`, `apply_integrity_review`, `auto_action_critical_flags`, `finalize_match` patch, `submit_match_solution` patch.
-- `supabase/functions/match-ticker/index.ts` — call `auto_action_critical_flags`.
-- `supabase/functions/judge-worker/index.ts` — invoke `scan_submission_integrity` after `finalize_judge_job`.
-- `src/hooks/useBattleIntegrity.ts` — new.
-- `src/pages/BattleSession.tsx` — mount hook, pass timing/paste metadata to submit.
-- `src/components/battle-v2/workspace/CodeEditor.tsx` — paste capture + open-timestamp.
-- `src/components/battle-v2/workspace/StatusBar.tsx` — integrity indicator.
-- `src/pages/admin/AdminBattles.tsx` — integrity tab + actions.
+- `supabase/migrations/<new>.sql` — six new RPCs above.
+- `src/hooks/useBattleEntryData.ts` — new.
+- `src/hooks/useBattleBriefing.ts` — new.
+- `src/hooks/useBattleResult.ts` — new.
+- `src/pages/Battle.tsx` — swap mock pipeline → real hook.
+- `src/pages/BattleSession.tsx` — wire briefing + workspace props.
+- `src/components/battle-v2/pre-battle/LobbyHeader.tsx` — accept real props.
+- `src/components/battle-v2/pre-battle/ReadyRoster.tsx` — accept participants.
+- `src/components/battle-v2/pre-battle/MatchBriefing.tsx` — accept problems.
+- `src/components/battle-v2/workspace/WorkspaceHud.tsx` — read live participants/timer.
+- `src/components/battle-v2/workspace/ProblemPanel.tsx` — list of problems + switching.
+- `src/components/battle-v2/workspace/ConsolePanel.tsx` — render verdict payload.
+- `src/components/battle-v2/post-battle/ResultBanner.tsx` — derive from result.
+- `src/components/battle-v2/post-battle/FinalScoreboard.tsx` — render players.
+- `src/components/battle-v2/post-battle/LpSummary.tsx` — read elo/xp delta.
+- `src/components/battle-v2/post-battle/PlayerStatsTable.tsx` — render players.
+- `src/components/battle-v2/entry/StatsPanel.tsx`, `GlobalStatsStrip.tsx`, `RecentBattlesList.tsx`, `OnlineWarriorsList.tsx` — accept real RPC shapes; render empty states.
 
 ## Verification
 
-1. Switch tabs 11+ times during a battle → `tab_switches` rises, integrity score drops below 50, severity-2 flag appears in admin panel.
-2. Paste a full solution → `paste_count` rises, on accept a `paste_solution` flag fires.
-3. Two test users submit near-identical code → `submission_similarity` row + `code_similarity` flags for both.
-4. Admin clicks "Invalidate" → match transitions to `completed` with `invalidated_reason` set, no ELO change applied.
-5. Severity-4 flag with no admin action for >60s → ticker auto-invalidates the match.
+1. New user with zero history → entry page shows empty states for "Recent Battles" and "Online Warriors", real `0` stats — no fabricated numbers.
+2. Two test users queue → on match found, lobby shows real handles + selected problem list pulled from `battle_match_problems`.
+3. During active match → opponent score in `OpponentTicker` and HUD updates within ~200ms of opponent's accepted submission (uses Step 6 realtime).
+4. After completion → post-battle page shows real ELO delta, MVP from result, integrity score per player, rematch button re-enters queue with same config.
 
 ## Out of scope (deferred)
 
-- Webcam/proctoring stream.
-- Network-level VPN or multi-account detection.
-- ML-based stylometry (token Jaccard only in MVP).
-- User-facing appeal workflow for invalidations.
+- Spectator entry to in-progress matches.
+- Replay/timeline scrubber on the post-battle screen.
+- Friend/clan-aware "Online Warriors" prioritization.
+- Animated transitions between phases (cosmetic-only, separate pass).
 
