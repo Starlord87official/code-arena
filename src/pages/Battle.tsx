@@ -66,18 +66,19 @@ export default function Battle() {
     isFindingOpponent,
     battleStats,
     isLoadingStats,
+    activeSession,
   } = useMatchmaking();
 
-  // Redirect to battle session as soon as we have a sessionId from matched/in_battle state.
-  // The RPC guarantees the session row exists before returning, so no need to re-verify.
+  // Redirect to battle session as soon as we have a sessionId — either from
+  // matched/in_battle local state, or recovered from the active-session query.
   useEffect(() => {
-    if (
-      (isMatched || matchmakingState.status === 'in_battle') &&
-      matchmakingState.sessionId
-    ) {
-      navigate(`/battle/session/${matchmakingState.sessionId}`, { replace: true });
+    const sessionId =
+      ((isMatched || matchmakingState.status === 'in_battle') && matchmakingState.sessionId) ||
+      activeSession?.id;
+    if (sessionId) {
+      navigate(`/battle/session/${sessionId}`, { replace: true });
     }
-  }, [isMatched, matchmakingState.status, matchmakingState.sessionId, navigate]);
+  }, [isMatched, matchmakingState.status, matchmakingState.sessionId, activeSession?.id, navigate]);
 
   // Filter online warriors by search
   const filteredWarriors = onlineWarriors.filter(w => 
