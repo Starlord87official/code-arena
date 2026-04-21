@@ -264,27 +264,25 @@ export default function BattleSessionPage() {
     if (!session || !user || !selectedMatchProblem) return;
     setSubmitting(true);
     try {
-      const idempotencyKey = `${session.id}:${selectedMatchProblem.id}:${Date.now()}`;
-
-      // 1. Server-authored submission insert via RPC
-      const { data: submissionId, error: submitErr } = await supabase.rpc(
-        "submit_battle_solution",
+      // Server-authoritative submission: inserts pending row + enqueues judge job.
+      const { data, error: submitErr } = await (supabase.rpc as any)(
+        "submit_match_solution",
         {
           p_match_id: session.id,
           p_problem_id: selectedMatchProblem.id,
-          p_language: language,
           p_code: code,
-          p_idempotency_key: idempotencyKey,
+          p_language: language,
         },
       );
 
-      if (submitErr || !submissionId) {
+      if (submitErr || !data?.submission_id) {
         toast.error(submitErr?.message || "Failed to submit");
         setSubmitting(false);
         return;
       }
 
-      const subId = submissionId as unknown as string;
+      const subId = data.submission_id as string;
+      toast.message("Judging on server…");
 
       // Insert pending row in local submissions list
       const localId = `#${String(submissions.length + 1).padStart(3, "0")}`;
@@ -300,13 +298,13 @@ export default function BattleSessionPage() {
         ...prev,
       ]);
 
-      // 2. Trigger the judge dispatcher (async)
-      const { error: judgeErr } = await supabase.functions.invoke("judge-dispatcher", {
-        body: { submission_id: subId },
-      });
-      if (judgeErr) {
-        console.warn("judge-dispatcher invoke failed:", judgeErr.message);
-      }
+      // Surface PENDING overlay immediately
+      setVerdict("PENDING" as Verdict);
+
+      // Kick the judge worker once so we don't have to wait for the next match-ticker cron tick.
+      supabase.functions.invoke("judge-worker", { body: {} }).catch((e) =>
+        console.warn("judge-worker invoke failed:", e?.message ?? e),
+      );
 
       // 3. Poll the submission row until verdict != pending (realtime channel
       //    also covers this, but a short poll guarantees verdict UI even if

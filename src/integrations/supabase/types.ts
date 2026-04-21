@@ -787,6 +787,53 @@ export type Database = {
         }
         Relationships: []
       }
+      challenge_testcases: {
+        Row: {
+          challenge_id: string
+          created_at: string
+          expected_output: string
+          id: string
+          input: string
+          is_sample: boolean
+          memory_limit_kb: number
+          order_index: number
+          time_limit_ms: number
+          weight: number
+        }
+        Insert: {
+          challenge_id: string
+          created_at?: string
+          expected_output: string
+          id?: string
+          input: string
+          is_sample?: boolean
+          memory_limit_kb?: number
+          order_index?: number
+          time_limit_ms?: number
+          weight?: number
+        }
+        Update: {
+          challenge_id?: string
+          created_at?: string
+          expected_output?: string
+          id?: string
+          input?: string
+          is_sample?: boolean
+          memory_limit_kb?: number
+          order_index?: number
+          time_limit_ms?: number
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_testcases_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       challenges: {
         Row: {
           challenge_type: string
@@ -1879,6 +1926,53 @@ export type Database = {
           used_by?: string | null
         }
         Relationships: []
+      }
+      judge_jobs: {
+        Row: {
+          attempts: number
+          created_at: string
+          finished_at: string | null
+          id: string
+          last_error: string | null
+          match_id: string
+          picked_up_at: string | null
+          status: string
+          submission_id: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          finished_at?: string | null
+          id?: string
+          last_error?: string | null
+          match_id: string
+          picked_up_at?: string | null
+          status?: string
+          submission_id: string
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          finished_at?: string | null
+          id?: string
+          last_error?: string | null
+          match_id?: string
+          picked_up_at?: string | null
+          status?: string
+          submission_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "judge_jobs_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: true
+            referencedRelation: "battle_match_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       leaderboard_snapshots: {
         Row: {
@@ -3705,6 +3799,7 @@ export type Database = {
         Args: { p_code: string; p_user_id: string }
         Returns: Json
       }
+      claim_judge_job: { Args: never; Returns: Json }
       complete_challenge: {
         Args: {
           p_challenge_id: string
@@ -3764,6 +3859,7 @@ export type Database = {
       }
       current_season_id: { Args: never; Returns: string }
       delete_doubt_comment: { Args: { p_comment_id: string }; Returns: Json }
+      enqueue_judge_job: { Args: { p_submission_id: string }; Returns: string }
       ensure_rank_state: {
         Args: { _user_id: string }
         Returns: {
@@ -3790,6 +3886,19 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      finalize_judge_job: {
+        Args: {
+          p_compile_log?: string
+          p_error?: string
+          p_job_id: string
+          p_memory_kb: number
+          p_passed: number
+          p_runtime_ms: number
+          p_total: number
+          p_verdict: string
+        }
+        Returns: Json
       }
       finalize_match:
         | { Args: { _match_id: string }; Returns: Json }
@@ -4083,6 +4192,15 @@ export type Database = {
           p_problem_id: string
         }
         Returns: string
+      }
+      submit_match_solution: {
+        Args: {
+          p_code: string
+          p_language: string
+          p_match_id: string
+          p_problem_id: string
+        }
+        Returns: Json
       }
       tick_active_matches: { Args: never; Returns: number }
       transfer_clan_leadership: {
