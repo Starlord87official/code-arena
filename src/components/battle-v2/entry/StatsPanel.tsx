@@ -1,7 +1,8 @@
-import { Flame, TrendingUp } from "lucide-react";
+import { AlertTriangle, Flame, TrendingUp } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePromotionSeries } from "@/hooks/usePromotionSeries";
 import { PromoSeriesTracker } from "@/components/battle-v2/PromoSeriesTracker";
+import { useDecayWarning } from "@/hooks/useDecayWarning";
 
 interface Stats {
   elo: number;
@@ -20,6 +21,7 @@ interface Props {
 
 export function StatsPanel({ stats, isLoading }: Props) {
   const { series } = usePromotionSeries();
+  const { data: decay } = useDecayWarning();
   return (
     <div className="relative overflow-hidden border border-line bg-panel/60 bl-glass bl-corners">
       <div className="pointer-events-none absolute inset-0 bl-grid opacity-15" />
@@ -63,6 +65,14 @@ export function StatsPanel({ stats, isLoading }: Props) {
             />
 
             <div className="pt-3 border-t border-line/40">
+              {decay?.active && (
+                <div className="mb-2 flex items-center gap-1.5 border border-amber-500/40 bg-amber-500/10 px-2 py-1.5 font-mono text-[10px] tracking-[0.14em] text-amber-300">
+                  <AlertTriangle className="h-3 w-3 shrink-0" />
+                  <span className="font-bold">
+                    DECAY IN {decay.daysUntilDecay}D · -{decay.weeklyLoss} LP/WK
+                  </span>
+                </div>
+              )}
               {series ? (
                 <PromoSeriesTracker series={series} />
               ) : (
