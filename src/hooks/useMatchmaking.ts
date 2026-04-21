@@ -302,9 +302,14 @@ export function useMatchmaking() {
         toast.info('Searching for opponent...');
       }
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Join queue error:', error);
-      toast.error('Failed to start matchmaking');
+      const msg = String(error?.message ?? '');
+      if (msg.includes('dodge_cooldown_active')) {
+        toast.error('You declined a recent match — short cooldown active. Try again in a minute.');
+      } else {
+        toast.error('Failed to start matchmaking');
+      }
       setMatchmakingState({ status: 'idle' });
     },
   });
