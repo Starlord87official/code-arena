@@ -357,9 +357,26 @@ export function useMatchmaking() {
       if (error) throw error;
       return data as BattleSession | null;
     },
-    enabled: !!user && (matchmakingState.status === 'matched' || matchmakingState.status === 'in_battle'),
-    refetchInterval: matchmakingState.status === 'in_battle' ? 5000 : false,
+    enabled: !!user,
+    refetchInterval: 5000,
   });
+
+  // Self-healing: if an active session exists in the DB, sync local state
+  // and force the redirect path even when matchmaking state was stale.
+  useEffect(() => {
+    if (!activeSession) return;
+    if (stateRef.current.sessionId === activeSession.id) return;
+    const opponentId =
+      activeSession.player_a_id === user?.id
+        ? activeSession.player_b_id
+        : activeSession.player_a_id;
+    safeSetState({
+      status: 'in_battle',
+      sessionId: activeSession.id,
+      battleId: activeSession.battle_id,
+      opponentId,
+    });
+  }, [activeSession, user?.id, safeSetState]);
 
   // Get recent duo battles
   const { data: recentDuoBattles, isLoading: isLoadingRecent } = useQuery({
