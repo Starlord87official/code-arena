@@ -1,42 +1,46 @@
 
-Fix the duo battle issue in two coordinated parts: reliable session entry for both players, and reliable opponent identity display once inside the arena.
 
-1. Stabilize matchmaking handoff in `src/hooks/useMatchmaking.ts`
-- Remove the fragile “validate session immediately or do nothing” behavior after `join_battle_queue` and queue polling.
-- When the backend returns `matched` with a `session_id`, lock local state to that session immediately instead of dropping the update if the follow-up read races the database commit.
-- Keep the existing stale-response protection, but refine it so older `idle/searching` results can never overwrite a newer `matched/in_battle` state.
-- Add a short recovery path: if the direct session validation misses once, continue syncing from the active-session query instead of leaving the second player stranded on `/battle`.
+## Fix: Opponent Name Shows as "Opponent" in Battle
 
-2. Make recovery state strong enough to redirect the stuck player
-- Keep `activeSession` as the self-healing source of truth for authenticated users.
-- Ensure `Battle.tsx` redirects when local matchmaking state contains a session, and also after recovery has promoted the user into `in_battle`.
-- Preserve the no-loop rule from previous fixes: never redirect from stale completed-session data.
+### Root Cause
 
-3. Fix opponent name lookups in live and results pages
-- In `src/pages/BattleSession.tsx` and `src/pages/BattleResults.tsx`, stop querying `profiles` directly for the opponent name.
-- Use `public_profiles` instead, because profile RLS is owner-only and that is why the UI falls back to “Opponent” even when the session row correctly contains the other user.
-- Keep the same fields (`username`, `avatar_url`, `division`, `xp` where needed), just read them from the public-safe surface already used elsewhere in the app.
+The `public_profiles` view is created with `security_invoker=on`, which means it enforces the RLS of the underlying `profiles` table. The only SELECT policy on `profiles` is `profiles_strict_owner_only` (`id = auth.uid()`) — so users can **only read their own profile row** through this view.
 
-4. Tighten live session UI fallbacks
-- In `BattleSession.tsx`, keep a graceful fallback label, but prefer the recovered public opponent profile whenever available.
-- Make sure the scoreboard, top bar, and result card all use the same resolved opponent identity source so one area does not show a username while another still shows “Opponent”.
+When Player A queries `public_profiles` for Player B's row, RLS silently returns no rows → the UI falls back to the literal string `"Opponent"`. The same happens for Player B looking up Player A. Any time it "works", it's because the row was hydrated from another cached source.
 
-5. Verify against the actual failing flow
-- Test the exact two-user quick match flow:
-  - both users click Find Opponent
-  - both should land on the same `/battle/session/:id`
-  - the delayed/stuck client should recover automatically if the first transition is missed
-  - the opponent name should display as the real username, not “Opponent”
-- Re-test the completed-battle return path to confirm this recovery improvement does not reintroduce the old `/battle` ↔ `/battle/results/:id` loop.
+This affects both `BattleSession.tsx` and `BattleResults.tsx`.
 
-Files to update
-- `src/hooks/useMatchmaking.ts`
-- `src/pages/Battle.tsx`
-- `src/pages/BattleSession.tsx`
-- `src/pages/BattleResults.tsx`
+### Fix
 
-Expected result
-- When a duo battle starts, both players enter the session reliably.
-- If one client misses the initial redirect, it self-recovers within the next sync cycle.
-- Manually opening the session URL no longer shows a generic “Opponent” label when the other player exists.
-- Previous battle-results loop protection remains intact.
+1. **Create a SECURITY DEFINER RPC** `get_battle_opponent_profile(p_session_id uuid)`
+   - Verifies `auth.uid()` is one of `player_a_id` / `player_b_id` of the given `battle_sessions` row
+   - Returns the opponent's safe public fields: `id, username, avatar_url, division, xp`
+   - Returns `null` if the caller is not a participant (no info leak)
+   - This is the same authorization pattern used by `complete_duo_battle`
+
+2. **Update `src/pages/BattleSession.tsx`**
+   - Replace the direct `public_profiles` query with `supabase.rpc('get_battle_opponent_profile', { p_session_id: sessionId })`
+   - Keep the same query key shape but key by `sessionId` instead of `opponentId` to avoid the stale `undefined` first render
+   - Keep "Opponent" only as a true loading fallback
+
+3. **Update `src/pages/BattleResults.tsx`**
+   - Same RPC swap so the post-match results screen shows the real opponent username, avatar, and division
+
+4. **No regression to other flows**
+   - Public profile pages keep using `get_public_profile(p_username)` (already SECURITY DEFINER, already works)
+   - Leaderboard / friends / etc. use `get_public_profiles(...)` which is already SECURITY DEFINER and unaffected
+   - Battle matchmaking, scoring, results loop fixes all stay intact
+
+### Files Touched
+
+- `supabase/migrations/<new>.sql` — add `get_battle_opponent_profile` RPC
+- `src/pages/BattleSession.tsx` — swap opponent fetch to RPC
+- `src/pages/BattleResults.tsx` — swap opponent fetch to RPC
+
+### Acceptance
+
+- Both players in `/battle/session/:id` see each other's real username, avatar, and division (not "Opponent")
+- Both players on `/battle/results/:id` see the real opponent identity
+- A non-participant calling the RPC with someone else's session ID gets `null`
+- No change to redirect/loop behavior fixed in previous turns
+
