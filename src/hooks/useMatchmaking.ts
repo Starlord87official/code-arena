@@ -305,8 +305,16 @@ export function useMatchmaking() {
     onError: (error: any) => {
       console.error('Join queue error:', error);
       const msg = String(error?.message ?? '');
-      if (msg.includes('dodge_cooldown_active')) {
-        toast.error('You declined a recent match — short cooldown active. Try again in a minute.');
+      // Server returns: queue_lockout_active:<unix_epoch_seconds>
+      const lockMatch = msg.match(/queue_lockout_active:(\d+)/);
+      if (lockMatch) {
+        const until = Number(lockMatch[1]) * 1000;
+        const secs = Math.max(0, Math.round((until - Date.now()) / 1000));
+        const m = Math.floor(secs / 60);
+        const s = secs % 60;
+        toast.error(`Queue locked — try again in ${m}m ${s}s`);
+      } else if (msg.includes('dodge_cooldown_active') || msg.includes('dodge')) {
+        toast.error('Dodge penalty active. Try again shortly.');
       } else {
         toast.error('Failed to start matchmaking');
       }

@@ -600,6 +600,7 @@ export type Database = {
           created_at: string
           dodge_until: string | null
           elo: number
+          enqueued_at: string
           expires_at: string
           id: string
           last_search_expansion_at: string
@@ -607,6 +608,7 @@ export type Database = {
           mmr: number
           mode: string
           region: string | null
+          search_window_elo: number
           status: string
           target_user_id: string | null
           user_id: string
@@ -616,6 +618,7 @@ export type Database = {
           created_at?: string
           dodge_until?: string | null
           elo?: number
+          enqueued_at?: string
           expires_at?: string
           id?: string
           last_search_expansion_at?: string
@@ -623,6 +626,7 @@ export type Database = {
           mmr?: number
           mode: string
           region?: string | null
+          search_window_elo?: number
           status?: string
           target_user_id?: string | null
           user_id: string
@@ -632,6 +636,7 @@ export type Database = {
           created_at?: string
           dodge_until?: string | null
           elo?: number
+          enqueued_at?: string
           expires_at?: string
           id?: string
           last_search_expansion_at?: string
@@ -639,6 +644,7 @@ export type Database = {
           mmr?: number
           mode?: string
           region?: string | null
+          search_window_elo?: number
           status?: string
           target_user_id?: string | null
           user_id?: string
@@ -3203,6 +3209,8 @@ export type Database = {
           decay_applied_at: string | null
           demotion_shield: number
           division: Database["public"]["Enums"]["rank_division"]
+          dodge_count_24h: number
+          dodge_window_started_at: string | null
           games_played: number
           id: string
           last_match_at: string | null
@@ -3221,6 +3229,8 @@ export type Database = {
           decay_applied_at?: string | null
           demotion_shield?: number
           division?: Database["public"]["Enums"]["rank_division"]
+          dodge_count_24h?: number
+          dodge_window_started_at?: string | null
           games_played?: number
           id?: string
           last_match_at?: string | null
@@ -3239,6 +3249,8 @@ export type Database = {
           decay_applied_at?: string | null
           demotion_shield?: number
           division?: Database["public"]["Enums"]["rank_division"]
+          dodge_count_24h?: number
+          dodge_window_started_at?: string | null
           games_played?: number
           id?: string
           last_match_at?: string | null
@@ -4006,6 +4018,8 @@ export type Database = {
           decay_applied_at: string | null
           demotion_shield: number
           division: Database["public"]["Enums"]["rank_division"]
+          dodge_count_24h: number
+          dodge_window_started_at: string | null
           games_played: number
           id: string
           last_match_at: string | null
@@ -4078,6 +4092,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      get_active_queue_lockout: { Args: never; Returns: Json }
       get_activity_summary: { Args: never; Returns: Json }
       get_ai_usage_today: { Args: never; Returns: Json }
       get_battle_opponent_profile: {
@@ -4252,6 +4267,10 @@ export type Database = {
         Args: { _clan_id: string; _user_id: string }
         Returns: boolean
       }
+      is_match_participant: {
+        Args: { _match_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_reading_public_fields: { Args: never; Returns: boolean }
       join_battle_queue: {
         Args: { p_mode: string; p_target_user_id?: string }
@@ -4288,13 +4307,19 @@ export type Database = {
         Args: { p_config_key?: string; p_mode: string; p_target_user?: string }
         Returns: string
       }
+      mm_initial_window: { Args: { _mmr: number }; Returns: number }
       mm_status: { Args: never; Returns: Json }
       mm_tick: { Args: never; Returns: number }
+      mm_widen_window: {
+        Args: { _current: number; _mmr: number }
+        Returns: number
+      }
       normalize_code: { Args: { p_code: string }; Returns: string }
       pick_topic: {
         Args: { p_match_id: string; p_topic: string }
         Returns: Json
       }
+      re_apply_dodge_penalty: { Args: { p_user_id: string }; Returns: Json }
       re_apply_match: { Args: { _match_id: string }; Returns: undefined }
       re_decay_inactive: { Args: { _season_id: string }; Returns: number }
       re_division_from_rank: {
