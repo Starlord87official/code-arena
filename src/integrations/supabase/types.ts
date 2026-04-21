@@ -3575,6 +3575,10 @@ export type Database = {
       }
     }
     Functions: {
+      _battle_topic_action: {
+        Args: { p_action: string; p_match_id: string; p_topic: string }
+        Returns: Json
+      }
       accept_mentor_invite: { Args: { invite_token: string }; Returns: Json }
       add_doubt_comment: {
         Args: { p_content: string; p_doubt_id: string }
@@ -3607,17 +3611,27 @@ export type Database = {
         Returns: Json
       }
       ban_topic: {
-        Args: { _match_id: string; _topic: string }
-        Returns: undefined
+        Args: { p_match_id: string; p_topic: string }
+        Returns: Json
       }
-      battle_transition: {
-        Args: {
-          _actor?: string
-          _match_id: string
-          _to: Database["public"]["Enums"]["match_state"]
-        }
-        Returns: Database["public"]["Enums"]["match_state"]
-      }
+      battle_transition:
+        | {
+            Args: {
+              _actor?: string
+              _match_id: string
+              _to: Database["public"]["Enums"]["match_state"]
+            }
+            Returns: Database["public"]["Enums"]["match_state"]
+          }
+        | {
+            Args: {
+              p_actor?: string
+              p_match_id: string
+              p_payload?: Json
+              p_to_state: Database["public"]["Enums"]["match_state"]
+            }
+            Returns: Database["public"]["Enums"]["match_state"]
+          }
       cancel_battle_queue: { Args: never; Returns: number }
       check_battle_queue_status: { Args: never; Returns: Json }
       check_daily_streak: { Args: never; Returns: Json }
@@ -3772,7 +3786,7 @@ export type Database = {
           winner_id: string
         }[]
       }
-      get_match_state: { Args: { _match_id: string }; Returns: Json }
+      get_match_state: { Args: { p_match_id: string }; Returns: Json }
       get_my_mentor_invites: {
         Args: never
         Returns: {
@@ -3901,8 +3915,8 @@ export type Database = {
       }
       mm_tick: { Args: never; Returns: number }
       pick_topic: {
-        Args: { _match_id: string; _topic: string }
-        Returns: undefined
+        Args: { p_match_id: string; p_topic: string }
+        Returns: Json
       }
       re_apply_match: { Args: { _match_id: string }; Returns: undefined }
       re_decay_inactive: { Args: { _season_id: string }; Returns: number }
@@ -3919,8 +3933,8 @@ export type Database = {
         Returns: Database["public"]["Enums"]["rank_tier"]
       }
       ready_check_respond: {
-        Args: { _match_id: string; _ready: boolean }
-        Returns: Database["public"]["Enums"]["match_state"]
+        Args: { p_match_id: string; p_ready: boolean }
+        Returns: Json
       }
       record_activity: { Args: { p_problems_solved?: number }; Returns: Json }
       record_ai_usage: {
