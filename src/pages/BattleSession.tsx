@@ -16,6 +16,8 @@ import { ConsolePanel, type TestCase, type SubmissionRow } from "@/components/ba
 import { StatusBar } from "@/components/battle-v2/workspace/StatusBar";
 import { VerdictOverlay } from "@/components/battle-v2/workspace/VerdictOverlay";
 import type { Verdict } from "@/components/battle-v2/types";
+import { useBattleRealtime } from "@/hooks/useBattleRealtime";
+import { useBattleHeartbeat } from "@/hooks/useBattleHeartbeat";
 
 interface MatchProblem {
   id: string;
@@ -82,9 +84,23 @@ export default function BattleSessionPage() {
     refetchInterval: (q) => {
       const d = q.state.data as BattleSessionT | undefined;
       if (d?.status === "completed") return false;
-      return 5000;
+      return 15000; // realtime is the primary; this is a safety net
     },
   });
+
+  // Realtime subscription — drives instant opponent + completion updates
+  const { match: rtMatch, participants: rtParticipants, latestSubmission, isConnected: rtConnected } = useBattleRealtime(sessionId);
+
+  // Heartbeat to prevent reconnect-sweep forfeit
+  useBattleHeartbeat(sessionId, !!user && session?.status !== "completed");
+
+  // When realtime says match is completed, kick navigation immediately (don't wait for poll)
+  useEffect(() => {
+    if (rtMatch?.state === "completed" && sessionId) {
+      queryClient.invalidateQueries({ queryKey: ["battle-session", sessionId] });
+      navigate(`/battle?completed=${sessionId}`, { replace: true });
+    }
+  }, [rtMatch?.state, sessionId, navigate, queryClient]);
 
   // Auto-redirect to post-battle on completion
   useEffect(() => {
