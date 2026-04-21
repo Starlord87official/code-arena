@@ -211,7 +211,7 @@ export function useMatchmaking() {
       }
       
       if (data.matched) {
-        setMatchmakingState({
+        safeSetState({
           status: 'matched',
           sessionId: data.session_id,
           battleId: data.battle_id,
