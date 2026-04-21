@@ -80,6 +80,24 @@ export function useMatchmaking() {
     });
   }, []);
 
+  const getLiveSession = useCallback(async (sessionId?: string) => {
+    if (!sessionId) return null;
+
+    const { data, error } = await supabase
+      .from('battle_sessions')
+      .select('id, battle_id, player_a_id, player_b_id, status')
+      .eq('id', sessionId)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error validating battle session:', error);
+      return null;
+    }
+
+    if (!data || data.status !== 'active') return null;
+    return data;
+  }, []);
+
   // Check queue status
   const checkQueueStatus = useCallback(async () => {
     if (!user) return null;
