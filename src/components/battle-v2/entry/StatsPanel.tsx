@@ -1,5 +1,7 @@
 import { Flame, TrendingUp } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { usePromotionSeries } from "@/hooks/usePromotionSeries";
+import { PromoSeriesTracker } from "@/components/battle-v2/PromoSeriesTracker";
 
 interface Stats {
   elo: number;
@@ -17,6 +19,7 @@ interface Props {
 }
 
 export function StatsPanel({ stats, isLoading }: Props) {
+  const { series } = usePromotionSeries();
   return (
     <div className="relative overflow-hidden border border-line bg-panel/60 bl-glass bl-corners">
       <div className="pointer-events-none absolute inset-0 bl-grid opacity-15" />
@@ -60,16 +63,22 @@ export function StatsPanel({ stats, isLoading }: Props) {
             />
 
             <div className="pt-3 border-t border-line/40">
-              <div className="flex items-center justify-between mb-1.5 font-mono text-[10px] tracking-[0.14em] text-text-dim">
-                <span>NEXT: {stats.next_rank}</span>
-                <span>{stats.elo_to_next} LP</span>
-              </div>
-              <div className="bl-bar-track h-2 overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-electric via-neon to-neon-soft"
-                  style={{ width: `${Math.min(100, stats.rank_progress)}%` }}
-                />
-              </div>
+              {series ? (
+                <PromoSeriesTracker series={series} />
+              ) : (
+                <>
+                  <div className="flex items-center justify-between mb-1.5 font-mono text-[10px] tracking-[0.14em] text-text-dim">
+                    <span>NEXT: {stats.next_rank}</span>
+                    <span>{stats.elo_to_next} LP</span>
+                  </div>
+                  <div className="bl-bar-track h-2 overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-electric via-neon to-neon-soft"
+                      style={{ width: `${Math.min(100, stats.rank_progress)}%` }}
+                    />
+                  </div>
+                </>
+              )}
             </div>
           </>
         )}

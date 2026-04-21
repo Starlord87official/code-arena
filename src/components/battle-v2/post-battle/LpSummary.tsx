@@ -1,6 +1,8 @@
 import { ArrowDownRight, ArrowUpRight, Gem, Sparkles, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ResultPlayer } from "@/hooks/useBattleResult";
+import { usePromotionSeries } from "@/hooks/usePromotionSeries";
+import { PromoSeriesTracker } from "@/components/battle-v2/PromoSeriesTracker";
 
 interface Props {
   players: ResultPlayer[];
@@ -10,6 +12,7 @@ interface Props {
 export function LpSummary({ players, callerId }: Props) {
   const me = players.find((p) => p.user_id === callerId);
   const opp = players.find((p) => p.user_id !== callerId);
+  const { series } = usePromotionSeries(callerId);
 
   if (!me) {
     return (
@@ -32,6 +35,12 @@ export function LpSummary({ players, callerId }: Props) {
           </div>
           <span className="font-mono text-[10px] tracking-[0.14em] text-text-mute">LP FLOW</span>
         </header>
+
+        {series && (
+          <div className="border-b border-line/60 px-5 py-3">
+            <PromoSeriesTracker series={series} compact />
+          </div>
+        )}
 
         <div className="grid grid-cols-1 gap-px bg-line/30 md:grid-cols-2">
           <LpCard player={me} accent="neon" label="YOU" />
