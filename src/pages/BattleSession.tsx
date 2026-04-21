@@ -242,50 +242,113 @@ export default function BattleSessionPage() {
     if (!session || !user || !selectedMatchProblem) return;
     setSubmitting(true);
     try {
-      const { error } = await supabase.from("battle_match_submissions").insert({
-        match_id: session.id,
-        problem_id: selectedMatchProblem.id,
-        user_id: user.id,
-        code,
-        language,
-        status: "pending",
-        score: 0,
-        testcases_passed: 0,
-        testcases_total: testCases.length,
-      });
-      if (error) console.log("V2 submission skipped:", error.message);
+      const idempotencyKey = `${session.id}:${selectedMatchProblem.id}:${Date.now()}`;
 
-      // Local verdict simulation — keeps UI responsive even without judge backend
-      const passed = Math.min(testCases.length, Math.floor(testCases.length * 0.85) + 1);
-      const total = testCases.length || 1;
-      const v: Verdict = passed === total ? "AC" : "WA";
-      const runtimeMs = 18 + Math.floor(Math.random() * 40);
+      // 1. Server-authored submission insert via RPC
+      const { data: submissionId, error: submitErr } = await supabase.rpc(
+        "submit_battle_solution",
+        {
+          p_match_id: session.id,
+          p_problem_id: selectedMatchProblem.id,
+          p_language: language,
+          p_code: code,
+          p_idempotency_key: idempotencyKey,
+        },
+      );
 
-      setVerdict(v);
-      setVerdictMeta({ passed, total, runtimeMs, lpDelta: v === "AC" ? selectedMatchProblem.points : -10 });
+      if (submitErr || !submissionId) {
+        toast.error(submitErr?.message || "Failed to submit");
+        setSubmitting(false);
+        return;
+      }
+
+      const subId = submissionId as unknown as string;
+
+      // Insert pending row in local submissions list
+      const localId = `#${String(submissions.length + 1).padStart(3, "0")}`;
       setSubmissions((prev) => [
         {
-          id: `#${String(prev.length + 1).padStart(3, "0")}`,
+          id: localId,
           time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
           lang: LANGUAGES.find((l) => l.id === language)?.label ?? language,
-          verdict: v,
-          passed,
-          total,
-          runtimeMs,
+          verdict: "PENDING" as Verdict,
+          passed: 0,
+          total: testCases.length || 0,
         },
         ...prev,
       ]);
+
+      // 2. Trigger the judge dispatcher (async)
+      const { error: judgeErr } = await supabase.functions.invoke("judge-dispatcher", {
+        body: { submission_id: subId },
+      });
+      if (judgeErr) {
+        console.warn("judge-dispatcher invoke failed:", judgeErr.message);
+      }
+
+      // 3. Poll the submission row until verdict != pending (realtime channel
+      //    also covers this, but a short poll guarantees verdict UI even if
+      //    the realtime event was missed during reconnect).
+      const started = Date.now();
+      let finalRow: any = null;
+      while (Date.now() - started < 15000) {
+        const { data } = await supabase
+          .from("battle_match_submissions")
+          .select("verdict, status, score, testcases_passed, testcases_total, runtime_ms")
+          .eq("id", subId)
+          .maybeSingle();
+        if (data && data.verdict && data.verdict !== "pending") {
+          finalRow = data;
+          break;
+        }
+        await new Promise((r) => setTimeout(r, 600));
+      }
+
+      if (!finalRow) {
+        toast.warning("Judging is taking longer than expected — refresh to see verdict.");
+        return;
+      }
+
+      const verdictMap: Record<string, Verdict> = {
+        accepted: "AC",
+        wrong_answer: "WA",
+        tle: "TLE",
+        mle: "MLE",
+        runtime_error: "RE",
+        compile_error: "CE",
+        rejected: "WA",
+      };
+      const v: Verdict = verdictMap[finalRow.verdict] ?? "WA";
+      const passed = finalRow.testcases_passed ?? 0;
+      const total = finalRow.testcases_total ?? testCases.length;
+      const runtimeMs = finalRow.runtime_ms ?? undefined;
+
+      setVerdict(v);
+      setVerdictMeta({
+        passed,
+        total,
+        runtimeMs,
+        lpDelta: v === "AC" ? selectedMatchProblem.points : -10,
+      });
+      setSubmissions((prev) =>
+        prev.map((s) =>
+          s.id === localId ? { ...s, verdict: v, passed, total, runtimeMs } : s,
+        ),
+      );
 
       if (v === "AC") {
         toast.success(`Accepted · +${selectedMatchProblem.points} pts`);
         setTestCases((prev) => prev.map((tc) => ({ ...tc, status: "AC", actual: tc.expected, runtimeMs })));
       } else {
-        toast.error("Wrong answer — keep pushing.");
+        toast.error(`${v} — keep pushing.`);
       }
+    } catch (e) {
+      console.error("submit failed:", e);
+      toast.error("Submission failed");
     } finally {
       setSubmitting(false);
     }
-  }, [session, user, selectedMatchProblem, code, language, testCases.length]);
+  }, [session, user, selectedMatchProblem, code, language, testCases.length, submissions.length]);
 
   const handleForfeit = useCallback(async () => {
     if (!session || isEndingRef.current) return;
