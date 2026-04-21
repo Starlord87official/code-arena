@@ -42,10 +42,10 @@ export default function BattleResults() {
     queryFn: async () => {
       if (!opponentId) return null;
       const { data } = await supabase
-        .from('profiles')
+        .from('public_profiles')
         .select('username, avatar_url, division')
         .eq('id', opponentId)
-        .single();
+        .maybeSingle();
       return data;
     },
     enabled: !!opponentId,
