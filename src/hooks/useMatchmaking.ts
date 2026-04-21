@@ -107,39 +107,47 @@ export function useMatchmaking() {
   useEffect(() => {
     if (matchmakingState.status === 'searching') {
       pollingIntervalRef.current = setInterval(async () => {
+        // If we already locked in a session between polls, stop.
+        if (stateRef.current.sessionId) {
+          if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current);
+            pollingIntervalRef.current = null;
+          }
+          return;
+        }
+
         const result = await checkQueueStatus();
-        
-        if (result?.success) {
-          if (result.status === 'matched' || result.status === 'in_battle') {
-            setMatchmakingState({
-              status: result.status,
-              sessionId: result.session_id,
-              battleId: result.battle_id,
-              opponentId: result.opponent_id,
-            });
-            toast.success('Opponent found! Battle starting...');
-            
-            // Stop polling
-            if (pollingIntervalRef.current) {
-              clearInterval(pollingIntervalRef.current);
-              pollingIntervalRef.current = null;
-            }
-          } else if (result.status === 'searching') {
-            setMatchmakingState(prev => ({
-              ...prev,
-              waitTime: result.wait_time,
-            }));
-          } else if (result.status === 'idle') {
-            // Queue expired
+        if (!result?.success) return;
+
+        // Ignore stale downgrades if local state already has a session.
+        if (stateRef.current.sessionId) return;
+
+        if (result.status === 'matched' || result.status === 'in_battle') {
+          safeSetState({
+            status: result.status,
+            sessionId: result.session_id,
+            battleId: result.battle_id,
+            opponentId: result.opponent_id,
+          });
+          toast.success('Opponent found! Battle starting...');
+          if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current);
+            pollingIntervalRef.current = null;
+          }
+        } else if (result.status === 'searching') {
+          safeSetState((prev) => ({ ...prev, waitTime: result.wait_time }));
+        } else if (result.status === 'idle') {
+          // Queue expired — only treat as timeout if we genuinely have no session.
+          if (!stateRef.current.sessionId) {
             setMatchmakingState({ status: 'idle' });
             toast.error('Search timed out. Please try again.');
-            if (pollingIntervalRef.current) {
-              clearInterval(pollingIntervalRef.current);
-              pollingIntervalRef.current = null;
-            }
+          }
+          if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current);
+            pollingIntervalRef.current = null;
           }
         }
-      }, 2000); // Poll every 2 seconds
+      }, 2000);
     }
 
     return () => {
@@ -148,28 +156,28 @@ export function useMatchmaking() {
         pollingIntervalRef.current = null;
       }
     };
-  }, [matchmakingState.status, checkQueueStatus]);
+  }, [matchmakingState.status, checkQueueStatus, safeSetState]);
 
-  // Check initial state on mount
+  // Check initial state on mount — guarded against clobbering a fresh match.
   useEffect(() => {
     const checkInitialState = async () => {
       if (!user) return;
-      // Skip if we already have a fresh match in local state — avoid clobbering
-      // the result of a just-resolved join_battle_queue RPC.
-      if (matchmakingState.sessionId) return;
+      if (stateRef.current.sessionId) return;
 
       const result = await checkQueueStatus();
-      if (result?.success && result.status !== 'idle') {
-        setMatchmakingState({
-          status: result.status,
-          queueId: result.queue_id,
-          sessionId: result.session_id,
-          battleId: result.battle_id,
-          opponentId: result.opponent_id,
-          waitTime: result.wait_time,
-          mode: result.mode,
-        });
-      }
+      if (!result?.success || result.status === 'idle') return;
+      // Re-check after async return — never overwrite a session locked in meanwhile.
+      if (stateRef.current.sessionId) return;
+
+      safeSetState({
+        status: result.status,
+        queueId: result.queue_id,
+        sessionId: result.session_id,
+        battleId: result.battle_id,
+        opponentId: result.opponent_id,
+        waitTime: result.wait_time,
+        mode: result.mode,
+      });
     };
 
     checkInitialState();
