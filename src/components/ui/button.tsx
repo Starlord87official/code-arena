@@ -20,6 +20,9 @@ const buttonVariants = cva(
         arenaOutline: "border-2 border-primary bg-transparent text-primary font-heading font-semibold uppercase tracking-wider hover:bg-primary/10 hover:shadow-neon",
         neon: "bg-transparent border border-primary text-primary font-heading hover:bg-primary/10 shadow-neon hover:shadow-neon-strong",
         legendary: "bg-gradient-to-r from-neon-purple via-rank-legend to-primary text-foreground font-display font-bold uppercase tracking-widest shadow-neon-strong hover:scale-105 transform animate-glow-pulse",
+        // Blue Lock — Egoist variants
+        egoist: "bl-btn-primary",
+        egoistGhost: "bl-btn-ghost",
       },
       size: {
         default: "h-10 px-4 py-2",
