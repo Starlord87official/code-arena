@@ -107,15 +107,18 @@ export default function BattleSessionPage() {
   // Realtime subscription — drives instant opponent + completion updates
   const { match: rtMatch, participants: rtParticipants, latestSubmission, isConnected: rtConnected } = useBattleRealtime(sessionId);
 
-  // Heartbeat to prevent reconnect-sweep forfeit
-  useBattleHeartbeat(sessionId, !!user && session?.status !== "completed");
+  // Heartbeat to prevent reconnect-sweep forfeit; auto-eject on invalid
+  useBattleHeartbeat(sessionId, isSessionValid && !!user && session?.status !== "completed", () => {
+    toast.error("Battle session no longer valid");
+    navigate("/battle", { replace: true });
+  });
 
   // Anti-cheat integrity tracking
   const myParticipant = rtParticipants.find((p) => p.user_id === user?.id);
   const myIntegrityScore = (myParticipant as any)?.integrity_score ?? null;
   const { reportPaste, getPasteRatio, resetPasteTally } = useBattleIntegrity({
     matchId: sessionId,
-    enabled: !!user && session?.status !== "completed",
+    enabled: isSessionValid && !!user && session?.status !== "completed",
     integrityScore: myIntegrityScore,
   });
 
