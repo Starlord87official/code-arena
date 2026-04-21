@@ -1,83 +1,91 @@
 
 
-# Step 6 — Real-Time Sync + Reconnect Policy
+# Step 7 — Code Execution + Judging Pipeline
 
 ## Goal
-Wire the duo battle frontend into Supabase Realtime so both participants see live state without polling, enforce the 60-second reconnect grace, and auto-forfeit disconnected players. Match completion already pushes through `battle_matches.state='completed'` (Step 5) — this step makes that change *instant* on the opponent's screen.
+Replace the stub judge with a real code execution + verdict pipeline so battle submissions are actually compiled, run against testcases, and scored. Today, `apply_submission_verdict` accepts a verdict from the client; this step makes the **server** the source of truth via an edge function judge that reads testcases, executes code, and writes the verdict server-side.
 
 ## Backend changes
 
-### 1. Migration: realtime + presence
+### 1. Migration: testcases + judge contract
 
-- Set `REPLICA IDENTITY FULL` on `battle_matches`, `battle_participants`, `battle_match_submissions`, `battle_event_log`.
-- Add all four tables to `supabase_realtime` publication.
-- Add columns on `battle_participants` (already has `disconnected_at`, `reconnected_at` — no schema change needed).
+**New table `challenge_testcases`** (per-challenge hidden test data):
+- `id uuid pk`
+- `challenge_id uuid not null` → references `challenges`
+- `order_index int not null default 0`
+- `input text not null`
+- `expected_output text not null`
+- `is_sample boolean default false` (sample = visible to user; rest = hidden)
+- `weight int default 1`
+- `time_limit_ms int default 2000`
+- `memory_limit_kb int default 262144`
+- RLS: only `is_sample=true` rows readable by authenticated users; full rows readable by `SECURITY DEFINER` judge function only.
+
+**New table `judge_jobs`** (queue for async judging):
+- `id uuid pk`, `submission_id uuid not null unique`
+- `match_id uuid`, `user_id uuid`, `status text` (`queued`/`running`/`done`/`failed`)
+- `attempts int default 0`, `last_error text`
+- `created_at`, `picked_up_at`, `finished_at`
+- RLS: participants read own jobs; insert/update via SECURITY DEFINER only.
 
 ### 2. RPCs
 
-- **`heartbeat_match(p_match_id uuid)`** — caller-only. Updates `battle_participants.reconnected_at = now()` and clears `disconnected_at` if set. Cheap; called every 15s by client.
-- **`mark_participant_disconnected(p_match_id uuid, p_user_id uuid)`** — `SECURITY DEFINER`, internal. Sets `disconnected_at = now()` if null. Logs `participant_disconnected` event.
-- **`reconnect_sweep()`** — `SECURITY DEFINER`, cron-callable.
-  - For each `active`/`ready_check`/`ban_pick` match, find participants where `disconnected_at < now() - interval '60 seconds'` AND `reconnected_at < disconnected_at` (or null).
-  - Marks them `is_forfeit = true` and calls `finalize_match(match_id, 'reconnect_timeout')`.
-  - Returns count of forfeits processed.
-- **`detect_stale_participants()`** — internal helper called by `reconnect_sweep`: any participant whose last heartbeat (`reconnected_at`) is older than 30s in an active match is auto-marked disconnected via `mark_participant_disconnected`.
+- **`enqueue_judge_job(p_submission_id uuid)`** — internal. Called by the existing submission insert path; creates a `judge_jobs` row in `queued` state and notifies via `pg_notify('judge_queue', submission_id)`.
+- **`claim_judge_job()`** — `SECURITY DEFINER`, called by the judge worker. Locks the next `queued` job (`SKIP LOCKED`), bumps `status='running'`, returns submission + code + testcases payload.
+- **`finalize_judge_job(p_job_id uuid, p_verdict text, p_passed int, p_total int, p_runtime_ms int, p_memory_kb int, p_compile_log text)`** — writes verdict back to `battle_match_submissions`, calls `apply_submission_verdict` (Step 2), marks job `done`. On failure path: bumps `attempts`, requeues if `attempts < 3`, else marks `failed` with synthetic `RE` verdict.
 
-### 3. Edge function update
+### 3. Edge function: `judge-worker`
 
-`supabase/functions/match-ticker/index.ts` — extend the existing cron entry:
-- Add `reconnect_sweep()` to the sequence after `tick_active_matches()`.
-- Returns `{ matches_finalized, matches_created, forfeits_processed }`.
+`supabase/functions/judge-worker/index.ts`
+- Validates shared secret header `x-judge-secret`.
+- Loop (bounded by 25s wall clock to stay under edge timeout): `claim_judge_job()` → run code → `finalize_judge_job()`.
+- Execution backend: stub runner for now that supports `python` and `javascript` via a sandboxed `eval` with stdin/stdout capture and per-testcase timeout. Returns one of `accepted` / `wrong_answer` / `tle` / `runtime_error` / `compile_error`.
+- Returns `{ jobs_processed, verdicts: [...] }`.
+
+### 4. Edge function: `match-ticker` extension
+
+`supabase/functions/match-ticker/index.ts` — also POSTs to `judge-worker` once per tick to drain the queue without needing a separate cron entry.
+
+### 5. Submission entry rewrite
+
+Update `apply_submission_verdict` (Step 2) → split into two RPCs:
+- **`submit_match_solution(p_match_id, p_problem_id, p_code, p_language)`** — caller-facing. Inserts a row into `battle_match_submissions` with `verdict='pending'`, calls `enqueue_judge_job`, returns `{ submission_id, status: 'queued' }`. Replaces direct verdict write from the client.
+- The internal score-application logic stays in `apply_submission_verdict`, now only callable by `finalize_judge_job`.
+
+Client can no longer self-report verdicts.
 
 ## Frontend changes
 
-### 1. New hook: `src/hooks/useBattleRealtime.ts`
-- Subscribes to three Postgres-changes channels scoped to `match_id`:
-  - `battle_matches:id=eq.{matchId}` → state/winner/ended_at updates.
-  - `battle_participants:match_id=eq.{matchId}` → score/solved/forfeit/disconnect.
-  - `battle_match_submissions:match_id=eq.{matchId}` → new verdicts (for opponent ticker).
-- Returns `{ match, participants, latestSubmission, isConnected }`.
-- Cleans up on unmount; reconnects with exponential backoff on `CHANNEL_ERROR`.
+### 1. `src/components/battle-v2/workspace/CodeEditor.tsx` (or its submit handler hook)
+- Submit flow becomes: `submit_match_solution` → toast "Judging…" → wait for realtime update on `battle_match_submissions` (already wired in Step 6 via `useBattleRealtime`) → display verdict from server.
+- Remove any client-side verdict computation; verdict UI now reads `submission.verdict` only.
 
-### 2. New hook: `src/hooks/useBattleHeartbeat.ts`
-- `setInterval(15s)` calling `supabase.rpc('heartbeat_match', { p_match_id })`.
-- Pauses on `document.visibilitychange === 'hidden'` for >60s → triggers local "Disconnected" toast and stops heartbeat (server will sweep).
-- Resumes immediately on visibility restore + sends heartbeat.
+### 2. `src/components/battle-v2/workspace/VerdictOverlay.tsx`
+- Render `pending` state with a "Judging on server…" spinner before the realtime verdict arrives.
+- Map server verdicts (`accepted` / `wrong_answer` / `tle` / `runtime_error` / `compile_error`) to existing AC / WA / TLE / RE visuals.
 
-### 3. `src/pages/BattleSession.tsx` wiring
-- Replace the existing 2-second polling interval inside the page with `useBattleRealtime(matchId)`.
-- Mount `useBattleHeartbeat(matchId)` once participant is loaded.
-- Listen for `match.state === 'completed'` from realtime → trigger existing post-battle navigation immediately (no waiting for next poll tick).
-- Surface `participant.disconnected_at` for the opponent slot as a "RECONNECTING… (Xs)" badge with a 60s countdown driven by `Date.now() - disconnected_at`.
-
-### 4. `src/components/battle-v2/workspace/OpponentTicker.tsx`
-- Accept new props `opponentDisconnected: boolean`, `secondsRemaining: number`.
-- Render an ember-toned "RECONNECTING" pill replacing live score when disconnected.
-- No layout change to other components.
-
-### 5. `src/hooks/useMatchmaking.ts`
-- Drop the 2s polling once a `match_id` is known and a realtime subscription is active. Polling is still used pre-match (queue → match_found transition) since `battle_queue` is not on realtime by design.
+### 3. `src/hooks/useSolveChallenge.ts` (non-battle path)
+- Untouched for solo challenge flow this step (deferred); battle path is the only one switched to server judging.
 
 ## Files touched
 
-- `supabase/migrations/<new>.sql` — publication + heartbeat/sweep RPCs.
-- `supabase/functions/match-ticker/index.ts` — adds `reconnect_sweep()` call.
-- `src/hooks/useBattleRealtime.ts` — new.
-- `src/hooks/useBattleHeartbeat.ts` — new.
-- `src/pages/BattleSession.tsx` — swap polling for realtime + heartbeat mount.
-- `src/components/battle-v2/workspace/OpponentTicker.tsx` — disconnect badge.
-- `src/hooks/useMatchmaking.ts` — stop polling post-match.
+- `supabase/migrations/<new>.sql` — `challenge_testcases`, `judge_jobs`, judge RPCs, split of `apply_submission_verdict`.
+- `supabase/functions/judge-worker/index.ts` — new.
+- `supabase/functions/match-ticker/index.ts` — calls `judge-worker` per tick.
+- `src/components/battle-v2/workspace/CodeEditor.tsx` — submit via new RPC.
+- `src/components/battle-v2/workspace/VerdictOverlay.tsx` — pending state.
 
 ## Verification
 
-1. Two browsers in same match → user A submits accepted → user B's score updates within ~200ms (no 2s poll lag).
-2. User A closes tab → after 60s, user B's screen shows match completed with A as forfeiter.
-3. User A closes tab and reopens within 50s → heartbeat resumes, no forfeit applied, `disconnected_at` cleared.
-4. `reconnect_sweep()` manual call cleans up any stale matches from prior sessions.
+1. Submit known-correct Python solution → row created with `pending` → within ~2s realtime updates verdict to `accepted`, score applied, opponent ticker reflects change.
+2. Submit infinite-loop code → judge marks `tle`, no score awarded.
+3. Submit syntax error → `compile_error` verdict, attempts=1, no requeue.
+4. Manually call `claim_judge_job()` after worker outage → drains backlog cleanly.
 
 ## Out of scope (deferred)
 
-- Spectator realtime channels (read-only viewers).
-- Cross-region realtime fanout tuning.
-- Toast UX for "Opponent reconnected" event (event is logged; UI in next pass).
+- C++/Java execution (only Python + JS in MVP runner).
+- Custom testcase weighting UI for admins.
+- Streaming per-testcase progress to the client.
+- Switching solo `useSolveChallenge` to the same pipeline (separate step).
 
