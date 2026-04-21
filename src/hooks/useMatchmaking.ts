@@ -141,11 +141,17 @@ export function useMatchmaking() {
         if (stateRef.current.sessionId) return;
 
         if (result.status === 'matched' || result.status === 'in_battle') {
+          const liveSession = await getLiveSession(result.session_id);
+          if (!liveSession) return;
+
           safeSetState({
-            status: result.status,
-            sessionId: result.session_id,
-            battleId: result.battle_id,
-            opponentId: result.opponent_id,
+            status: 'in_battle',
+            sessionId: liveSession.id,
+            battleId: liveSession.battle_id,
+            opponentId:
+              liveSession.player_a_id === user?.id
+                ? liveSession.player_b_id
+                : liveSession.player_a_id,
           });
           toast.success('Opponent found! Battle starting...');
           if (pollingIntervalRef.current) {
@@ -184,8 +190,24 @@ export function useMatchmaking() {
 
       const result = await checkQueueStatus();
       if (!result?.success || result.status === 'idle') return;
-      // Re-check after async return — never overwrite a session locked in meanwhile.
       if (stateRef.current.sessionId) return;
+
+      if (result.status === 'matched' || result.status === 'in_battle') {
+        const liveSession = await getLiveSession(result.session_id);
+        if (!liveSession || stateRef.current.sessionId) return;
+
+        safeSetState({
+          status: 'in_battle',
+          queueId: result.queue_id,
+          sessionId: liveSession.id,
+          battleId: liveSession.battle_id,
+          opponentId:
+            liveSession.player_a_id === user.id ? liveSession.player_b_id : liveSession.player_a_id,
+          waitTime: result.wait_time,
+          mode: result.mode,
+        });
+        return;
+      }
 
       safeSetState({
         status: result.status,
@@ -229,13 +251,17 @@ export function useMatchmaking() {
       }
       
       if (data.matched) {
-        safeSetState({
-          status: 'matched',
-          sessionId: data.session_id,
-          battleId: data.battle_id,
-          opponentId: data.opponent_id,
+        getLiveSession(data.session_id).then((liveSession) => {
+          if (!liveSession) return;
+          safeSetState({
+            status: 'in_battle',
+            sessionId: liveSession.id,
+            battleId: liveSession.battle_id,
+            opponentId:
+              liveSession.player_a_id === user?.id ? liveSession.player_b_id : liveSession.player_a_id,
+          });
+          toast.success('Match found! Starting battle...');
         });
-        toast.success('Match found! Starting battle...');
       } else {
         setMatchmakingState({
           status: 'searching',
