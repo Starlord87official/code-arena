@@ -3714,16 +3714,14 @@ export type Database = {
         Args: { p_challenge_id: string }
         Returns: Json
       }
-      complete_duo_battle:
-        | { Args: { p_session_id: string }; Returns: Json }
-        | {
-            Args: {
-              p_player_a_score: number
-              p_player_b_score: number
-              p_session_id: string
-            }
-            Returns: Json
-          }
+      complete_duo_battle: {
+        Args: {
+          p_player_a_score: number
+          p_player_b_score: number
+          p_session_id: string
+        }
+        Returns: Json
+      }
       complete_revision: { Args: { p_topic_id: string }; Returns: Json }
       complete_revision_item: { Args: { p_id: string }; Returns: Json }
       create_clan: {
@@ -4039,13 +4037,6 @@ export type Database = {
           _flag_id: string
         }
         Returns: undefined
-      }
-      score_match: {
-        Args: { _match_id: string }
-        Returns: {
-          is_draw: boolean
-          winner_id: string
-        }[]
       }
       score_problem: {
         Args: {
