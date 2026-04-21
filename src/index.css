@@ -1079,3 +1079,88 @@
 /* Selection */
 ::selection { background: hsla(187, 100%, 50%, 0.35); color: hsl(187, 100%, 95%); }
 
+/* ============= Blue Lock Battle v2 — additional utilities ============= */
+
+/* Horizontal scanlines overlay */
+.bl-scanline {
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 2px,
+    hsla(187, 100%, 50%, 0.04) 2px,
+    hsla(187, 100%, 50%, 0.04) 3px
+  );
+  pointer-events: none;
+}
+
+/* Pulse ring for countdown / verdict */
+@keyframes bl-pulse-ring {
+  0% { transform: scale(0.92); opacity: 0.85; }
+  70% { transform: scale(1.18); opacity: 0; }
+  100% { transform: scale(0.92); opacity: 0; }
+}
+.bl-pulse-ring { animation: bl-pulse-ring 1.8s cubic-bezier(0, 0, 0.2, 1) infinite; }
+
+/* Countdown number pop */
+@keyframes bl-countdown-pop {
+  0% { transform: scale(1.5); opacity: 0; filter: blur(8px); }
+  60% { transform: scale(0.92); opacity: 1; filter: blur(0); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.bl-countdown-pop { animation: bl-countdown-pop 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); }
+
+/* Result banner entrance */
+@keyframes bl-result-in {
+  0% { transform: translateY(12px) scale(0.985); opacity: 0; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+.bl-result-in { animation: bl-result-in 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+/* Phase fade-in */
+@keyframes bl-phase-in {
+  0% { opacity: 0; transform: translateY(6px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.bl-phase-in { animation: bl-phase-in 0.45s ease-out both; }
+
+/* Shine sweep across an element */
+@keyframes bl-shine-anim {
+  0% { transform: translateX(-120%) skewX(-12deg); opacity: 0; }
+  20% { opacity: 0.6; }
+  100% { transform: translateX(220%) skewX(-12deg); opacity: 0; }
+}
+.bl-shine {
+  background: linear-gradient(110deg, transparent 0%, hsla(187, 100%, 80%, 0.18) 45%, hsla(187, 100%, 95%, 0.35) 50%, hsla(187, 100%, 80%, 0.18) 55%, transparent 100%);
+  animation: bl-shine-anim 2.6s ease-in-out infinite;
+}
+
+/* Sweep highlight inside a button */
+@keyframes bl-sweep-anim {
+  0% { transform: translateX(-120%); opacity: 0; }
+  40% { opacity: 0.7; }
+  100% { transform: translateX(220%); opacity: 0; }
+}
+.bl-sweep {
+  background: linear-gradient(110deg, transparent 0%, hsla(187, 100%, 80%, 0.15) 50%, transparent 100%);
+  animation: bl-sweep-anim 2.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Count-flicker for animated numbers */
+@keyframes bl-count-flicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.78; }
+}
+.bl-count-flicker { animation: bl-count-flicker 1.6s ease-in-out infinite; }
+
+/* Additional glows */
+.glow-gold { box-shadow: 0 0 20px hsla(43, 96%, 56%, 0.45), inset 0 0 16px hsla(43, 96%, 56%, 0.12); }
+.glow-blood { box-shadow: 0 0 20px hsla(350, 100%, 60%, 0.45), inset 0 0 16px hsla(350, 100%, 60%, 0.12); }
+
+.text-glow-gold {
+  text-shadow: 0 0 8px hsla(43, 96%, 56%, 0.6), 0 0 18px hsla(43, 96%, 56%, 0.35);
+}
+.text-glow-blood {
+  text-shadow: 0 0 8px hsla(350, 100%, 60%, 0.6), 0 0 18px hsla(350, 100%, 60%, 0.35);
+}
+
