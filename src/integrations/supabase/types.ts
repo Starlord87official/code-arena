@@ -3139,7 +3139,6 @@ export type Database = {
         Args: { p_application_id: string }
         Returns: Json
       }
-      cancel_battle_queue: { Args: never; Returns: Json }
       check_battle_queue_status: { Args: never; Returns: Json }
       check_daily_streak: { Args: never; Returns: Json }
       claim_invite_code: {
@@ -3330,10 +3329,6 @@ export type Database = {
         Returns: boolean
       }
       is_reading_public_fields: { Args: never; Returns: boolean }
-      join_battle_queue: {
-        Args: { p_mode: string; p_target_user_id?: string }
-        Returns: Json
-      }
       join_clan: { Args: { p_clan_id: string }; Returns: Json }
       leave_clan_v2: { Args: never; Returns: Json }
       mark_doubt_solved: { Args: { p_doubt_id: string }; Returns: Json }
