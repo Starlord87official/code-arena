@@ -3117,6 +3117,33 @@ export type Database = {
           },
         ]
       }
+      queue_lockouts: {
+        Row: {
+          created_at: string
+          id: string
+          locked_until: string
+          meta: Json
+          reason: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          locked_until: string
+          meta?: Json
+          reason: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          locked_until?: string
+          meta?: Json
+          reason?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       rank_states: {
         Row: {
           decay_applied_at: string | null
@@ -4194,6 +4221,7 @@ export type Database = {
         Args: { _mmr_a: number; _mmr_b: number }
         Returns: number
       }
+      re_grow_deviation: { Args: never; Returns: number }
       re_k_factor: {
         Args: { _deviation: number; _games: number; _is_placement: boolean }
         Returns: number
