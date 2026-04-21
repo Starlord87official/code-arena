@@ -78,6 +78,13 @@ export default function BattleSessionPage() {
     },
   });
 
+  // Side effect: navigate to results when session is completed
+  useEffect(() => {
+    if (session?.status === 'completed' && sessionId) {
+      navigate(`/battle/results/${sessionId}`, { replace: true });
+    }
+  }, [session?.status, sessionId, navigate]);
+
   // Fetch opponent profile
   const opponentId = session?.player_a_id === user?.id ? session?.player_b_id : session?.player_a_id;
   const { data: opponentProfile } = useQuery({
@@ -347,10 +354,8 @@ export default function BattleSessionPage() {
     );
   }
 
-  // ─── Completed → redirect to results route ───
+  // ─── Completed → redirect to results route (side effect, not in render) ───
   if (session.status === 'completed') {
-    // Redirect to the dedicated results page — never render results here
-    navigate(`/battle/results/${sessionId}`, { replace: true });
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="h-12 w-12 text-primary animate-spin" />
