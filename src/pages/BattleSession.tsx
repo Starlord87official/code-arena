@@ -18,6 +18,7 @@ import { VerdictOverlay } from "@/components/battle-v2/workspace/VerdictOverlay"
 import type { Verdict } from "@/components/battle-v2/types";
 import { useBattleRealtime } from "@/hooks/useBattleRealtime";
 import { useBattleHeartbeat } from "@/hooks/useBattleHeartbeat";
+import { useBattleIntegrity } from "@/hooks/useBattleIntegrity";
 
 interface MatchProblem {
   id: string;
@@ -94,6 +95,24 @@ export default function BattleSessionPage() {
   // Heartbeat to prevent reconnect-sweep forfeit
   useBattleHeartbeat(sessionId, !!user && session?.status !== "completed");
 
+  // Anti-cheat integrity tracking
+  const myParticipant = rtParticipants.find((p) => p.user_id === user?.id);
+  const myIntegrityScore = (myParticipant as any)?.integrity_score ?? null;
+  const { reportPaste, getPasteRatio, resetPasteTally } = useBattleIntegrity({
+    matchId: sessionId,
+    enabled: !!user && session?.status !== "completed",
+    integrityScore: myIntegrityScore,
+  });
+
+  // Track when each problem was first focused for time-since-open
+  const problemOpenAtRef = useRef<Record<string, number>>({});
+  const selectedProblemIdRef = useRef<string | null>(null);
+  const handleEditorFirstFocus = useCallback(() => {
+    const pid = selectedProblemIdRef.current;
+    if (pid && !problemOpenAtRef.current[pid]) {
+      problemOpenAtRef.current[pid] = Date.now();
+    }
+  }, []);
   // When realtime says match is completed, kick navigation immediately (don't wait for poll)
   useEffect(() => {
     if (rtMatch?.state === "completed" && sessionId) {
@@ -164,6 +183,12 @@ export default function BattleSessionPage() {
   });
 
   const selectedMatchProblem = matchProblems?.[selectedProblemIdx];
+
+  // Sync the ref + reset paste tally when the problem changes
+  useEffect(() => {
+    selectedProblemIdRef.current = selectedMatchProblem?.id ?? null;
+    resetPasteTally();
+  }, [selectedMatchProblem?.id, resetPasteTally]);
 
   // Build ProblemDetail for the panel
   const problemDetail: ProblemDetail | null = useMemo(() => {
@@ -264,6 +289,11 @@ export default function BattleSessionPage() {
     if (!session || !user || !selectedMatchProblem) return;
     setSubmitting(true);
     try {
+      // Compute integrity metadata
+      const openedAt = selectedMatchProblem ? problemOpenAtRef.current[selectedMatchProblem.id] : undefined;
+      const timeSinceOpenSec = openedAt ? Math.floor((Date.now() - openedAt) / 1000) : null;
+      const pasteRatio = getPasteRatio(code.length);
+
       // Server-authoritative submission: inserts pending row + enqueues judge job.
       const { data, error: submitErr } = await (supabase.rpc as any)(
         "submit_match_solution",
@@ -272,6 +302,8 @@ export default function BattleSessionPage() {
           p_problem_id: selectedMatchProblem.id,
           p_code: code,
           p_language: language,
+          p_paste_ratio: pasteRatio,
+          p_time_since_open_sec: timeSinceOpenSec,
         },
       );
 
@@ -368,7 +400,7 @@ export default function BattleSessionPage() {
     } finally {
       setSubmitting(false);
     }
-  }, [session, user, selectedMatchProblem, code, language, testCases.length, submissions.length]);
+  }, [session, user, selectedMatchProblem, code, language, testCases.length, submissions.length, getPasteRatio]);
 
   const handleForfeit = useCallback(async () => {
     if (!session || isEndingRef.current) return;
@@ -491,7 +523,14 @@ export default function BattleSessionPage() {
             submitting={submitting}
           />
           <div className="flex-1 min-h-0">
-            <CodeEditor value={code} onChange={setCode} disabled={submitting} language={LANGUAGES.find((l) => l.id === language)?.label} />
+            <CodeEditor
+              value={code}
+              onChange={setCode}
+              disabled={submitting}
+              language={LANGUAGES.find((l) => l.id === language)?.label}
+              onPaste={reportPaste}
+              onFirstFocus={handleEditorFirstFocus}
+            />
           </div>
           <ConsolePanel
             collapsed={consoleCollapsed}
@@ -504,7 +543,7 @@ export default function BattleSessionPage() {
         </div>
       </div>
 
-      <StatusBar battleId={battleIdShort} language={LANGUAGES.find((l) => l.id === language)?.label} />
+      <StatusBar battleId={battleIdShort} language={LANGUAGES.find((l) => l.id === language)?.label} integrityScore={myIntegrityScore} />
 
       <VerdictOverlay
         verdict={verdict}

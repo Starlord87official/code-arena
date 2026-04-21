@@ -187,6 +187,15 @@ Deno.serve(async (req) => {
       } else {
         verdicts.push({ submission_id: job.submission_id, verdict: result.verdict });
         processed++;
+        // Anti-cheat scan (best-effort; never blocks verdict reporting)
+        try {
+          const { error: scanErr } = await admin.rpc("scan_submission_integrity", {
+            p_submission_id: job.submission_id,
+          });
+          if (scanErr) console.error("scan_submission_integrity:", scanErr);
+        } catch (e) {
+          console.error("integrity scan threw:", e);
+        }
       }
     } catch (e) {
       console.error("judge execution error:", e);

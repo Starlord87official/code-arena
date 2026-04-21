@@ -25,15 +25,17 @@ Deno.serve(async (req) => {
   const supabase = createClient(supabaseUrl, serviceKey);
 
   try {
-    const [finalized, created, sweep] = await Promise.all([
+    const [finalized, created, sweep, integrity] = await Promise.all([
       supabase.rpc("tick_active_matches"),
       supabase.rpc("mm_tick"),
       supabase.rpc("reconnect_sweep"),
+      supabase.rpc("auto_action_critical_flags"),
     ]);
 
     if (finalized.error) console.error("tick_active_matches:", finalized.error);
     if (created.error) console.error("mm_tick:", created.error);
     if (sweep.error) console.error("reconnect_sweep:", sweep.error);
+    if (integrity.error) console.error("auto_action_critical_flags:", integrity.error);
 
     // Drain judge queue (best-effort, ignore failures so ticker stays cheap)
     let judgeProcessed = 0;
@@ -64,11 +66,13 @@ Deno.serve(async (req) => {
         matches_finalized: finalized.data ?? 0,
         matches_created: created.data ?? 0,
         forfeits_processed: sweep.data ?? 0,
+        integrity_actioned: integrity.data ?? 0,
         judge_jobs_processed: judgeProcessed,
         errors: {
           finalize: finalized.error?.message ?? null,
           mm_tick: created.error?.message ?? null,
           sweep: sweep.error?.message ?? null,
+          integrity: integrity.error?.message ?? null,
         },
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },

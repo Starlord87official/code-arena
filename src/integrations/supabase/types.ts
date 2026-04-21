@@ -344,6 +344,7 @@ export type Database = {
         Row: {
           code: string
           code_hash: string | null
+          code_normalized_hash: string | null
           compile_log: string | null
           id: string
           idempotency_key: string | null
@@ -351,6 +352,7 @@ export type Database = {
           language: string
           match_id: string
           memory_kb: number | null
+          paste_ratio: number | null
           problem_id: string
           runtime_ms: number | null
           score: number
@@ -358,6 +360,7 @@ export type Database = {
           submitted_at: string
           testcases_passed: number | null
           testcases_total: number | null
+          time_since_problem_open_sec: number | null
           user_id: string
           verdict: Database["public"]["Enums"]["submission_verdict"]
           verdict_payload: Json | null
@@ -365,6 +368,7 @@ export type Database = {
         Insert: {
           code?: string
           code_hash?: string | null
+          code_normalized_hash?: string | null
           compile_log?: string | null
           id?: string
           idempotency_key?: string | null
@@ -372,6 +376,7 @@ export type Database = {
           language?: string
           match_id: string
           memory_kb?: number | null
+          paste_ratio?: number | null
           problem_id: string
           runtime_ms?: number | null
           score?: number
@@ -379,6 +384,7 @@ export type Database = {
           submitted_at?: string
           testcases_passed?: number | null
           testcases_total?: number | null
+          time_since_problem_open_sec?: number | null
           user_id: string
           verdict?: Database["public"]["Enums"]["submission_verdict"]
           verdict_payload?: Json | null
@@ -386,6 +392,7 @@ export type Database = {
         Update: {
           code?: string
           code_hash?: string | null
+          code_normalized_hash?: string | null
           compile_log?: string | null
           id?: string
           idempotency_key?: string | null
@@ -393,6 +400,7 @@ export type Database = {
           language?: string
           match_id?: string
           memory_kb?: number | null
+          paste_ratio?: number | null
           problem_id?: string
           runtime_ms?: number | null
           score?: number
@@ -400,6 +408,7 @@ export type Database = {
           submitted_at?: string
           testcases_passed?: number | null
           testcases_total?: number | null
+          time_since_problem_open_sec?: number | null
           user_id?: string
           verdict?: Database["public"]["Enums"]["submission_verdict"]
           verdict_payload?: Json | null
@@ -512,13 +521,18 @@ export type Database = {
           elo_after: number | null
           elo_before: number
           elo_change: number | null
+          focus_lost_ms: number
           hints_used: number
           id: string
+          integrity_score: number
           is_forfeit: boolean
           match_id: string
+          paste_chars_total: number
+          paste_count: number
           problems_solved: number
           reconnected_at: string | null
           score: number
+          tab_switches: number
           total_solve_time_sec: number
           user_id: string
           wrong_submissions: number
@@ -530,13 +544,18 @@ export type Database = {
           elo_after?: number | null
           elo_before?: number
           elo_change?: number | null
+          focus_lost_ms?: number
           hints_used?: number
           id?: string
+          integrity_score?: number
           is_forfeit?: boolean
           match_id: string
+          paste_chars_total?: number
+          paste_count?: number
           problems_solved?: number
           reconnected_at?: string | null
           score?: number
+          tab_switches?: number
           total_solve_time_sec?: number
           user_id: string
           wrong_submissions?: number
@@ -548,13 +567,18 @@ export type Database = {
           elo_after?: number | null
           elo_before?: number
           elo_change?: number | null
+          focus_lost_ms?: number
           hints_used?: number
           id?: string
+          integrity_score?: number
           is_forfeit?: boolean
           match_id?: string
+          paste_chars_total?: number
+          paste_count?: number
           problems_solved?: number
           reconnected_at?: string | null
           score?: number
+          tab_switches?: number
           total_solve_time_sec?: number
           user_id?: string
           wrong_submissions?: number
@@ -3342,6 +3366,36 @@ export type Database = {
         }
         Relationships: []
       }
+      submission_similarity: {
+        Row: {
+          algorithm: string
+          created_at: string
+          id: string
+          match_id: string
+          similarity: number
+          submission_a: string
+          submission_b: string
+        }
+        Insert: {
+          algorithm?: string
+          created_at?: string
+          id?: string
+          match_id: string
+          similarity: number
+          submission_a: string
+          submission_b: string
+        }
+        Update: {
+          algorithm?: string
+          created_at?: string
+          id?: string
+          match_id?: string
+          similarity?: number
+          submission_a?: string
+          submission_b?: string
+        }
+        Relationships: []
+      }
       user_active_roadmaps: {
         Row: {
           id: string
@@ -3753,6 +3807,10 @@ export type Database = {
         Args: { _match_id: string; _reason: string }
         Returns: undefined
       }
+      apply_integrity_review: {
+        Args: { p_action: string; p_flag_id: string }
+        Returns: Json
+      }
       apply_submission_verdict: {
         Args: {
           p_payload?: Json
@@ -3766,6 +3824,7 @@ export type Database = {
         Args: { p_application_id: string }
         Returns: Json
       }
+      auto_action_critical_flags: { Args: never; Returns: number }
       ban_topic: {
         Args: { p_match_id: string; p_topic: string }
         Returns: Json
@@ -3903,6 +3962,14 @@ export type Database = {
       finalize_match:
         | { Args: { _match_id: string }; Returns: Json }
         | { Args: { p_match_id: string; p_reason?: string }; Returns: Json }
+        | {
+            Args: {
+              p_match_id: string
+              p_reason: string
+              p_skip_rating: boolean
+            }
+            Returns: undefined
+          }
       forfeit_match: { Args: { p_match_id: string }; Returns: Json }
       get_activity_summary: { Args: never; Returns: Json }
       get_ai_usage_today: { Args: never; Returns: Json }
@@ -4107,6 +4174,7 @@ export type Database = {
       }
       mm_status: { Args: never; Returns: Json }
       mm_tick: { Args: never; Returns: number }
+      normalize_code: { Args: { p_code: string }; Returns: string }
       pick_topic: {
         Args: { p_match_id: string; p_topic: string }
         Returns: Json
@@ -4160,6 +4228,10 @@ export type Database = {
         }
         Returns: Json
       }
+      record_integrity_event: {
+        Args: { p_kind: string; p_match_id: string; p_payload?: Json }
+        Returns: Json
+      }
       respond_friend_request: {
         Args: { p_accept: boolean; p_request_id: string }
         Returns: Json
@@ -4169,6 +4241,10 @@ export type Database = {
           _decision: Database["public"]["Enums"]["anticheat_status"]
           _flag_id: string
         }
+        Returns: undefined
+      }
+      scan_submission_integrity: {
+        Args: { p_submission_id: string }
         Returns: undefined
       }
       score_match: { Args: { p_match_id: string }; Returns: undefined }
@@ -4193,16 +4269,29 @@ export type Database = {
         }
         Returns: string
       }
-      submit_match_solution: {
-        Args: {
-          p_code: string
-          p_language: string
-          p_match_id: string
-          p_problem_id: string
-        }
-        Returns: Json
-      }
+      submit_match_solution:
+        | {
+            Args: {
+              p_code: string
+              p_language: string
+              p_match_id: string
+              p_problem_id: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_code: string
+              p_language?: string
+              p_match_id: string
+              p_paste_ratio?: number
+              p_problem_id: string
+              p_time_since_open_sec?: number
+            }
+            Returns: Json
+          }
       tick_active_matches: { Args: never; Returns: number }
+      token_jaccard: { Args: { a: string; b: string }; Returns: number }
       transfer_clan_leadership: {
         Args: { p_new_leader_id: string }
         Returns: Json
@@ -4234,12 +4323,19 @@ export type Database = {
         | "plagiarism_score"
         | "solve_anomaly"
         | "disconnect_abuse"
+        | "behavioral"
+        | "code_similarity"
+        | "impossible_solve_time"
+        | "paste_solution"
+        | "devtools_open"
+        | "fullscreen_exit"
       anticheat_status:
         | "pending_review"
         | "dismissed"
         | "warning"
         | "penalty"
         | "match_invalidated"
+        | "actioned"
       app_role: "mentor" | "student"
       doubt_category: "study" | "job" | "internship" | "referral"
       doubt_difficulty: "beginner" | "intermediate" | "advanced"
@@ -4416,6 +4512,12 @@ export const Constants = {
         "plagiarism_score",
         "solve_anomaly",
         "disconnect_abuse",
+        "behavioral",
+        "code_similarity",
+        "impossible_solve_time",
+        "paste_solution",
+        "devtools_open",
+        "fullscreen_exit",
       ],
       anticheat_status: [
         "pending_review",
@@ -4423,6 +4525,7 @@ export const Constants = {
         "warning",
         "penalty",
         "match_invalidated",
+        "actioned",
       ],
       app_role: ["mentor", "student"],
       doubt_category: ["study", "job", "internship", "referral"],

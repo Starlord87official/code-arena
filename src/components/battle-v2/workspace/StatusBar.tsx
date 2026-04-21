@@ -1,12 +1,22 @@
-import { GitBranch, Wifi, Cpu, Circle, Command } from "lucide-react";
+import { GitBranch, Wifi, Cpu, Circle, Command, ShieldCheck, ShieldAlert } from "lucide-react";
 
 interface Props {
   battleId: string;
   language?: string;
   latencyMs?: number;
+  /** Server-driven integrity score (0–100). Hidden when undefined. */
+  integrityScore?: number | null;
 }
 
-export function StatusBar({ battleId, language = "Python 3.11", latencyMs = 28 }: Props) {
+export function StatusBar({ battleId, language = "Python 3.11", latencyMs = 28, integrityScore }: Props) {
+  const hasIntegrity = typeof integrityScore === "number";
+  const integrityTone =
+    !hasIntegrity ? "text-text-mute"
+      : integrityScore! <= 20 ? "text-blood"
+      : integrityScore! <= 50 ? "text-ember"
+      : "text-neon";
+  const IntegrityIcon = hasIntegrity && integrityScore! <= 50 ? ShieldAlert : ShieldCheck;
+
   return (
     <footer className="relative z-20 flex items-center gap-4 border-t border-line/60 bg-panel/50 px-3 h-7 backdrop-blur">
       <div className="pointer-events-none absolute inset-0 bl-grid opacity-15" />
@@ -27,6 +37,12 @@ export function StatusBar({ battleId, language = "Python 3.11", latencyMs = 28 }
       </div>
 
       <div className="ml-auto flex items-center gap-3 font-mono text-[10px] text-text-mute">
+        {hasIntegrity && (
+          <span className={`flex items-center gap-1 ${integrityTone}`}>
+            <IntegrityIcon className="h-3 w-3" />
+            <span>INTEGRITY: {integrityScore}</span>
+          </span>
+        )}
         <span className="flex items-center gap-1">
           <Cpu className="h-3 w-3" />
           <span className="text-neon">sandbox</span>

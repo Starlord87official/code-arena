@@ -3,14 +3,36 @@ interface Props {
   onChange: (v: string) => void;
   disabled?: boolean;
   language?: string;
+  /** Anti-cheat hook: called with chars pasted + total length after paste. */
+  onPaste?: (chars: number, totalAfter: number) => void;
+  /** Anti-cheat hook: fired on first focus of the editor (per problem). */
+  onFirstFocus?: () => void;
 }
 
 /**
  * Lightweight editable code surface — Blue Lock styled.
  * Pure textarea on top of a void backdrop; no external deps.
  */
-export function CodeEditor({ value, onChange, disabled, language = "Python 3.11" }: Props) {
+export function CodeEditor({ value, onChange, disabled, language = "Python 3.11", onPaste, onFirstFocus }: Props) {
   const lines = value.split("\n");
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    if (!onPaste) return;
+    const text = e.clipboardData.getData("text") ?? "";
+    const chars = text.length;
+    if (chars > 0) {
+      // Compute total after paste assuming default replace of selection.
+      const target = e.currentTarget;
+      const selStart = target.selectionStart ?? value.length;
+      const selEnd = target.selectionEnd ?? value.length;
+      const totalAfter = value.length - (selEnd - selStart) + chars;
+      onPaste(chars, totalAfter);
+    }
+  };
+
+  const handleFocus = () => {
+    onFirstFocus?.();
+  };
 
   return (
     <div className="relative flex h-full w-full overflow-hidden bg-[#050912]">
@@ -27,6 +49,8 @@ export function CodeEditor({ value, onChange, disabled, language = "Python 3.11"
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onPaste={handlePaste}
+        onFocus={handleFocus}
         disabled={disabled}
         spellCheck={false}
         placeholder="// Write your solution here…"
