@@ -2,30 +2,40 @@ import { Link } from 'react-router-dom';
 import { Building2, ChevronRight, Trophy, Star, Briefcase, Zap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { 
-  useCompaniesWithCounts, 
-  companyDefinitions, 
+import {
+  useCompaniesWithCounts,
+  companyDefinitions,
   getCompanyDefinitionsByTier,
-  CompanyWithChallengeCount 
+  CompanyWithChallengeCount,
 } from '@/hooks/useCompanyChallenges';
 import { PageHeader } from '@/components/bl/PageHeader';
+import { SectionHeader } from '@/components/bl/SectionHeader';
+import { GlassPanel } from '@/components/bl/GlassPanel';
 
 function CompanyCard({ company }: { company: CompanyWithChallengeCount }) {
+  const isTier1 = company.tier === 1;
   return (
-    <Link to={`/companies/${company.slug}`}>
-      <div className="arena-card p-5 rounded-xl hover:border-primary/50 transition-all group">
+    <Link to={`/companies/${company.slug}`} className="block">
+      <GlassPanel
+        padding="md"
+        corners
+        sideStripe={isTier1 ? 'ember' : false}
+        className="group transition-all duration-300 hover:-translate-y-0.5 hover:border-neon/40"
+      >
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-              <Building2 className="h-6 w-6 text-primary" />
+            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-neon/15 to-electric/10 flex items-center justify-center">
+              <Building2 className="h-6 w-6 text-neon" />
             </div>
             <div>
-              <h3 className="font-heading font-bold text-lg group-hover:text-primary transition-colors">
+              <h3 className="font-display font-bold text-lg text-text group-hover:text-neon transition-colors">
                 {company.name}
               </h3>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <span>{company.challengeCount} problems</span>
-                {company.tier === 1 && (
+              <div className="flex items-center gap-2 text-xs text-text-mute">
+                <span>
+                  <span className="font-mono">{company.challengeCount}</span> problems
+                </span>
+                {isTier1 && (
                   <Badge className="bg-rank-legend/20 text-rank-legend border-rank-legend/50 text-[10px]">
                     <Star className="h-2.5 w-2.5 mr-1" />
                     Top Tech
@@ -34,28 +44,28 @@ function CompanyCard({ company }: { company: CompanyWithChallengeCount }) {
               </div>
             </div>
           </div>
-          <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+          <ChevronRight className="h-5 w-5 text-text-mute group-hover:text-neon group-hover:translate-x-1 transition-all" />
         </div>
-        
-        <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+
+        <p className="text-sm text-text-dim line-clamp-2 mb-3">
           {company.description}
         </p>
-        
+
         <div className="flex flex-wrap gap-1.5">
           {company.tags.slice(0, 4).map(tag => (
-            <Badge key={tag} variant="outline" className="text-xs">
+            <Badge key={tag} variant="outline" className="text-xs text-text-dim">
               {tag}
             </Badge>
           ))}
         </div>
-      </div>
+      </GlassPanel>
     </Link>
   );
 }
 
 function CompanyCardSkeleton() {
   return (
-    <div className="arena-card p-5 rounded-xl">
+    <GlassPanel padding="md">
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3 mb-3">
           <Skeleton className="w-12 h-12 rounded-lg" />
@@ -71,46 +81,47 @@ function CompanyCardSkeleton() {
         <Skeleton className="h-5 w-12" />
         <Skeleton className="h-5 w-16" />
       </div>
-    </div>
+    </GlassPanel>
   );
 }
 
-function TierSection({ tier, title, icon: Icon, companies, isLoading }: { 
-  tier: 1 | 2 | 3; 
-  title: string; 
-  icon: typeof Trophy;
+function TierSection({
+  tier,
+  title,
+  companies,
+  isLoading,
+}: {
+  tier: 1 | 2 | 3;
+  title: string;
   companies: CompanyWithChallengeCount[];
   isLoading: boolean;
 }) {
-  const tierStyles = {
-    1: 'from-rank-legend/20 via-rank-gold/10 to-transparent border-rank-legend/30',
-    2: 'from-rank-platinum/20 via-rank-silver/10 to-transparent border-rank-platinum/30',
-    3: 'from-primary/20 via-primary/5 to-transparent border-primary/30',
-  };
-
-  // Get static company list for this tier for skeleton count
   const tierCompanyDefs = getCompanyDefinitionsByTier(tier);
+  const count = companies.length || tierCompanyDefs.length;
+  const tag = `TIER ${String(tier).padStart(2, '0')} // ${title}`;
+
+  const badgeClass =
+    tier === 1
+      ? 'border-rank-legend/50 text-rank-legend'
+      : tier === 2
+      ? 'border-rank-platinum/50 text-rank-platinum'
+      : 'border-neon/40 text-neon';
 
   return (
     <div className="mb-10">
-      <div className={`flex items-center gap-3 mb-6 p-4 rounded-lg bg-gradient-to-r ${tierStyles[tier]} border`}>
-        <Icon className={`h-6 w-6 ${tier === 1 ? 'text-rank-legend' : tier === 2 ? 'text-rank-platinum' : 'text-primary'}`} />
-        <h2 className="font-display text-xl font-bold">{title}</h2>
-        <Badge variant="outline" className="ml-auto">
-          {companies.length || tierCompanyDefs.length} companies
-        </Badge>
-      </div>
-      
+      <SectionHeader
+        tag={tag}
+        right={
+          <Badge variant="outline" className={`font-mono ${badgeClass}`}>
+            {count} companies
+          </Badge>
+        }
+      />
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {isLoading ? (
-          tierCompanyDefs.map(company => (
-            <CompanyCardSkeleton key={company.slug} />
-          ))
-        ) : (
-          companies.map(company => (
-            <CompanyCard key={company.slug} company={company} />
-          ))
-        )}
+        {isLoading
+          ? tierCompanyDefs.map(company => <CompanyCardSkeleton key={company.slug} />)
+          : companies.map(company => <CompanyCard key={company.slug} company={company} />)}
       </div>
     </div>
   );
@@ -119,12 +130,10 @@ function TierSection({ tier, title, icon: Icon, companies, isLoading }: {
 export default function Companies() {
   const { data: companiesWithCounts, isLoading } = useCompaniesWithCounts();
 
-  // Get companies by tier from the data, or use static definitions with 0 count while loading
   const getCompaniesByTier = (tier: 1 | 2 | 3): CompanyWithChallengeCount[] => {
     if (companiesWithCounts) {
       return companiesWithCounts.filter(c => c.tier === tier);
     }
-    // While loading, use static definitions with 0 count
     return getCompanyDefinitionsByTier(tier).map(def => ({ ...def, challengeCount: 0 }));
   };
 
@@ -132,14 +141,11 @@ export default function Companies() {
   const tier2 = getCompaniesByTier(2);
   const tier3 = getCompaniesByTier(3);
 
-  // Calculate total problems
   const totalProblems = companiesWithCounts?.reduce((sum, c) => sum + c.challengeCount, 0) || 0;
-  // Since a challenge can have multiple company_tags, we need unique count from the query
-  // For now, show the sum which may include duplicates
 
   return (
     <div className="min-h-screen py-6 px-4">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         <PageHeader
           sector="013"
           tag="COMPANIES"
@@ -149,75 +155,78 @@ export default function Companies() {
 
         {/* Stats Overview */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-          <div className="arena-card p-4 text-center">
+          <GlassPanel padding="md" corners className="text-center">
             <div className="flex items-center justify-center gap-2 mb-1">
-              <Building2 className="h-5 w-5 text-primary" />
+              <Building2 className="h-5 w-5 text-neon" />
             </div>
-            <div className="text-2xl font-bold text-foreground">
+            <div className="font-mono text-2xl font-bold text-text">
               {companyDefinitions.length}
             </div>
-            <div className="text-xs text-muted-foreground uppercase tracking-wide">Companies</div>
-          </div>
-          <div className="arena-card p-4 text-center border-rank-legend/30">
+            <div className="text-[10px] text-text-mute uppercase tracking-wide">Companies</div>
+          </GlassPanel>
+
+          <GlassPanel padding="md" corners sideStripe="ember" className="text-center">
             <div className="flex items-center justify-center gap-2 mb-1">
               <Trophy className="h-5 w-5 text-rank-legend" />
             </div>
-            <div className="text-2xl font-bold text-rank-legend">
+            <div className="font-mono text-2xl font-bold text-rank-legend">
               {tier1.length}
             </div>
-            <div className="text-xs text-muted-foreground uppercase tracking-wide">Top Tech</div>
-          </div>
-          <div className="arena-card p-4 text-center">
+            <div className="text-[10px] text-text-mute uppercase tracking-wide">Top Tech</div>
+          </GlassPanel>
+
+          <GlassPanel padding="md" corners className="text-center">
             <div className="flex items-center justify-center gap-2 mb-1">
               <Briefcase className="h-5 w-5 text-rank-platinum" />
             </div>
-            <div className="text-2xl font-bold text-rank-platinum">
+            <div className="font-mono text-2xl font-bold text-rank-platinum">
               {tier2.length}
             </div>
-            <div className="text-xs text-muted-foreground uppercase tracking-wide">Tier 2</div>
-          </div>
-          <div className="arena-card p-4 text-center">
+            <div className="text-[10px] text-text-mute uppercase tracking-wide">Tier 2</div>
+          </GlassPanel>
+
+          <GlassPanel padding="md" corners className="text-center">
             <div className="flex items-center justify-center gap-2 mb-1">
               <Zap className="h-5 w-5 text-status-success" />
             </div>
-            <div className="text-2xl font-bold text-foreground">
-              {isLoading ? '-' : totalProblems}
+            <div className="font-mono text-2xl font-bold text-text">
+              {isLoading ? '—' : totalProblems}
             </div>
-            <div className="text-xs text-muted-foreground uppercase tracking-wide">Total Problems</div>
-          </div>
+            <div className="text-[10px] text-text-mute uppercase tracking-wide">Total Problems</div>
+          </GlassPanel>
         </div>
 
         {/* Company Tiers */}
-        <TierSection 
-          tier={1} 
-          title="Tier 1: Top Tech Giants" 
-          icon={Trophy}
+        <TierSection
+          tier={1}
+          title="TOP TECH GIANTS"
           companies={tier1}
           isLoading={isLoading}
         />
-        
-        <TierSection 
-          tier={2} 
-          title="Tier 2: High-Growth Tech" 
-          icon={Briefcase}
+
+        <TierSection
+          tier={2}
+          title="HIGH-GROWTH TECH"
           companies={tier2}
           isLoading={isLoading}
         />
-        
-        <TierSection 
-          tier={3} 
-          title="Tier 3: Startups & Product Companies" 
-          icon={Zap}
+
+        <TierSection
+          tier={3}
+          title="STARTUPS & PRODUCT"
           companies={tier3}
           isLoading={isLoading}
         />
 
         {/* Info Note */}
-        <div className="mt-8 p-4 rounded-lg bg-muted/50 border border-border text-center">
-          <p className="text-sm text-muted-foreground">
-            💡 Problems are mapped based on real interview patterns. The library is expanding during Private Beta.
-          </p>
-        </div>
+        <GlassPanel padding="md" className="mt-8">
+          <div className="flex items-center gap-3 justify-center">
+            <span className="h-2 w-2 rounded-full bg-neon shadow-[0_0_8px_hsl(var(--neon))]" />
+            <p className="text-sm text-text-dim text-center">
+              Problems are mapped based on real interview patterns. The library is expanding during Private Beta.
+            </p>
+          </div>
+        </GlassPanel>
       </div>
     </div>
   );
