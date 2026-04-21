@@ -3197,6 +3197,16 @@ export type Database = {
       delete_doubt_comment: { Args: { p_comment_id: string }; Returns: Json }
       get_activity_summary: { Args: never; Returns: Json }
       get_ai_usage_today: { Args: never; Returns: Json }
+      get_battle_opponent_profile: {
+        Args: { p_session_id: string }
+        Returns: {
+          avatar_url: string
+          division: string
+          id: string
+          username: string
+          xp: number
+        }[]
+      }
       get_challenge_stats: {
         Args: never
         Returns: {
