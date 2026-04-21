@@ -6,7 +6,6 @@ import { useBattleResult } from "@/hooks/useBattleResult";
 import { useMatchmaking, type BattleMode } from "@/hooks/useMatchmaking";
 
 import type { BattlePhase } from "@/components/battle-v2/types";
-import { PhaseToggle } from "@/components/battle-v2/PhaseToggle";
 
 // Entry
 import { EntryHero } from "@/components/battle-v2/entry/EntryHero";
@@ -185,11 +184,6 @@ export default function Battle() {
         <PostBattleView result={result} userId={user?.id} onExit={handleExitPostBattle} onRematch={handleRematch} />
       )}
 
-      {phase !== "entry" && import.meta.env.DEV && (
-        <div className="fixed bottom-4 right-4 z-[100] max-w-md">
-          <PhaseToggle current={phase} onChange={setDevPhase} />
-        </div>
-      )}
     </div>
   );
 }
@@ -232,7 +226,6 @@ function EntryView(props: {
         </h1>
       </div>
 
-      <PhaseToggle current={props.phase} onChange={props.onPhaseChange} />
       <EntryHero />
 
       <SectionLabel step="01" subtitle="CONFIGURE YOUR LOADOUT" title="Profile, format, region." />
