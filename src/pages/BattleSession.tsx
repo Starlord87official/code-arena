@@ -92,10 +92,10 @@ export default function BattleSessionPage() {
     queryFn: async () => {
       if (!opponentId) return null;
       const { data } = await supabase
-        .from('profiles')
+        .from('public_profiles')
         .select('username, avatar_url, division, xp')
         .eq('id', opponentId)
-        .single();
+        .maybeSingle();
       return data;
     },
     enabled: !!opponentId,
