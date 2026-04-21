@@ -9,7 +9,7 @@ import type { BattleSession as BattleSessionT } from "@/hooks/useMatchmaking";
 
 import { WorkspaceHud } from "@/components/battle-v2/workspace/WorkspaceHud";
 import { OpponentTicker, type OpponentSnapshot } from "@/components/battle-v2/workspace/OpponentTicker";
-import { ProblemPanel, type ProblemDetail } from "@/components/battle-v2/workspace/ProblemPanel";
+import { ProblemPanel, type ProblemDetail, type ProblemSummary } from "@/components/battle-v2/workspace/ProblemPanel";
 import { EditorToolbar, type LangId, LANGUAGES } from "@/components/battle-v2/workspace/EditorToolbar";
 import { CodeEditor } from "@/components/battle-v2/workspace/CodeEditor";
 import { ConsolePanel, type TestCase, type SubmissionRow } from "@/components/battle-v2/workspace/ConsolePanel";
@@ -238,6 +238,24 @@ export default function BattleSessionPage() {
       tone: "ember",
     });
   }, [latestSubmission, user, opponentProfile, testCases.length]);
+
+  // Surface latest submission verdict_payload (stdout/stderr/runtime) into the console tab
+  useEffect(() => {
+    const sub = latestSubmission;
+    if (!sub || !user || sub.user_id !== user.id) return;
+    const payload = (sub as any).verdict_payload || {};
+    const lines: string[] = [];
+    lines.push(`$ judge → ${sub.verdict?.toUpperCase?.() ?? sub.status?.toUpperCase?.() ?? "RESULT"}`);
+    if (typeof payload.runtime_ms === "number") lines.push(`· runtime: ${payload.runtime_ms}ms`);
+    if (typeof sub.testcases_passed === "number" && typeof sub.testcases_total === "number") {
+      lines.push(`· testcases: ${sub.testcases_passed}/${sub.testcases_total}`);
+    }
+    if (payload.stdout) lines.push("\n--- stdout ---\n" + String(payload.stdout));
+    if (payload.stderr) lines.push("\n--- stderr ---\n" + String(payload.stderr));
+    if (payload.compile_log) lines.push("\n--- compile ---\n" + String(payload.compile_log));
+    setConsoleOutput(lines.join("\n"));
+  }, [latestSubmission, user]);
+
 
   // Opponent disconnect tracking from realtime participants
   const opponentParticipant = rtParticipants.find((p) => p.user_id !== user?.id);
@@ -491,6 +509,23 @@ export default function BattleSessionPage() {
     tone: "neon",
   };
 
+  const selfScore = myParticipant
+    ? { handle: "You", score: myParticipant.score, problemsSolved: myParticipant.problems_solved, isSelf: true }
+    : undefined;
+  const opponentScore = opponentParticipant
+    ? {
+        handle: opponentProfile?.username || "Opponent",
+        score: opponentParticipant.score,
+        problemsSolved: opponentParticipant.problems_solved,
+      }
+    : undefined;
+
+  const problemSummaries: ProblemSummary[] = (matchProblems || []).map((mp) => ({
+    id: mp.id,
+    title: mp.challenge.title,
+    difficulty: mp.challenge.difficulty,
+  }));
+
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-void text-text">
       <WorkspaceHud
@@ -499,6 +534,9 @@ export default function BattleSessionPage() {
         startTime={new Date(session.start_time).getTime()}
         opponentName={opponentProfile?.username}
         onForfeit={handleForfeit}
+        selfScore={selfScore}
+        opponentScore={opponentScore}
+        problemCount={matchProblems?.length}
       />
 
       <OpponentTicker
@@ -510,7 +548,14 @@ export default function BattleSessionPage() {
       />
 
       <div className="flex flex-1 overflow-hidden min-h-0">
-        <ProblemPanel problem={problemDetail} collapsed={problemCollapsed} onToggle={() => setProblemCollapsed((c) => !c)} />
+        <ProblemPanel
+          problem={problemDetail}
+          collapsed={problemCollapsed}
+          onToggle={() => setProblemCollapsed((c) => !c)}
+          problems={problemSummaries}
+          selectedIndex={selectedProblemIdx}
+          onSelectProblem={(i) => setSelectedProblemIdx(i)}
+        />
 
         <div className="flex flex-1 flex-col min-w-0">
           <EditorToolbar

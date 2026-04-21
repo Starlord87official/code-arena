@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Clock, Hash, Radio, Swords, Users, Flag, Zap } from "lucide-react";
+import { ArrowLeft, Clock, Hash, Radio, Swords, Users, Flag, Zap, Trophy } from "lucide-react";
+
+interface ScoreSnap {
+  handle: string;
+  score: number;
+  problemsSolved: number;
+  isSelf?: boolean;
+}
 
 interface Props {
   battleId: string;
@@ -9,9 +16,22 @@ interface Props {
   opponentName?: string;
   spectators?: number;
   onForfeit: () => void;
+  selfScore?: ScoreSnap;
+  opponentScore?: ScoreSnap;
+  problemCount?: number;
 }
 
-export function WorkspaceHud({ battleId, durationMinutes, startTime, opponentName, spectators = 0, onForfeit }: Props) {
+export function WorkspaceHud({
+  battleId,
+  durationMinutes,
+  startTime,
+  opponentName,
+  spectators = 0,
+  onForfeit,
+  selfScore,
+  opponentScore,
+  problemCount,
+}: Props) {
   const endTime = startTime + durationMinutes * 60 * 1000;
   const [seconds, setSeconds] = useState(() => Math.max(0, Math.floor((endTime - Date.now()) / 1000)));
 
@@ -55,10 +75,22 @@ export function WorkspaceHud({ battleId, durationMinutes, startTime, opponentNam
           </div>
         </div>
 
-        <div className="hidden items-center gap-1.5 border border-line/60 bg-panel/50 px-2.5 h-7 lg:flex bl-clip-chevron">
-          <Swords className="h-3 w-3 text-neon" />
-          <span className="font-display text-[10px] font-bold tracking-[0.22em] text-text">DUO BATTLE</span>
-        </div>
+        {selfScore && opponentScore && (
+          <div className="hidden items-center gap-2 border border-line/60 bg-panel/50 px-2.5 h-7 md:flex bl-clip-chevron">
+            <Trophy className="h-3 w-3 text-gold" />
+            <span className="font-mono text-[11px] tabular-nums text-neon">{selfScore.score}</span>
+            <span className="font-mono text-[10px] text-text-mute">vs</span>
+            <span className="font-mono text-[11px] tabular-nums text-ember">{opponentScore.score}</span>
+            {problemCount !== undefined && (
+              <>
+                <span className="ml-1 text-text-mute">·</span>
+                <span className="font-mono text-[10px] text-text-dim tabular-nums">
+                  {selfScore.problemsSolved}/{problemCount}
+                </span>
+              </>
+            )}
+          </div>
+        )}
 
         {opponentName && (
           <div className="hidden items-center gap-1.5 border border-ember/40 bg-ember/5 px-2.5 h-7 md:flex bl-clip-chevron">
