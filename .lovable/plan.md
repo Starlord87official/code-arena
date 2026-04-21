@@ -1,118 +1,42 @@
 
-Fix the battle return loop by separating “recover active match” behavior from the results page and preventing `/battle` from trusting stale cached active-session data.
+Fix the duo battle issue in two coordinated parts: reliable session entry for both players, and reliable opponent identity display once inside the arena.
 
-## Root Cause
+1. Stabilize matchmaking handoff in `src/hooks/useMatchmaking.ts`
+- Remove the fragile “validate session immediately or do nothing” behavior after `join_battle_queue` and queue polling.
+- When the backend returns `matched` with a `session_id`, lock local state to that session immediately instead of dropping the update if the follow-up read races the database commit.
+- Keep the existing stale-response protection, but refine it so older `idle/searching` results can never overwrite a newer `matched/in_battle` state.
+- Add a short recovery path: if the direct session validation misses once, continue syncing from the active-session query instead of leaving the second player stranded on `/battle`.
 
-The loop happens because:
+2. Make recovery state strong enough to redirect the stuck player
+- Keep `activeSession` as the self-healing source of truth for authenticated users.
+- Ensure `Battle.tsx` redirects when local matchmaking state contains a session, and also after recovery has promoted the user into `in_battle`.
+- Preserve the no-loop rule from previous fixes: never redirect from stale completed-session data.
 
-1. `BattleResults.tsx` calls `useMatchmaking()`.
-2. `useMatchmaking()` always runs the `activeSession` query while the user is logged in.
-3. React Query can immediately reuse cached `['active-battle-session', user.id]` data from the just-finished match.
-4. After clicking “Return to Battle Lobby”, `Battle.tsx` redirects as soon as `activeSession?.id` exists:
-   ```ts
-   const sessionId =
-     ((isMatched || matchmakingState.status === 'in_battle') && matchmakingState.sessionId) ||
-     activeSession?.id;
-   ```
-5. Since the cached active session still exists briefly, `/battle` sends the user right back into the match flow, which resolves again to `/battle/results/:id`.
+3. Fix opponent name lookups in live and results pages
+- In `src/pages/BattleSession.tsx` and `src/pages/BattleResults.tsx`, stop querying `profiles` directly for the opponent name.
+- Use `public_profiles` instead, because profile RLS is owner-only and that is why the UI falls back to “Opponent” even when the session row correctly contains the other user.
+- Keep the same fields (`username`, `avatar_url`, `division`, `xp` where needed), just read them from the public-safe surface already used elsewhere in the app.
 
-This is a cache/recovery timing bug, not a route-config problem.
+4. Tighten live session UI fallbacks
+- In `BattleSession.tsx`, keep a graceful fallback label, but prefer the recovered public opponent profile whenever available.
+- Make sure the scoreboard, top bar, and result card all use the same resolved opponent identity source so one area does not show a username while another still shows “Opponent”.
 
-## Changes to Make
+5. Verify against the actual failing flow
+- Test the exact two-user quick match flow:
+  - both users click Find Opponent
+  - both should land on the same `/battle/session/:id`
+  - the delayed/stuck client should recover automatically if the first transition is missed
+  - the opponent name should display as the real username, not “Opponent”
+- Re-test the completed-battle return path to confirm this recovery improvement does not reintroduce the old `/battle` ↔ `/battle/results/:id` loop.
 
-### 1) Stop `BattleResults.tsx` from subscribing to matchmaking recovery
-`BattleResults.tsx` only needs a local reset action; it should not mount the full `useMatchmaking()` hook.
-
-Replace:
-```ts
-const { resetState } = useMatchmaking();
-```
-
-With a lightweight cleanup strategy inside the page:
-- remove all battle-related React Query caches
-- then navigate to `/battle`
-- do not create a matchmaking subscription from the results screen
-
-Implementation options:
-- preferred: extract a tiny shared helper/hook like `useBattleStateCleanup()`
-- simpler: inline the cleanup logic directly in `BattleResults.tsx`
-
-### 2) Make `/battle` redirect only from confirmed live state
-In `src/pages/Battle.tsx`, do not redirect from `activeSession?.id` alone.
-
-Change redirect logic to require one of these:
-- local matchmaking state says `matched` or `in_battle` with a `sessionId`
-- or an active session has been freshly confirmed as truly active
-
-Recommended rule:
-```ts
-if ((isMatched || matchmakingState.status === 'in_battle') && matchmakingState.sessionId) {
-  navigate(`/battle/session/${matchmakingState.sessionId}`, { replace: true });
-}
-```
-
-Do not use `activeSession?.id` as an unconditional fallback on the lobby page.
-
-### 3) Keep active-session recovery, but make it safe
-In `useMatchmaking.ts`, keep the self-healing recovery for real stuck players, but tighten it:
-
-- only sync local state to `in_battle` when `activeSession.status === 'active'`
-- expose `isFetchingActiveSession` / `activeSessionFetchedAt` if needed
-- avoid treating old cached data as immediate truth during a route transition from results → lobby
-
-A practical approach:
-- keep the query
-- but in `Battle.tsx`, only use it for UI/state sync after refetch confirmation, not for instant redirect
-- alternatively, set `staleTime: 0` on `activeSession` so it refetches immediately and cached data is not trusted as fresh
-
-### 4) Strengthen results-page cleanup
-In `BattleResults.tsx`, update the return handler so it fully clears battle cache before navigation.
-
-Current cleanup removes:
-- `['battle-session', sessionId]`
-- `['battle-result', sessionId]`
-- `['battle-problems', sessionId]`
-- `['active-battle-session']`
-
-Tighten this to remove/invalidate the full family:
-- `['active-battle-session']` with exact: false
-- `['battle-session']` with exact: false
-- `['battle-result']` with exact: false
-- `['battle-problems']` with exact: false
-- optionally `['recent-duo-battles']`
-
-This ensures no stale session snapshot survives the transition.
-
-### 5) Move navigation side effect out of render in `BattleSession.tsx`
-`BattleSession.tsx` currently does:
-```ts
-if (session.status === 'completed') {
-  navigate(`/battle/results/${sessionId}`, { replace: true });
-  return <Loader2 ... />
-}
-```
-
-Move this into a `useEffect`. It is not the main loop bug, but it reduces repeated side effects during render and makes route transitions more stable.
-
-## Files to Update
-
-- `src/pages/BattleResults.tsx`
-- `src/pages/Battle.tsx`
+Files to update
 - `src/hooks/useMatchmaking.ts`
+- `src/pages/Battle.tsx`
 - `src/pages/BattleSession.tsx`
+- `src/pages/BattleResults.tsx`
 
-## Expected Result
-
-After the fix:
-- clicking “Return to Battle Lobby” from `/battle/results/:id` lands on `/battle` and stays there
-- no automatic bounce back to the completed results page
-- active-session recovery still works for genuinely stuck players during live matches
-- no regression to battle completion, reconnect, or results routing
-
-## Acceptance Criteria
-
-- Finish a duel and land on `/battle/results/:id`
-- Click “Return to Battle Lobby”
-- User stays on `/battle` without loop
-- Refresh on `/battle` after returning does not reopen the finished match
-- Two-player matchmaking recovery still redirects only for actually active sessions
+Expected result
+- When a duo battle starts, both players enter the session reliably.
+- If one client misses the initial redirect, it self-recovers within the next sync cycle.
+- Manually opening the session URL no longer shows a generic “Opponent” label when the other player exists.
+- Previous battle-results loop protection remains intact.
