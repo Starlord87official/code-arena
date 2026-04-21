@@ -1,19 +1,30 @@
 import { useEffect, useState } from "react";
 import { Dot, Radio, Shield, Swords } from "lucide-react";
-import type { BattleTeam } from "../types";
 
-interface Props {
-  blue: BattleTeam;
-  red: BattleTeam;
-  matchId?: string;
+export interface LobbyTeam {
+  name: string;
+  initial: string;
+  accent: "neon" | "ember";
+  seed?: string;
+  elo?: number;
 }
 
-export function LobbyHeader({ blue, red, matchId = "—" }: Props) {
+interface Props {
+  blue: LobbyTeam;
+  red: LobbyTeam;
+  matchId?: string;
+  formatLabel?: string;
+  modeLabel?: string;
+}
+
+export function LobbyHeader({ blue, red, matchId = "—", formatLabel = "DUO BATTLE", modeLabel }: Props) {
   const [dots, setDots] = useState(1);
   useEffect(() => {
     const id = setInterval(() => setDots((d) => (d % 3) + 1), 500);
     return () => clearInterval(id);
   }, []);
+
+  const idShort = matchId.length > 12 ? matchId.slice(0, 8) : matchId;
 
   return (
     <div className="relative overflow-hidden border border-line bg-panel/60 bl-glass bl-corners">
@@ -27,7 +38,7 @@ export function LobbyHeader({ blue, red, matchId = "—" }: Props) {
             <Radio className="mr-1 h-3 w-3 animate-pulse" />
             MATCH LOBBY
           </span>
-          <span className="font-mono text-[11px] tracking-[0.14em] text-text-dim">{matchId}</span>
+          <span className="font-mono text-[11px] tracking-[0.14em] text-text-dim">{idShort}</span>
         </div>
 
         <div className="flex w-full flex-col items-center justify-center gap-5 md:flex-row md:gap-10">
@@ -38,7 +49,7 @@ export function LobbyHeader({ blue, red, matchId = "—" }: Props) {
               <span className="text-neon text-glow">VS</span>
             </div>
             <span className="font-mono text-[10px] tracking-[0.24em] text-text-mute">
-              DUO BATTLE · BO5
+              {formatLabel}{modeLabel ? ` · ${modeLabel}` : ""}
             </span>
           </div>
           <Crest team={red} align="right" />
@@ -56,9 +67,8 @@ export function LobbyHeader({ blue, red, matchId = "—" }: Props) {
   );
 }
 
-function Crest({ team, align }: { team: BattleTeam; align?: "right" }) {
+function Crest({ team, align }: { team: LobbyTeam; align?: "right" }) {
   const isBlue = team.accent === "neon";
-  const initial = team.name.charAt(0).toUpperCase();
   return (
     <div
       className={`flex items-center gap-4 ${align === "right" ? "md:flex-row-reverse md:text-right" : ""}`}
@@ -70,7 +80,7 @@ function Crest({ team, align }: { team: BattleTeam; align?: "right" }) {
             : "border-ember/70 bg-ember/10 text-ember glow-ember"
         }`}
       >
-        {initial}
+        {team.initial}
       </div>
       <div>
         <h3

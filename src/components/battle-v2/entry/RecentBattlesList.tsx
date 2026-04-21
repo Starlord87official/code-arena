@@ -1,11 +1,24 @@
 import { Crown, Shield, Swords } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { RecentBattle } from "@/hooks/useBattleData";
+import type { RecentBattleRow } from "@/hooks/useBattleEntryData";
 import { cn } from "@/lib/utils";
 
 interface Props {
-  battles: RecentBattle[];
+  battles: RecentBattleRow[];
   isLoading: boolean;
+}
+
+function formatRelative(iso: string | null): string {
+  if (!iso) return "—";
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const h = Math.floor(mins / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  if (d < 7) return `${d}d ago`;
+  return new Date(iso).toLocaleDateString();
 }
 
 export function RecentBattlesList({ battles, isLoading }: Props) {
@@ -45,7 +58,7 @@ export function RecentBattlesList({ battles, isLoading }: Props) {
               NO BATTLES YET
             </p>
             <p className="font-mono text-[10px] text-text-mute mt-1">
-              Win your first match to write your story.
+              {"// no data yet — win your first match."}
             </p>
           </div>
         ) : (
@@ -53,9 +66,10 @@ export function RecentBattlesList({ battles, isLoading }: Props) {
             {battles.map((b) => {
               const isWin = b.result === "win";
               const isLoss = b.result === "loss";
+              const elo = b.elo_change ?? 0;
               return (
                 <li
-                  key={b.id}
+                  key={b.match_id}
                   className={cn(
                     "flex items-center gap-3 border bg-void/40 p-3",
                     isWin && "border-neon/40 bg-neon/5",
@@ -70,9 +84,11 @@ export function RecentBattlesList({ battles, isLoading }: Props) {
                   )}
                   <div className="min-w-0 flex-1">
                     <div className="font-display text-[12px] font-bold text-text">
-                      vs {b.opponent.name}
+                      vs {b.opponent_handle}
                     </div>
-                    <div className="font-mono text-[10px] text-text-dim mt-0.5">{b.date}</div>
+                    <div className="font-mono text-[10px] text-text-dim mt-0.5">
+                      {formatRelative(b.ended_at)} · {b.score_self}-{b.score_opp}
+                    </div>
                   </div>
                   <span
                     className={cn(
@@ -85,11 +101,11 @@ export function RecentBattlesList({ battles, isLoading }: Props) {
                   <span
                     className={cn(
                       "font-mono text-[11px] font-bold tabular-nums w-14 text-right",
-                      b.xpChange > 0 ? "text-neon" : b.xpChange < 0 ? "text-ember" : "text-text-mute",
+                      elo > 0 ? "text-neon" : elo < 0 ? "text-ember" : "text-text-mute",
                     )}
                   >
-                    {b.xpChange > 0 ? "+" : ""}
-                    {b.xpChange} XP
+                    {elo > 0 ? "+" : ""}
+                    {elo} LP
                   </span>
                 </li>
               );
