@@ -1,74 +1,78 @@
 
 
-# Step 10 — Phase B: Promotion Series + Demotion Shield
+# Step 10 — Phase C: Matchmaking Widening + Anti-Snipe (with hotfix)
 
-Build the tournament-grade promotion/demotion logic on top of the Phase A rating engine. After Phase A, LP is correctly derived from ELO with streak modifiers, but hitting 100 LP currently just clamps — there's no promo series, and the `demotion_shield` granted in Phase A isn't actually consulted on tier loss.
+## 0. Hotfix first: `battle_participants` RLS recursion
 
-## What Phase B builds
+Live preview is throwing `42P17 infinite recursion detected in policy for relation "battle_participants"` on every match read (visible in network logs at `/battle/session/...`). A recent policy on `battle_participants` references itself (or references `battle_matches` whose policy references `battle_participants` back). Fix before adding any new policies in this phase.
 
-### 1. New table: `promotion_attempts`
-Per-game record inside an open `promotion_series`:
-- `series_id` (fk → promotion_series)
-- `match_id` (fk → battle_matches)
-- `won` (bool)
-- `created_at`
-- Unique on `(series_id, match_id)`
-- RLS: user reads own rows; admins read all
+**Action:** rewrite the offending policies to use a `SECURITY DEFINER` helper (`is_match_participant(match_id, user_id)`) that bypasses RLS, and reference that helper from policies on `battle_matches`, `battle_participants`, and `battle_match_problems`. Standard pattern.
 
-### 2. New SECURITY DEFINER RPCs
+## 1. Matchmaking widening
 
-- **`re_start_promotion_series(p_user_id, p_kind)`** — opens a Bo3 (`division`) or Bo5 (`tier`) series. Idempotent — returns existing open series if one exists. Sets `target_division` / `target_tier` based on current rank.
+Patch `mm_enqueue` + `matchmaking-tick`:
 
-- **`re_record_promotion_result(p_user_id, p_match_id, p_won)`** — appends to `promotion_attempts`, updates `wins`/`losses` on the series. Closes with:
-  - **Success**: bump tier/division, retain 50–75 LP (50 for division, 75 for tier), reset `demotion_shield = 5`, mark series `passed`.
-  - **Failure**: clamp LP to 75 (one game away), mark series `failed`.
+- Add `search_window_elo INT` and `enqueued_at TIMESTAMPTZ` columns to `battle_queue`.
+- Initial window from blueprint by tier band:
+  - Iron–Silver: 50 → 100 → 150 → 250 → 400
+  - Gold–Plat:   75 → 125 → 200 → 300 → 500
+  - Diamond+:    100 → 150 → 250 → 400 → 600
+- `matchmaking-tick` widens the window every 10s; pair the first opponent within `|ΔMMR| ≤ window`.
+- After 60s with no match, fall back to "loose" pairing (window × 2).
 
-- **`get_active_promotion_series(p_user_id)`** — returns the open series (if any) for the entry/lobby UI.
+## 2. Repeat-opponent prevention
 
-### 3. Rewire `re_apply_match` (Phase A)
+In `mm_create_match` (the pairing function), before locking a pair:
+- Query `battle_participants` joined to `battle_matches` for any match between the two users with `ended_at > now() - interval '30 minutes'`.
+- If found, skip this pair and keep both players in queue (matchmaking-tick will retry next pass).
 
-Patch the LP application step at the bottom of `re_apply_match`:
+## 3. Dodge penalty
 
-1. **On match completion**: if user has an `in_progress` series, call `re_record_promotion_result(user, match, won)` instead of normal LP write. The series RPC handles tier movement.
-2. **On reaching 100 LP** (no active series): auto-call `re_start_promotion_series`. Determine kind: `tier` if at division I, else `division`.
-3. **Demotion guard**: when computed `new_lp < 0`:
-   - If `demotion_shield > 0`: clamp LP to 0, decrement shield by 1, no tier change.
-   - Else: drop to next division/tier with LP = 25 (cushion), reset `demotion_shield = 5` on new tier entry.
-4. **Iron IV floor**: clamp LP at 0 when `tier=iron AND division=IV`, no further demotion.
-5. **Shield decay on play**: every ranked match decrements shield by 1 (min 0), so it expires over 5 games regardless of result.
+When a user declines / lets the ready-check timer expire on an accepted match:
 
-### 4. Frontend surfaces
+- New RPC `re_apply_dodge_penalty(p_user_id)`:
+  - Reads recent dodges from `queue_lockouts` (kind=`dodge`) in last 24h.
+  - Escalation: 1st = -3 LP + 5 min lockout; 2nd = -10 LP + 15 min; 3rd+ = -15 LP + 30 min + temporary MMR ghosting flag.
+  - Inserts a `queue_lockouts` row with `expires_at` and increments a `dodge_count_24h` counter on `rank_states`.
+- Hook into the existing match-cancel path (where ready-check fails): if cancellation came from one specific user, call the RPC for that user only.
+- `mm_enqueue` already honors `queue_lockouts` (Phase A). Surface the penalty via toast on the entry screen ("Dodge penalty: -3 LP, queue locked 5m").
 
-- **`src/hooks/usePromotionSeries.ts`** — wraps `get_active_promotion_series`, subscribes to `promotion_series` realtime channel, returns `{ series, isLoading }`.
+## 4. Queue ghosting for high-elo players
 
-- **`src/components/battle-v2/PromoSeriesTracker.tsx`** — compact widget showing W/L pips (●○○ for Bo3, ●●○○○ for Bo5), kind label ("PROMO TO PLATINUM IV"), and result needed ("WIN 2 MORE TO PROMOTE"). Reused in StatsPanel + LobbyHeader.
+In `get_online_warriors` (entry-screen RPC):
+- If caller's `mmr >= 2400` (Master+), randomize/mask handles of other high-MMR players (e.g., `Challenger #4821`) and omit avatar to prevent queue sniping.
+- Lower-MMR callers see real handles as today.
 
-- **`StatsPanel.tsx`** (entry) — when active series exists, replace LP bar with `PromoSeriesTracker`.
+## 5. Frontend surfaces
 
-- **`LpSummary.tsx`** (post-battle) — when the just-finished match was part of a series:
-  - Show series result chip (`PROMO GAME 2/3 — WIN`)
-  - On series close, render tier-up/down cinematic (large badge swap with glow + "PROMOTED TO PLATINUM IV" caption)
-
-- **Penalty/promotion toasts** — fire from post-battle page on series start, win, loss, fail, and demotion.
+- **`src/hooks/useMatchmaking.ts`** — already shows a generic "dodge_cooldown_active" toast (line ~262). Extend to read `lockout_until` from the join error and display countdown (`Try again in 4m 12s`).
+- **`src/components/battle-v2/entry/QueueButton.tsx`** — when `queue_lockouts` row is active, show disabled state with countdown chip ("Locked 4:12").
+- **`src/components/battle-v2/entry/StatsPanel.tsx`** — small "Wait time widening: ±150 LP" hint when `enqueued_at > 30s ago`, derived from the queue row.
+- **Penalty toasts**: tilt cooldown (Phase A), dodge penalty (this phase), repeat-opponent skip (silent — just feels like longer wait).
 
 ## Files touched
 
-- **New migration**: `promotion_attempts` table + 3 RPCs + rewrite of `re_apply_match` LP/tier section.
-- **New hook**: `src/hooks/usePromotionSeries.ts`.
-- **New component**: `src/components/battle-v2/PromoSeriesTracker.tsx`.
-- **Updated**: `src/components/battle-v2/entry/StatsPanel.tsx`, `src/components/battle-v2/post-battle/LpSummary.tsx`, `src/components/battle-v2/pre-battle/LobbyHeader.tsx`.
+- **New migration**:
+  - Hotfix `battle_participants` RLS via `is_match_participant()` helper.
+  - Add `search_window_elo`, `enqueued_at` to `battle_queue`.
+  - Add `dodge_count_24h` to `rank_states`.
+  - Rewrite `mm_enqueue`, `mm_create_match`, `matchmaking-tick` body.
+  - New RPC `re_apply_dodge_penalty`.
+  - Patch `get_online_warriors` for ghosting.
+- **Updated edge function**: `supabase/functions/matchmaking-tick/index.ts` (call widening, repeat guard).
+- **Updated**: `src/hooks/useMatchmaking.ts`, `src/components/battle-v2/entry/QueueButton.tsx`, `src/components/battle-v2/entry/StatsPanel.tsx`.
 
 ## Verification
 
-1. User reaches 100 LP → next match auto-opens series; `PromoSeriesTracker` appears in entry StatsPanel.
-2. Win 2/3 (division) → tier badge updates in realtime, LP lands at 50, success toast fires, cinematic shows on post-battle.
-3. Lose 2/3 → series closes failed, LP clamps to 75, no tier change.
-4. User at 0 LP loses again with `demotion_shield > 0` → no demotion, shield decrements (visible in entry StatsPanel chip from Phase A).
-5. Iron IV user at 0 LP loses → LP stays at 0, no further demotion.
+1. Open `/battle/session/...` — match reads now return 200 (recursion gone).
+2. Two test accounts at very different MMR enter quick queue → no instant pairing; after ~30s window widens and they match.
+3. Same two accounts immediately re-queue after a match → matchmaking-tick skips them; they only pair after 30 min OR with a third player.
+4. Accept a match, then let ready-check expire → dodge toast (-3 LP, 5 min lockout); QueueButton shows countdown.
+5. Master-tier account sees ghosted handles in Online Warriors list.
 
-## Out of scope (Phase C+)
+## Out of scope (Phase D+)
 
+- Rank decay cron + season reset (Phase D).
+- `useRankState` hook + `RankBadge` component + leaderboard wiring (Phase E).
 - Topic ban/pick UI (Phase E).
-- Matchmaking widening + dodge penalty (Phase C).
-- Decay + season jobs (Phase D).
 
