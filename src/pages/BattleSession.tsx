@@ -509,6 +509,23 @@ export default function BattleSessionPage() {
     tone: "neon",
   };
 
+  const selfScore = myParticipant
+    ? { handle: "You", score: myParticipant.score, problemsSolved: myParticipant.problems_solved, isSelf: true }
+    : undefined;
+  const opponentScore = opponentParticipant
+    ? {
+        handle: opponentProfile?.username || "Opponent",
+        score: opponentParticipant.score,
+        problemsSolved: opponentParticipant.problems_solved,
+      }
+    : undefined;
+
+  const problemSummaries: ProblemSummary[] = (matchProblems || []).map((mp) => ({
+    id: mp.id,
+    title: mp.challenge.title,
+    difficulty: mp.challenge.difficulty,
+  }));
+
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-void text-text">
       <WorkspaceHud
@@ -517,6 +534,9 @@ export default function BattleSessionPage() {
         startTime={new Date(session.start_time).getTime()}
         opponentName={opponentProfile?.username}
         onForfeit={handleForfeit}
+        selfScore={selfScore}
+        opponentScore={opponentScore}
+        problemCount={matchProblems?.length}
       />
 
       <OpponentTicker
@@ -528,7 +548,14 @@ export default function BattleSessionPage() {
       />
 
       <div className="flex flex-1 overflow-hidden min-h-0">
-        <ProblemPanel problem={problemDetail} collapsed={problemCollapsed} onToggle={() => setProblemCollapsed((c) => !c)} />
+        <ProblemPanel
+          problem={problemDetail}
+          collapsed={problemCollapsed}
+          onToggle={() => setProblemCollapsed((c) => !c)}
+          problems={problemSummaries}
+          selectedIndex={selectedProblemIdx}
+          onSelectProblem={(i) => setSelectedProblemIdx(i)}
+        />
 
         <div className="flex flex-1 flex-col min-w-0">
           <EditorToolbar
