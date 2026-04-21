@@ -9,7 +9,7 @@ import type { BattleSession as BattleSessionT } from "@/hooks/useMatchmaking";
 
 import { WorkspaceHud } from "@/components/battle-v2/workspace/WorkspaceHud";
 import { OpponentTicker, type OpponentSnapshot } from "@/components/battle-v2/workspace/OpponentTicker";
-import { ProblemPanel, type ProblemDetail } from "@/components/battle-v2/workspace/ProblemPanel";
+import { ProblemPanel, type ProblemDetail, type ProblemSummary } from "@/components/battle-v2/workspace/ProblemPanel";
 import { EditorToolbar, type LangId, LANGUAGES } from "@/components/battle-v2/workspace/EditorToolbar";
 import { CodeEditor } from "@/components/battle-v2/workspace/CodeEditor";
 import { ConsolePanel, type TestCase, type SubmissionRow } from "@/components/battle-v2/workspace/ConsolePanel";
