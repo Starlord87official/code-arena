@@ -1,34 +1,8 @@
 import { Link } from 'react-router-dom';
-import { BookOpen, Calendar, Check, ChevronRight, Clock, AlertTriangle, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { useRevisionQueue, useCompleteRevisionItem, RevisionQueueItem } from '@/hooks/useRevisionQueue';
+import { BookOpen, CheckCircle2, Loader2 } from 'lucide-react';
+import { useRevisionQueue, useCompleteRevisionItem } from '@/hooks/useRevisionQueue';
 import { useToast } from '@/hooks/use-toast';
-import { format, parseISO } from 'date-fns';
-
-function getStatusStyle(status: RevisionQueueItem['status']) {
-  switch (status) {
-    case 'overdue':
-      return {
-        badge: 'bg-status-warning/20 text-status-warning border-status-warning/50',
-        icon: Clock,
-        label: 'Due — revising now strengthens memory',
-      };
-    case 'due':
-      return {
-        badge: 'bg-primary/20 text-primary border-primary/50',
-        icon: Clock,
-        label: 'Due Today',
-      };
-    case 'upcoming':
-    default:
-      return {
-        badge: 'bg-primary/20 text-primary border-primary/50',
-        icon: Calendar,
-        label: 'Upcoming',
-      };
-  }
-}
+import { cn } from '@/lib/utils';
 
 export function RevisionQueueCard() {
   const { data: items = [], isLoading } = useRevisionQueue();
@@ -53,129 +27,101 @@ export function RevisionQueueCard() {
     });
   };
 
-  // Group items by status priority
-  const overdueItems = items.filter(i => i.status === 'overdue');
-  const dueItems = items.filter(i => i.status === 'due');
-  const upcomingItems = items.filter(i => i.status === 'upcoming');
-  const totalActive = items.length;
+  const overdue = items.filter((i) => i.status === 'overdue');
+  const due = items.filter((i) => i.status === 'due');
+  const upcoming = items.filter((i) => i.status === 'upcoming');
+  const ordered = [...overdue, ...due, ...upcoming].slice(0, 5);
+  const total = items.length;
 
   return (
-    <div className="arena-card rounded-xl overflow-hidden">
-      <div className="p-4 border-b border-border bg-gradient-to-r from-accent/10 to-transparent">
-        <div className="flex items-center justify-between">
+    <div className="relative bl-glass overflow-hidden">
+      <div className="p-5">
+        <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <BookOpen className="h-5 w-5 text-accent" />
-            <h3 className="font-display font-bold">Revision Queue</h3>
+            <BookOpen className="h-4 w-4 text-neon" />
+            <h3 className="font-display text-[14px] font-bold tracking-tight text-text">
+              Revision Queue
+            </h3>
           </div>
-          {totalActive > 0 && (
-            <Badge variant="outline" className="text-xs">
-              {totalActive} active
-            </Badge>
+          {total > 0 && (
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 border border-neon/40 bg-neon/10 text-neon font-display text-[10px] font-bold tracking-[0.2em]">
+              <span className="h-1.5 w-1.5 rounded-full bg-neon shadow-[0_0_8px_#00f0ff] bl-flicker" />
+              {total} ACTIVE
+            </span>
           )}
         </div>
-      </div>
 
-      <div className="p-4">
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            <Loader2 className="h-5 w-5 animate-spin text-neon" />
           </div>
-        ) : totalActive === 0 ? (
+        ) : total === 0 ? (
           <div className="text-center py-6">
-            <BookOpen className="h-8 w-8 text-muted-foreground/50 mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground">No revisions scheduled</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Mark problems for revision from challenges
+            <BookOpen className="h-8 w-8 text-text-mute mx-auto mb-2 opacity-50" />
+            <p className="text-[12px] text-text-dim">No revisions scheduled</p>
+            <p className="text-[11px] text-text-mute mt-1 font-mono">
+              // MARK PROBLEMS FOR REVISION
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {/* Overdue & Due summary */}
-            {(overdueItems.length > 0 || dueItems.length > 0) && (
-              <div className="flex gap-3 text-sm">
-                {overdueItems.length > 0 && (
-                  <div className="flex items-center gap-1 text-status-warning">
-                    <Clock className="h-3.5 w-3.5" />
-                    <span className="font-semibold">{overdueItems.length} ready to revise</span>
-                  </div>
-                )}
-                {dueItems.length > 0 && (
-                  <div className="flex items-center gap-1 text-primary">
-                    <Clock className="h-3.5 w-3.5" />
-                    <span className="font-semibold">{dueItems.length} due today</span>
-                  </div>
-                )}
-              </div>
-            )}
+          <ul className="flex flex-col gap-1.5">
+            {ordered.map((it, i) => {
+              const dueLabel =
+                it.status === 'overdue'
+                  ? 'OVERDUE'
+                  : it.status === 'due'
+                    ? 'TODAY'
+                    : 'UPCOMING';
+              const dueClass =
+                it.status === 'overdue' || it.status === 'due'
+                  ? 'text-ember'
+                  : 'text-text-dim';
 
-            {/* Items list (show first 5) */}
-            <div className="space-y-2">
-              {[...overdueItems, ...dueItems, ...upcomingItems].slice(0, 5).map((item) => {
-                const style = getStatusStyle(item.status);
-                const StatusIcon = style.icon;
-
-                return (
-                  <div
-                    key={item.id}
-                    className={`p-3 rounded-lg border transition-colors ${
-                      item.status === 'overdue'
-                        ? 'bg-destructive/5 border-destructive/20'
-                        : item.status === 'due'
-                        ? 'bg-status-warning/5 border-status-warning/20'
-                        : 'bg-secondary/50 border-border'
-                    }`}
+              return (
+                <li
+                  key={it.id}
+                  className="group relative border border-line/60 bg-void/40 p-2.5 flex items-center gap-3 hover:border-neon/40 hover:bg-neon/[0.03] transition-colors"
+                >
+                  <span className="font-mono text-[10px] text-text-mute w-5 text-center shrink-0">
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <Link
+                    to={`/solve/${it.problem_id}`}
+                    className="min-w-0 flex-1"
                   >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <StatusIcon className={`h-3.5 w-3.5 flex-shrink-0 ${
-                            item.status === 'overdue' ? 'text-destructive' :
-                            item.status === 'due' ? 'text-status-warning' : 'text-primary'
-                          }`} />
-                          <span className="font-medium text-sm truncate">
-                            {item.problem_title}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
-                          {item.topic && (
-                            <>
-                              <span className="truncate">{item.topic}</span>
-                              <span>•</span>
-                            </>
-                          )}
-                          <span>{format(parseISO(item.scheduled_date), 'MMM d')}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        <Link to={`/solve/${item.problem_id}`}>
-                          <Button variant="ghost" size="sm" className="h-7 px-2 text-xs">
-                            Revise
-                          </Button>
-                        </Link>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 w-7 p-0"
-                          onClick={() => handleComplete(item.id, item.problem_title)}
-                          disabled={isCompleting}
-                        >
-                          <Check className="h-3.5 w-3.5 text-status-success" />
-                        </Button>
-                      </div>
+                    <div className="font-display text-[13px] font-semibold text-text truncate group-hover:text-neon transition-colors">
+                      {it.problem_title}
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                    <div className="font-mono text-[10px] text-text-mute truncate">
+                      {it.topic || '—'}
+                    </div>
+                  </Link>
+                  <span
+                    className={cn(
+                      'font-display text-[10px] font-bold tracking-[0.18em] shrink-0',
+                      dueClass,
+                    )}
+                  >
+                    {dueLabel}
+                  </span>
+                  <button
+                    onClick={() => handleComplete(it.id, it.problem_title)}
+                    disabled={isCompleting}
+                    className="shrink-0 p-1 hover:scale-110 transition-transform"
+                    aria-label="Mark complete"
+                  >
+                    <CheckCircle2 className="h-4 w-4 text-text-mute group-hover:text-neon transition-colors" />
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
 
-            {totalActive > 5 && (
-              <div className="text-center">
-                <span className="text-xs text-muted-foreground">
-                  +{totalActive - 5} more items
-                </span>
-              </div>
-            )}
-          </div>
+        {total > 5 && (
+          <p className="text-center mt-3 font-mono text-[11px] text-text-mute">
+            +{total - 5} MORE
+          </p>
         )}
       </div>
     </div>
