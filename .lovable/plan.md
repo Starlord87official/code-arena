@@ -1,78 +1,86 @@
 
 
-# Step 10 — Phase C: Matchmaking Widening + Anti-Snipe (with hotfix)
+# Step 10 — Phase D: Decay + Season Jobs
 
-## 0. Hotfix first: `battle_participants` RLS recursion
+With Phases A–C live (rating engine, promo series, matchmaking guards), the ladder still has no anti-camping pressure and no season lifecycle. Phase D adds the cron-driven decay system and the admin-triggered season reset.
 
-Live preview is throwing `42P17 infinite recursion detected in policy for relation "battle_participants"` on every match read (visible in network logs at `/battle/session/...`). A recent policy on `battle_participants` references itself (or references `battle_matches` whose policy references `battle_participants` back). Fix before adding any new policies in this phase.
+## 1. Schema additions
 
-**Action:** rewrite the offending policies to use a `SECURITY DEFINER` helper (`is_match_participant(match_id, user_id)`) that bypasses RLS, and reference that helper from policies on `battle_matches`, `battle_participants`, and `battle_match_problems`. Standard pattern.
+- **`rank_states.decay_bank_days`** `INT NOT NULL DEFAULT 0` — protected days that absorb decay before LP is touched.
+- **`rank_states.last_decay_at`** `TIMESTAMPTZ` — last time decay ran for this user (so we don't double-charge).
+- **New table `season_history`**:
+  - `id uuid pk`
+  - `season_id uuid → seasons`
+  - `user_id uuid → auth.users`
+  - `final_tier rank_tier`, `final_division rank_division`, `final_lp int`, `final_mmr int`
+  - `peak_tier`, `peak_division`, `peak_lp`, `peak_mmr`
+  - `total_matches`, `wins`, `losses`
+  - `archived_at timestamptz default now()`
+  - Unique on `(season_id, user_id)`. RLS: user reads own; admin reads all.
+- **`rank_states.peak_*`** columns (peak_tier/peak_division/peak_lp/peak_mmr) updated by `re_apply_match` whenever current exceeds peak.
 
-## 1. Matchmaking widening
+## 2. Decay logic — `re_apply_decay()`
 
-Patch `mm_enqueue` + `matchmaking-tick`:
+SECURITY DEFINER function, returns `int` (rows affected). For each `rank_states` row in the current season where `tier >= platinum`:
 
-- Add `search_window_elo INT` and `enqueued_at TIMESTAMPTZ` columns to `battle_queue`.
-- Initial window from blueprint by tier band:
-  - Iron–Silver: 50 → 100 → 150 → 250 → 400
-  - Gold–Plat:   75 → 125 → 200 → 300 → 500
-  - Diamond+:    100 → 150 → 250 → 400 → 600
-- `matchmaking-tick` widens the window every 10s; pair the first opponent within `|ΔMMR| ≤ window`.
-- After 60s with no match, fall back to "loose" pairing (window × 2).
+1. Compute grace period by tier: Plat 21d, Diamond 14d, Master 10d, GM/Challenger 7d.
+2. If `last_match_at > now() - grace`: skip.
+3. Compute `days_inactive = floor(extract(epoch from now() - last_match_at) / 86400) - grace_days`.
+4. If `decay_bank_days > 0`: consume `min(bank, days_inactive)`, decrement bank, update `last_decay_at`, skip LP loss.
+5. Else, apply weekly LP loss prorated per `last_decay_at` cycle: Plat -25/wk, Diamond -35/wk, Master -50/wk, GM -75/wk.
+6. If `lp < 0`: cascade demotion using existing tier/division step-down logic (no shield — decay bypasses shield by design, per blueprint).
+7. Update `last_decay_at = now()`.
 
-## 2. Repeat-opponent prevention
+In `re_apply_match` (Phase A), grant `+1 decay_bank_days` per ranked match played, capped at: Plat 14, Diamond 10, Master 7, GM 5.
 
-In `mm_create_match` (the pairing function), before locking a pair:
-- Query `battle_participants` joined to `battle_matches` for any match between the two users with `ended_at > now() - interval '30 minutes'`.
-- If found, skip this pair and keep both players in queue (matchmaking-tick will retry next pass).
+## 3. Cron edge function — `rank-decay-tick`
 
-## 3. Dodge penalty
+- New function at `supabase/functions/rank-decay-tick/index.ts`.
+- Header-secured via `MM_CRON_SECRET` (reuse existing secret pattern from `match-ticker`).
+- Calls `re_apply_decay()` once, returns `{ users_decayed }`.
+- `supabase/config.toml`: add `[functions.rank-decay-tick]` with `verify_jwt = false`.
+- **Cron registration** runs as a separate `INSERT` (not migration) using `pg_cron`+`pg_net`, every 6 hours: `0 */6 * * *`.
 
-When a user declines / lets the ready-check timer expire on an accepted match:
+## 4. Season reset — `rank-season-reset`
 
-- New RPC `re_apply_dodge_penalty(p_user_id)`:
-  - Reads recent dodges from `queue_lockouts` (kind=`dodge`) in last 24h.
-  - Escalation: 1st = -3 LP + 5 min lockout; 2nd = -10 LP + 15 min; 3rd+ = -15 LP + 30 min + temporary MMR ghosting flag.
-  - Inserts a `queue_lockouts` row with `expires_at` and increments a `dodge_count_24h` counter on `rank_states`.
-- Hook into the existing match-cancel path (where ready-check fails): if cancellation came from one specific user, call the RPC for that user only.
-- `mm_enqueue` already honors `queue_lockouts` (Phase A). Surface the penalty via toast on the entry screen ("Dodge penalty: -3 LP, queue locked 5m").
-
-## 4. Queue ghosting for high-elo players
-
-In `get_online_warriors` (entry-screen RPC):
-- If caller's `mmr >= 2400` (Master+), randomize/mask handles of other high-MMR players (e.g., `Challenger #4821`) and omit avatar to prevent queue sniping.
-- Lower-MMR callers see real handles as today.
+- New function at `supabase/functions/rank-season-reset/index.ts`.
+- Admin-only: requires authenticated user with `has_role(auth.uid(), 'admin')`.
+- Body: `{ new_season_name, new_season_starts_at, new_season_ends_at }`.
+- Calls SECURITY DEFINER RPC `re_close_and_open_season(...)`:
+  1. For each row in current `rank_states`: insert into `season_history` (final + peak snapshot).
+  2. Mark current `seasons` row `is_active = false`, set `ended_at = now()`.
+  3. Insert new `seasons` row, mark active.
+  4. For each user: soft reset `mmr = (mmr + 1200) / 2`, `mmr_deviation = 100`, `lp = 0`, `tier`/`division` recomputed from new MMR via existing `re_tier_from_lp` analogue, `placements_remaining = 5`, `demotion_shield = 5`, `decay_bank_days = 0`, `last_decay_at = null`, peak fields cleared, streaks reset.
+  5. Returns `{ users_archived, new_season_id }`.
 
 ## 5. Frontend surfaces
 
-- **`src/hooks/useMatchmaking.ts`** — already shows a generic "dodge_cooldown_active" toast (line ~262). Extend to read `lockout_until` from the join error and display countdown (`Try again in 4m 12s`).
-- **`src/components/battle-v2/entry/QueueButton.tsx`** — when `queue_lockouts` row is active, show disabled state with countdown chip ("Locked 4:12").
-- **`src/components/battle-v2/entry/StatsPanel.tsx`** — small "Wait time widening: ±150 LP" hint when `enqueued_at > 30s ago`, derived from the queue row.
-- **Penalty toasts**: tilt cooldown (Phase A), dodge penalty (this phase), repeat-opponent skip (silent — just feels like longer wait).
+- **`src/hooks/useDecayWarning.ts`** — reads `rank_states.last_match_at` + tier; if user is Plat+ and within 3 days of grace expiry, returns `{ daysUntilDecay, weeklyLoss }`.
+- **`StatsPanel.tsx`** — when warning active, show amber chip: `DECAY IN 2D · -35 LP/WK` (above the LP bar).
+- **Decay applied toast** — on entry-screen mount, if `last_decay_at > last visit timestamp` (stored in localStorage), fire toast: `Rank decay: -35 LP (Diamond grace expired)`.
+- **`AdminSystem.tsx`** — add "Season Management" card with current season info + "Start New Season" button that opens a confirm dialog (name + start/end dates) and calls `rank-season-reset`.
 
 ## Files touched
 
-- **New migration**:
-  - Hotfix `battle_participants` RLS via `is_match_participant()` helper.
-  - Add `search_window_elo`, `enqueued_at` to `battle_queue`.
-  - Add `dodge_count_24h` to `rank_states`.
-  - Rewrite `mm_enqueue`, `mm_create_match`, `matchmaking-tick` body.
-  - New RPC `re_apply_dodge_penalty`.
-  - Patch `get_online_warriors` for ghosting.
-- **Updated edge function**: `supabase/functions/matchmaking-tick/index.ts` (call widening, repeat guard).
-- **Updated**: `src/hooks/useMatchmaking.ts`, `src/components/battle-v2/entry/QueueButton.tsx`, `src/components/battle-v2/entry/StatsPanel.tsx`.
+- **New migration**: schema additions + `re_apply_decay()` + `re_close_and_open_season()` + decay-bank grant inside patched `re_apply_match`.
+- **New edge functions**: `supabase/functions/rank-decay-tick/index.ts`, `supabase/functions/rank-season-reset/index.ts`.
+- **Updated**: `supabase/config.toml` (function blocks).
+- **Cron registration**: separate INSERT (pg_cron) — not a migration.
+- **New hook**: `src/hooks/useDecayWarning.ts`.
+- **Updated**: `src/components/battle-v2/entry/StatsPanel.tsx`, `src/pages/admin/AdminSystem.tsx`.
 
 ## Verification
 
-1. Open `/battle/session/...` — match reads now return 200 (recursion gone).
-2. Two test accounts at very different MMR enter quick queue → no instant pairing; after ~30s window widens and they match.
-3. Same two accounts immediately re-queue after a match → matchmaking-tick skips them; they only pair after 30 min OR with a third player.
-4. Accept a match, then let ready-check expire → dodge toast (-3 LP, 5 min lockout); QueueButton shows countdown.
-5. Master-tier account sees ghosted handles in Online Warriors list.
+1. Manually invoke `rank-decay-tick` with the cron secret → Diamond test account inactive >14d loses 35 LP; bank consumed first if any.
+2. Active player who plays 5 ranked matches → `decay_bank_days` increments to 5 (visible via direct query).
+3. Admin opens System page → sees current season; clicking "Start New Season" archives all users into `season_history` and soft-resets MMR.
+4. Plat+ user 19 days inactive sees amber `DECAY IN 2D` chip on entry screen.
+5. After decay run, returning user sees the `-25 LP` toast once.
 
-## Out of scope (Phase D+)
+## Out of scope (Phase E)
 
-- Rank decay cron + season reset (Phase D).
-- `useRankState` hook + `RankBadge` component + leaderboard wiring (Phase E).
-- Topic ban/pick UI (Phase E).
+- `useRankState` hook + `RankBadge` component everywhere.
+- Replace `DivisionProgress` mock in dashboard.
+- Topic ban/pick UI in lobby.
+- `/leaderboard/ranked` wired to `get_leaderboard` RPC.
 
