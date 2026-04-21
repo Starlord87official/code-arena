@@ -4001,6 +4001,7 @@ export type Database = {
         Args: { p_other_user_id: string }
         Returns: Json
       }
+      get_global_battle_stats: { Args: never; Returns: Json }
       get_invite_info: { Args: { invite_token: string }; Returns: Json }
       get_invite_status_by_token: { Args: { p_token: string }; Returns: Json }
       get_leaderboard: {
@@ -4028,6 +4029,7 @@ export type Database = {
           xp: number
         }[]
       }
+      get_match_briefing: { Args: { p_match_id: string }; Returns: Json }
       get_match_history: {
         Args: { _limit?: number; _user_id?: string }
         Returns: {
@@ -4040,6 +4042,7 @@ export type Database = {
           winner_id: string
         }[]
       }
+      get_match_result: { Args: { p_match_id: string }; Returns: Json }
       get_match_state: { Args: { p_match_id: string }; Returns: Json }
       get_my_mentor_invites: {
         Args: never
@@ -4056,6 +4059,7 @@ export type Database = {
           status: Database["public"]["Enums"]["invite_status"]
         }[]
       }
+      get_online_warriors: { Args: { p_limit?: number }; Returns: Json }
       get_or_create_user_targets: {
         Args: never
         Returns: {
@@ -4096,8 +4100,13 @@ export type Database = {
         Args: { _season_id?: string; _user_id?: string }
         Returns: Json
       }
+      get_recent_battles: {
+        Args: { p_limit?: number; p_user_id?: string }
+        Returns: Json
+      }
       get_revision_queue: { Args: never; Returns: Json }
       get_user_battle_stats: { Args: never; Returns: Json }
+      get_user_battle_summary: { Args: { p_user_id?: string }; Returns: Json }
       get_user_level: { Args: { p_user_id: string }; Returns: number }
       get_user_pack_progress: {
         Args: { p_pack_id: string; p_user_id: string }
