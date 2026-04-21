@@ -484,7 +484,38 @@ export default function BattleSessionPage() {
   }, [handleRun, handleSubmit]);
 
   // ─── Loading / Error ───
-  if (sessionLoading) {
+  if (sessionLoading || validationLoading) {
+    return (
+      <div className="min-h-screen bg-void flex items-center justify-center">
+        <Loader2 className="h-12 w-12 text-neon animate-spin" />
+      </div>
+    );
+  }
+  if (sessionError || !session || validation?.valid === false) {
+    const reason = validation?.reason;
+    const message =
+      reason === "expired" ? "This battle has expired."
+      : reason === "completed" ? "This battle has already ended."
+      : reason === "not_participant" ? "You're not a participant in this battle."
+      : reason === "no_match" ? "This battle session is no longer active."
+      : "This battle session doesn't exist or has ended.";
+    return (
+      <div className="min-h-screen bg-void flex items-center justify-center px-4">
+        <div className="text-center bl-glass border border-blood/40 p-8 max-w-md">
+          <AlertCircle className="h-12 w-12 text-blood mx-auto mb-4" />
+          <h2 className="font-display text-xl font-bold text-text mb-2">Battle Unavailable</h2>
+          <p className="font-mono text-sm text-text-dim mb-4">{message}</p>
+          <button
+            onClick={() => navigate("/battle")}
+            className="bl-btn-primary bl-clip-notch px-5 py-2.5 text-[11px] tracking-[0.22em]"
+          >
+            RETURN TO LOBBY
+          </button>
+        </div>
+      </div>
+    );
+  }
+  if (session.status === "completed") {
     return (
       <div className="min-h-screen bg-void flex items-center justify-center">
         <Loader2 className="h-12 w-12 text-neon animate-spin" />
