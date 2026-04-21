@@ -3595,11 +3595,11 @@ export type Database = {
       }
       apply_submission_verdict: {
         Args: {
-          _payload?: Json
-          _submission_id: string
-          _verdict: Database["public"]["Enums"]["submission_verdict"]
+          p_payload?: Json
+          p_submission_id: string
+          p_verdict: Database["public"]["Enums"]["submission_verdict"]
         }
-        Returns: undefined
+        Returns: Json
       }
       apply_to_clan: { Args: { p_clan_id: string }; Returns: Json }
       approve_clan_application: {
@@ -3983,11 +3983,11 @@ export type Database = {
       start_roadmap: { Args: { p_roadmap_id: string }; Returns: Json }
       submit_battle_solution: {
         Args: {
-          _code: string
-          _idempotency_key?: string
-          _language: string
-          _match_id: string
-          _problem_id: string
+          p_code: string
+          p_idempotency_key?: string
+          p_language: string
+          p_match_id: string
+          p_problem_id: string
         }
         Returns: string
       }
