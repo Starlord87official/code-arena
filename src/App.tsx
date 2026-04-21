@@ -15,6 +15,7 @@ import Dashboard from "./pages/Dashboard";
 import Challenges from "./pages/Challenges";
 import Solve from "./pages/Solve";
 import Leaderboard from "./pages/Leaderboard";
+import RankedLeaderboard from "./pages/RankedLeaderboard";
 import Notifications from "./pages/Notifications";
 import Profile from "./pages/Profile";
 import PublicProfile from "./pages/PublicProfile";
@@ -113,6 +114,7 @@ const App = () => {
               <Route path="/challenges/:category" element={<ChallengesList />} />
               <Route path="/solve/:id" element={<Solve />} />
               <Route path="/leaderboard" element={<Leaderboard />} />
+              <Route path="/leaderboard/ranked" element={<RankedLeaderboard />} />
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/profile/:username" element={<PublicProfile />} />
