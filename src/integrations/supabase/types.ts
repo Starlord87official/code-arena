@@ -432,6 +432,7 @@ export type Database = {
       }
       battle_matches: {
         Row: {
+          banned_topics: string[]
           config_id: string | null
           created_at: string
           created_by: string
@@ -446,14 +447,17 @@ export type Database = {
           judge_provider: string
           mode: string
           phase_started_at: string
+          picked_topics: string[]
           problem_count: number
           season_id: string | null
           started_at: string | null
           state: Database["public"]["Enums"]["match_state"]
           status: string
+          topic_choices: Json
           winner_id: string | null
         }
         Insert: {
+          banned_topics?: string[]
           config_id?: string | null
           created_at?: string
           created_by: string
@@ -468,14 +472,17 @@ export type Database = {
           judge_provider?: string
           mode?: string
           phase_started_at?: string
+          picked_topics?: string[]
           problem_count?: number
           season_id?: string | null
           started_at?: string | null
           state?: Database["public"]["Enums"]["match_state"]
           status?: string
+          topic_choices?: Json
           winner_id?: string | null
         }
         Update: {
+          banned_topics?: string[]
           config_id?: string | null
           created_at?: string
           created_by?: string
@@ -490,11 +497,13 @@ export type Database = {
           judge_provider?: string
           mode?: string
           phase_started_at?: string
+          picked_topics?: string[]
           problem_count?: number
           season_id?: string | null
           started_at?: string | null
           state?: Database["public"]["Enums"]["match_state"]
           status?: string
+          topic_choices?: Json
           winner_id?: string | null
         }
         Relationships: [
@@ -4263,6 +4272,21 @@ export type Database = {
           status: Database["public"]["Enums"]["invite_status"]
         }[]
       }
+      get_my_ranked_position: {
+        Args: { p_tier_filter?: string }
+        Returns: {
+          avatar_url: string
+          division: Database["public"]["Enums"]["rank_division"]
+          games_played: number
+          lp: number
+          mmr: number
+          rank_position: number
+          tier: Database["public"]["Enums"]["rank_tier"]
+          user_id: string
+          username: string
+          win_streak: number
+        }[]
+      }
       get_online_warriors: { Args: { p_limit?: number }; Returns: Json }
       get_or_create_user_targets: {
         Args: never
@@ -4303,6 +4327,22 @@ export type Database = {
       get_rank_snapshot: {
         Args: { _season_id?: string; _user_id?: string }
         Returns: Json
+      }
+      get_ranked_leaderboard: {
+        Args: { p_limit?: number; p_offset?: number; p_tier_filter?: string }
+        Returns: {
+          avatar_url: string
+          division: Database["public"]["Enums"]["rank_division"]
+          games_played: number
+          is_self: boolean
+          lp: number
+          mmr: number
+          rank_position: number
+          tier: Database["public"]["Enums"]["rank_tier"]
+          user_id: string
+          username: string
+          win_streak: number
+        }[]
       }
       get_recent_battles: {
         Args: { p_limit?: number; p_user_id?: string }
@@ -4391,6 +4431,10 @@ export type Database = {
       }
       mm_initial_window: { Args: { _mmr: number }; Returns: number }
       mm_status: { Args: never; Returns: Json }
+      mm_submit_topic_choice: {
+        Args: { p_kind: string; p_match_id: string; p_topic: string }
+        Returns: Json
+      }
       mm_tick: { Args: never; Returns: number }
       mm_widen_window: {
         Args: { _current: number; _mmr: number }
