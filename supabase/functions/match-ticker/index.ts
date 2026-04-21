@@ -35,11 +35,36 @@ Deno.serve(async (req) => {
     if (created.error) console.error("mm_tick:", created.error);
     if (sweep.error) console.error("reconnect_sweep:", sweep.error);
 
+    // Drain judge queue (best-effort, ignore failures so ticker stays cheap)
+    let judgeProcessed = 0;
+    try {
+      const judgeResp = await fetch(`${supabaseUrl}/functions/v1/judge-worker`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${serviceKey}`,
+          ...(Deno.env.get("JUDGE_WORKER_SECRET")
+            ? { "x-judge-secret": Deno.env.get("JUDGE_WORKER_SECRET")! }
+            : {}),
+        },
+        body: "{}",
+      });
+      if (judgeResp.ok) {
+        const body = await judgeResp.json().catch(() => ({}));
+        judgeProcessed = body.jobs_processed ?? 0;
+      } else {
+        console.error("judge-worker non-ok:", judgeResp.status);
+      }
+    } catch (e) {
+      console.error("judge-worker invoke failed:", e);
+    }
+
     return new Response(
       JSON.stringify({
         matches_finalized: finalized.data ?? 0,
         matches_created: created.data ?? 0,
         forfeits_processed: sweep.data ?? 0,
+        judge_jobs_processed: judgeProcessed,
         errors: {
           finalize: finalized.error?.message ?? null,
           mm_tick: created.error?.message ?? null,
