@@ -1,91 +1,110 @@
 
 
-# Step 7 — Code Execution + Judging Pipeline
+# Step 8 — Anti-Cheat + Integrity Layer
 
 ## Goal
-Replace the stub judge with a real code execution + verdict pipeline so battle submissions are actually compiled, run against testcases, and scored. Today, `apply_submission_verdict` accepts a verdict from the client; this step makes the **server** the source of truth via an edge function judge that reads testcases, executes code, and writes the verdict server-side.
+Detect and act on suspicious behavior during ranked battles: tab switches, paste storms, impossible solve times, code similarity across opponents, and submission flooding. Flags surface to admins via `anticheat_flags` (table already exists) and can auto-invalidate matches when severity is high.
 
 ## Backend changes
 
-### 1. Migration: testcases + judge contract
+### 1. Migration: integrity tracking + similarity hashing
 
-**New table `challenge_testcases`** (per-challenge hidden test data):
-- `id uuid pk`
-- `challenge_id uuid not null` → references `challenges`
-- `order_index int not null default 0`
-- `input text not null`
-- `expected_output text not null`
-- `is_sample boolean default false` (sample = visible to user; rest = hidden)
-- `weight int default 1`
-- `time_limit_ms int default 2000`
-- `memory_limit_kb int default 262144`
-- RLS: only `is_sample=true` rows readable by authenticated users; full rows readable by `SECURITY DEFINER` judge function only.
+**Extend `battle_participants`** (additive):
+- `tab_switches int not null default 0`
+- `paste_count int not null default 0`
+- `paste_chars_total int not null default 0`
+- `focus_lost_ms bigint not null default 0`
+- `integrity_score int not null default 100` (drops as flags accumulate)
 
-**New table `judge_jobs`** (queue for async judging):
-- `id uuid pk`, `submission_id uuid not null unique`
-- `match_id uuid`, `user_id uuid`, `status text` (`queued`/`running`/`done`/`failed`)
-- `attempts int default 0`, `last_error text`
-- `created_at`, `picked_up_at`, `finished_at`
-- RLS: participants read own jobs; insert/update via SECURITY DEFINER only.
+**Extend `battle_match_submissions`** (additive):
+- `code_normalized_hash text` (whitespace/identifier-stripped hash for cross-user similarity)
+- `paste_ratio numeric(4,3)` (pasted chars / total chars at submit time)
+- `time_since_problem_open_sec int` (suspiciously low → flag)
+
+**New table `submission_similarity`** (pairs of suspicious matches):
+- `id uuid pk`, `match_id uuid`, `submission_a uuid`, `submission_b uuid`
+- `similarity numeric(4,3)`, `algorithm text default 'token-jaccard'`
+- `created_at timestamptz default now()`
+- RLS: admin read only.
 
 ### 2. RPCs
 
-- **`enqueue_judge_job(p_submission_id uuid)`** — internal. Called by the existing submission insert path; creates a `judge_jobs` row in `queued` state and notifies via `pg_notify('judge_queue', submission_id)`.
-- **`claim_judge_job()`** — `SECURITY DEFINER`, called by the judge worker. Locks the next `queued` job (`SKIP LOCKED`), bumps `status='running'`, returns submission + code + testcases payload.
-- **`finalize_judge_job(p_job_id uuid, p_verdict text, p_passed int, p_total int, p_runtime_ms int, p_memory_kb int, p_compile_log text)`** — writes verdict back to `battle_match_submissions`, calls `apply_submission_verdict` (Step 2), marks job `done`. On failure path: bumps `attempts`, requeues if `attempts < 3`, else marks `failed` with synthetic `RE` verdict.
+- **`record_integrity_event(p_match_id uuid, p_kind text, p_payload jsonb)`** — caller-only, throttled (max 30/min/user via in-function check). Updates the participant counters atomically based on `p_kind`:
+  - `tab_switch` → increments `tab_switches`, accumulates `focus_lost_ms`.
+  - `paste` → increments `paste_count`, adds chars to `paste_chars_total`.
+  - `devtools_open`, `fullscreen_exit` → counters + immediate `anticheat_flags` insert at severity 2.
+  - Recomputes `integrity_score = greatest(0, 100 - tab_switches*5 - paste_count*2 - (focus_lost_ms/60000)*3)`.
+  - When score crosses 50, inserts a `pending_review` flag of kind `behavioral`. When ≤ 20, inserts severity-4 flag and notifies via `pg_notify('anticheat', match_id)`.
 
-### 3. Edge function: `judge-worker`
+- **`scan_submission_integrity(p_submission_id uuid)`** — `SECURITY DEFINER`, called by `finalize_judge_job` after a verdict is written.
+  - Computes normalized code hash (strip comments/whitespace, lowercase identifiers via simple regex pass).
+  - Compares against opponent submissions in same match for same problem; if Jaccard token similarity ≥ 0.85, inserts row in `submission_similarity` and a severity-3 `code_similarity` flag for both users.
+  - Checks `time_since_problem_open_sec`: if `verdict='accepted'` AND `< 20` for medium, `< 60` for hard → severity-2 `impossible_solve_time` flag.
+  - Checks paste-driven solves: `paste_ratio > 0.7` AND `verdict='accepted'` → severity-3 `paste_solution` flag.
 
-`supabase/functions/judge-worker/index.ts`
-- Validates shared secret header `x-judge-secret`.
-- Loop (bounded by 25s wall clock to stay under edge timeout): `claim_judge_job()` → run code → `finalize_judge_job()`.
-- Execution backend: stub runner for now that supports `python` and `javascript` via a sandboxed `eval` with stdin/stdout capture and per-testcase timeout. Returns one of `accepted` / `wrong_answer` / `tle` / `runtime_error` / `compile_error`.
-- Returns `{ jobs_processed, verdicts: [...] }`.
+- **`apply_integrity_review(p_flag_id uuid, p_action text)`** — admin-only.
+  - `p_action` ∈ `dismiss` | `warn` | `invalidate_match` | `forfeit_user`.
+  - On `invalidate_match` → sets `battle_matches.invalidated_reason`, calls `finalize_match(match_id, 'integrity_invalidated')` with no rating change (skips ELO step via flag).
+  - On `forfeit_user` → marks participant `is_forfeit=true`, calls `finalize_match(match_id, 'integrity_forfeit')`.
+  - Logs decision into `battle_event_log` and updates flag `status='actioned'/'dismissed'`.
+
+### 3. `finalize_match` patch
+
+- Accept new internal arg `p_skip_rating boolean default false`. When true (integrity invalidation), skip ELO updates and XP, still write `battle_history` row marked `winner='invalidated'`.
 
 ### 4. Edge function: `match-ticker` extension
 
-`supabase/functions/match-ticker/index.ts` — also POSTs to `judge-worker` once per tick to drain the queue without needing a separate cron entry.
-
-### 5. Submission entry rewrite
-
-Update `apply_submission_verdict` (Step 2) → split into two RPCs:
-- **`submit_match_solution(p_match_id, p_problem_id, p_code, p_language)`** — caller-facing. Inserts a row into `battle_match_submissions` with `verdict='pending'`, calls `enqueue_judge_job`, returns `{ submission_id, status: 'queued' }`. Replaces direct verdict write from the client.
-- The internal score-application logic stays in `apply_submission_verdict`, now only callable by `finalize_judge_job`.
-
-Client can no longer self-report verdicts.
+- After `tick_active_matches`, run `auto_action_critical_flags()` (new helper): for any `pending_review` flag with `severity >= 4` older than 60s with no admin action, auto-invalidate the match. Returns count actioned.
 
 ## Frontend changes
 
-### 1. `src/components/battle-v2/workspace/CodeEditor.tsx` (or its submit handler hook)
-- Submit flow becomes: `submit_match_solution` → toast "Judging…" → wait for realtime update on `battle_match_submissions` (already wired in Step 6 via `useBattleRealtime`) → display verdict from server.
-- Remove any client-side verdict computation; verdict UI now reads `submission.verdict` only.
+### 1. New hook: `src/hooks/useBattleIntegrity.ts`
+- Mounted in `BattleSession.tsx` for active matches only.
+- Listens to:
+  - `document.visibilitychange` → on hidden, start timer; on visible, post `tab_switch` with `focus_lost_ms`.
+  - `paste` event on the editor container → captures pasted char count, posts `paste`.
+  - `fullscreenchange` (when match config requires fullscreen) → posts `fullscreen_exit`.
+  - Heuristic devtools detection via `window` size delta (best-effort).
+- Calls `record_integrity_event` (debounced 500ms per event kind).
+- Surfaces local toast warnings at `integrity_score` thresholds (80, 50, 20) so the user sees the consequence before being flagged.
 
-### 2. `src/components/battle-v2/workspace/VerdictOverlay.tsx`
-- Render `pending` state with a "Judging on server…" spinner before the realtime verdict arrives.
-- Map server verdicts (`accepted` / `wrong_answer` / `tle` / `runtime_error` / `compile_error`) to existing AC / WA / TLE / RE visuals.
+### 2. `src/components/battle-v2/workspace/CodeEditor.tsx`
+- Wire `onPaste` → forwards `{chars, source}` to `useBattleIntegrity`.
+- Track `time_since_problem_open_sec` per problem (timestamp on first focus) and pass into `submit_match_solution` payload (added param).
 
-### 3. `src/hooks/useSolveChallenge.ts` (non-battle path)
-- Untouched for solo challenge flow this step (deferred); battle path is the only one switched to server judging.
+### 3. `src/components/battle-v2/workspace/StatusBar.tsx`
+- Add a small "INTEGRITY: 100" indicator that turns ember below 50 and crimson below 20. Read from `participants` returned by `useBattleRealtime` (already streams the new column).
+
+### 4. Admin: `src/pages/admin/AdminBattles.tsx`
+- New tab "Integrity Flags" listing `anticheat_flags` joined with match + user. Per-row actions: Dismiss / Warn / Invalidate / Forfeit, calling `apply_integrity_review`.
+- Read-only table for `submission_similarity` showing the two side-by-side code blobs.
+
+### 5. `submit_match_solution` signature
+- Add params `p_paste_ratio numeric`, `p_time_since_open_sec int`. CodeEditor passes them; server stores into the new submission columns and uses them in `scan_submission_integrity`.
 
 ## Files touched
 
-- `supabase/migrations/<new>.sql` — `challenge_testcases`, `judge_jobs`, judge RPCs, split of `apply_submission_verdict`.
-- `supabase/functions/judge-worker/index.ts` — new.
-- `supabase/functions/match-ticker/index.ts` — calls `judge-worker` per tick.
-- `src/components/battle-v2/workspace/CodeEditor.tsx` — submit via new RPC.
-- `src/components/battle-v2/workspace/VerdictOverlay.tsx` — pending state.
+- `supabase/migrations/<new>.sql` — column adds, `submission_similarity`, `record_integrity_event`, `scan_submission_integrity`, `apply_integrity_review`, `auto_action_critical_flags`, `finalize_match` patch, `submit_match_solution` patch.
+- `supabase/functions/match-ticker/index.ts` — call `auto_action_critical_flags`.
+- `supabase/functions/judge-worker/index.ts` — invoke `scan_submission_integrity` after `finalize_judge_job`.
+- `src/hooks/useBattleIntegrity.ts` — new.
+- `src/pages/BattleSession.tsx` — mount hook, pass timing/paste metadata to submit.
+- `src/components/battle-v2/workspace/CodeEditor.tsx` — paste capture + open-timestamp.
+- `src/components/battle-v2/workspace/StatusBar.tsx` — integrity indicator.
+- `src/pages/admin/AdminBattles.tsx` — integrity tab + actions.
 
 ## Verification
 
-1. Submit known-correct Python solution → row created with `pending` → within ~2s realtime updates verdict to `accepted`, score applied, opponent ticker reflects change.
-2. Submit infinite-loop code → judge marks `tle`, no score awarded.
-3. Submit syntax error → `compile_error` verdict, attempts=1, no requeue.
-4. Manually call `claim_judge_job()` after worker outage → drains backlog cleanly.
+1. Switch tabs 11+ times during a battle → `tab_switches` rises, integrity score drops below 50, severity-2 flag appears in admin panel.
+2. Paste a full solution → `paste_count` rises, on accept a `paste_solution` flag fires.
+3. Two test users submit near-identical code → `submission_similarity` row + `code_similarity` flags for both.
+4. Admin clicks "Invalidate" → match transitions to `completed` with `invalidated_reason` set, no ELO change applied.
+5. Severity-4 flag with no admin action for >60s → ticker auto-invalidates the match.
 
 ## Out of scope (deferred)
 
-- C++/Java execution (only Python + JS in MVP runner).
-- Custom testcase weighting UI for admins.
-- Streaming per-testcase progress to the client.
-- Switching solo `useSolveChallenge` to the same pipeline (separate step).
+- Webcam/proctoring stream.
+- Network-level VPN or multi-account detection.
+- ML-based stylometry (token Jaccard only in MVP).
+- User-facing appeal workflow for invalidations.
 
