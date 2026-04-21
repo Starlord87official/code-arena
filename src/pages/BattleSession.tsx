@@ -289,6 +289,11 @@ export default function BattleSessionPage() {
     if (!session || !user || !selectedMatchProblem) return;
     setSubmitting(true);
     try {
+      // Compute integrity metadata
+      const openedAt = selectedMatchProblem ? problemOpenAtRef.current[selectedMatchProblem.id] : undefined;
+      const timeSinceOpenSec = openedAt ? Math.floor((Date.now() - openedAt) / 1000) : null;
+      const pasteRatio = getPasteRatio(code.length);
+
       // Server-authoritative submission: inserts pending row + enqueues judge job.
       const { data, error: submitErr } = await (supabase.rpc as any)(
         "submit_match_solution",
@@ -297,6 +302,8 @@ export default function BattleSessionPage() {
           p_problem_id: selectedMatchProblem.id,
           p_code: code,
           p_language: language,
+          p_paste_ratio: pasteRatio,
+          p_time_since_open_sec: timeSinceOpenSec,
         },
       );
 
