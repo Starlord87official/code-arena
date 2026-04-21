@@ -70,7 +70,9 @@ export default function Battle() {
   const { user, isAuthenticated } = useAuth();
 
   // Entry state
-  const [selectedMode, setSelectedMode] = useState<BattleMode>("quick");
+  const [selectedMode, setSelectedMode] = useState<ModeId>("ranked");
+  const [selectedFormat, setSelectedFormat] = useState<BattleFormat>("duo");
+  const [selectedRegion, setSelectedRegion] = useState<string>("AP-S");
   const [warriorQuery, setWarriorQuery] = useState("");
 
   // Phase state — production drives from real signals; PhaseToggle overrides only in DEV
@@ -105,7 +107,6 @@ export default function Battle() {
     enabled: !!completedSessionId,
   });
 
-  // Compute current phase
   const phase: BattlePhase = useMemo(() => {
     if (devPhase) return devPhase;
     if (completedSession?.status === "completed") return "post_battle";
@@ -114,13 +115,8 @@ export default function Battle() {
     return "entry";
   }, [devPhase, completedSession, isMatched, isSearching, matchmakingState.status]);
 
-  // When matched in production, route to live workspace after pre-battle countdown
-  // For now, when phase is "live" (only via dev toggle or programmatic), nav to session
   useEffect(() => {
-    if (devPhase) return; // dev preview, don't auto-route
-    if (matchmakingState.sessionId && (isMatched || matchmakingState.status === "in_battle")) {
-      // Stay on pre-battle; CountdownLauncher will navigate
-    }
+    if (devPhase) return;
   }, [devPhase, isMatched, matchmakingState]);
 
   const handleFindOpponent = () => {
@@ -128,14 +124,14 @@ export default function Battle() {
       navigate("/auth");
       return;
     }
-    findOpponent(selectedMode);
+    const mode: BattleMode = selectedMode === "practice" ? "quick" : selectedMode;
+    findOpponent(mode);
   };
 
   const handleLaunch = () => {
     if (matchmakingState.sessionId) {
       navigate(`/battle/session/${matchmakingState.sessionId}`, { replace: true });
     } else if (devPhase) {
-      // Dev preview only — no real session. Bounce to entry to avoid broken nav.
       setDevPhase("live");
     }
   };
@@ -145,25 +141,67 @@ export default function Battle() {
     navigate("/battle", { replace: true });
   };
 
-  // ─── Render by phase ───
+  // Combatant data sourced from real auth + battle stats
+  const combatant: CombatantData | undefined = user
+    ? {
+        pid: (user.id ?? "0000").slice(0, 4).toUpperCase(),
+        username:
+          (user.user_metadata?.username as string) ??
+          user.email?.split("@")[0] ??
+          "warrior",
+        initial: (
+          (user.user_metadata?.username as string) ??
+          user.email ??
+          "W"
+        )
+          .slice(0, 1)
+          .toUpperCase(),
+        level: Math.max(1, Math.floor((battleStats.total_xp_earned ?? 0) / 1000)),
+        rank: battleStats.next_rank?.replace(/^Next: /, "") ?? "Bronze",
+        topPercent: undefined,
+        lpCurrent: battleStats.elo,
+        lpTarget: battleStats.elo + (battleStats.elo_to_next || 100),
+        nextRank: battleStats.next_rank,
+        isCaptain: selectedFormat === "duo",
+        wins: battleStats.wins,
+        losses: battleStats.losses,
+        winRate: battleStats.win_rate,
+        streak: battleStats.win_streak,
+        mvps: battleStats.best_win_streak,
+        dailyDone: 0,
+        dailyTotal: 3,
+        dailyLabel: "Win 3 Ranked duels",
+        form: [],
+        recent: [],
+      }
+    : undefined;
+
+  const modeMeta = useMemo(() => {
+    switch (selectedMode) {
+      case "quick":
+        return { label: "QUICK MATCH", accent: "neon" as const, stakes: "No LP" };
+      case "ranked":
+        return { label: "RANKED DUO", accent: "ember" as const, stakes: "±24 LP" };
+      case "custom":
+        return { label: "CUSTOM BATTLE", accent: "gold" as const, stakes: "Configurable" };
+      case "practice":
+      default:
+        return { label: "PRACTICE ARENA", accent: "neon" as const, stakes: "Training" };
+    }
+  }, [selectedMode]);
+
   return (
     <div className="min-h-screen bg-void text-text">
-      <PhaseToggle current={phase} onChange={setDevPhase} />
-
       {phase === "entry" && (
         <EntryView
-          stats={{
-            elo: battleStats.elo,
-            total_duels: battleStats.total_duels,
-            win_rate: battleStats.win_rate,
-            win_streak: battleStats.win_streak,
-            next_rank: battleStats.next_rank,
-            elo_to_next: battleStats.elo_to_next,
-            rank_progress: battleStats.rank_progress,
-          }}
+          combatant={combatant}
           isLoadingStats={isLoadingStats}
           selectedMode={selectedMode}
           onSelectMode={setSelectedMode}
+          selectedFormat={selectedFormat}
+          onSelectFormat={setSelectedFormat}
+          selectedRegion={selectedRegion}
+          onSelectRegion={setSelectedRegion}
           warriorQuery={warriorQuery}
           onWarriorQuery={setWarriorQuery}
           onlineWarriors={onlineWarriors}
@@ -175,6 +213,12 @@ export default function Battle() {
           waitTime={matchmakingState.waitTime}
           onFind={handleFindOpponent}
           onCancel={cancelSearch}
+          modeLabel={modeMeta.label}
+          modeAccent={modeMeta.accent}
+          stakesLabel={modeMeta.stakes}
+          onlineCount={onlineWarriors.length}
+          phase={phase}
+          onPhaseChange={setDevPhase}
         />
       )}
 
@@ -223,10 +267,14 @@ export default function Battle() {
 
 // ─────────── ENTRY ───────────
 function EntryView(props: {
-  stats: any;
+  combatant?: CombatantData;
   isLoadingStats: boolean;
-  selectedMode: BattleMode;
-  onSelectMode: (m: BattleMode) => void;
+  selectedMode: ModeId;
+  onSelectMode: (m: ModeId) => void;
+  selectedFormat: BattleFormat;
+  onSelectFormat: (f: BattleFormat) => void;
+  selectedRegion: string;
+  onSelectRegion: (r: string) => void;
   warriorQuery: string;
   onWarriorQuery: (s: string) => void;
   onlineWarriors: any[];
@@ -238,48 +286,97 @@ function EntryView(props: {
   waitTime?: number;
   onFind: () => void;
   onCancel: () => void;
+  modeLabel: string;
+  modeAccent: "neon" | "ember" | "gold";
+  stakesLabel: string;
+  onlineCount: number;
+  phase: BattlePhase;
+  onPhaseChange: (p: BattlePhase) => void;
 }) {
+  const formatLabel = props.selectedFormat === "duo" ? "2 V 2" : "1 V 1";
+
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-8 md:px-6 md:py-10 space-y-6">
+    <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-6 md:py-8 space-y-6">
+      {/* Sector header */}
+      <div className="flex flex-col gap-1">
+        <div className="font-mono text-[10px] tracking-[0.22em] text-text-mute">
+          SECTOR <span className="text-neon">// 007_ENTRY</span>
+        </div>
+        <h1 className="font-display text-[28px] md:text-[34px] font-black tracking-tight text-text">
+          Battle Entry
+        </h1>
+      </div>
+
+      <PhaseToggle current={props.phase} onChange={props.onPhaseChange} />
+
       <EntryHero />
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
-          <div className="relative overflow-hidden border border-line bg-panel/60 bl-glass bl-corners">
-            <div className="pointer-events-none absolute inset-0 bl-grid opacity-15" />
-            <header className="relative flex items-center justify-between border-b border-line/60 px-5 py-3 bl-side-stripe">
-              <span className="font-display text-[13px] font-bold tracking-[0.2em] text-text text-glow">
-                SELECT BATTLE MODE
-              </span>
-              <span className="font-mono text-[10px] tracking-[0.14em] text-text-mute">
-                {props.selectedMode.toUpperCase()}
-              </span>
-            </header>
-            <div className="relative p-5 space-y-4">
-              <ModeSelector selected={props.selectedMode} onSelect={props.onSelectMode} />
-              <QueueButton
-                isSearching={props.isSearching}
-                isPending={props.isFindingOpponent}
-                waitTime={props.waitTime}
-                onFind={props.onFind}
-                onCancel={props.onCancel}
-              />
-            </div>
-          </div>
+      {/* Section 01 — Configure your loadout */}
+      <SectionLabel
+        step="01"
+        subtitle="CONFIGURE YOUR LOADOUT"
+        title="Profile, format, region."
+      />
+      <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr_1fr]">
+        <CombatantProfile data={props.combatant} isLoading={props.isLoadingStats} />
+        <FormatSelector
+          selected={props.selectedFormat}
+          onSelect={props.onSelectFormat}
+        />
+        <RegionSelector
+          regions={[]}
+          selected={props.selectedRegion}
+          onSelect={props.onSelectRegion}
+        />
+      </div>
 
-          <OnlineWarriorsList
-            warriors={props.onlineWarriors}
-            isLoading={props.isLoadingOnline}
-            query={props.warriorQuery}
-            onQuery={props.onWarriorQuery}
-          />
+      {/* Section 02 — Choose your war */}
+      <SectionLabel
+        step="02"
+        subtitle="SELECT BATTLE MODE"
+        title="Choose your war."
+        rightSlot={
+          <span className="font-mono text-[10px] tracking-[0.22em] text-text-mute">
+            4 MODES · <span className="text-ember">1 RANKED</span>
+          </span>
+        }
+      />
+      <ModeGrid selected={props.selectedMode} onSelect={props.onSelectMode} />
 
-          <RecentBattlesList battles={props.recentBattles} isLoading={props.isLoadingRecent} />
-        </div>
+      {/* Loadout bar + CTA */}
+      <LoadoutBar
+        modeLabel={props.modeLabel}
+        modeAccent={props.modeAccent}
+        formatLabel={formatLabel}
+        regionCode={props.selectedRegion}
+        stakesLabel={props.stakesLabel}
+        isSearching={props.isSearching}
+        isPending={props.isFindingOpponent}
+        waitTime={props.waitTime}
+        onFind={props.onFind}
+        onCancel={props.onCancel}
+      />
 
-        <div className="space-y-6">
-          <StatsPanel stats={props.stats} isLoading={props.isLoadingStats} />
-        </div>
+      {/* Global stats strip */}
+      <GlobalStatsStrip
+        online={props.onlineCount}
+        liveBattles={0}
+        avgQueue={props.waitTime ? `${Math.floor(props.waitTime)}s` : "—"}
+        queueHealth={97}
+      />
+
+      {/* Section 03 — Warriors & history */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <OnlineWarriorsList
+          warriors={props.onlineWarriors}
+          isLoading={props.isLoadingOnline}
+          query={props.warriorQuery}
+          onQuery={props.onWarriorQuery}
+        />
+        <RecentBattlesList
+          battles={props.recentBattles}
+          isLoading={props.isLoadingRecent}
+        />
       </div>
     </div>
   );
