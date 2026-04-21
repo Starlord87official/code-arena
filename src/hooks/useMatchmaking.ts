@@ -57,6 +57,28 @@ export function useMatchmaking() {
   const queryClient = useQueryClient();
   const [matchmakingState, setMatchmakingState] = useState<MatchmakingState>({ status: 'idle' });
   const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const stateRef = useRef<MatchmakingState>({ status: 'idle' });
+
+  // Keep ref synchronized with latest state for async race protection
+  useEffect(() => {
+    stateRef.current = matchmakingState;
+  }, [matchmakingState]);
+
+  // Guarded setter: prevents stale async responses from downgrading a real match.
+  // Once we have a sessionId or are matched/in_battle, ignore idle/searching updates.
+  const safeSetState = useCallback((next: MatchmakingState | ((prev: MatchmakingState) => MatchmakingState)) => {
+    setMatchmakingState((prev) => {
+      const candidate = typeof next === 'function' ? next(prev) : next;
+      const hasActiveMatch =
+        !!prev.sessionId || prev.status === 'matched' || prev.status === 'in_battle';
+      const candidateIsDowngrade =
+        candidate.status === 'idle' || candidate.status === 'searching';
+      if (hasActiveMatch && candidateIsDowngrade && !candidate.sessionId) {
+        return prev;
+      }
+      return candidate;
+    });
+  }, []);
 
   // Check queue status
   const checkQueueStatus = useCallback(async () => {
