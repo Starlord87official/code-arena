@@ -7,39 +7,23 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { PageHeader } from '@/components/bl/PageHeader';
+import { GlassPanel } from '@/components/bl/GlassPanel';
 
 const statusFilters = ['all', 'upcoming', 'live', 'ended'] as const;
 
 export default function Contests() {
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
 
-  // In private beta, no contests yet
-  const contests: any[] = [];
-
   return (
-    <div className="min-h-screen bg-background py-8 px-4">
+    <div className="min-h-screen py-6 px-4">
       <div className="max-w-5xl mx-auto">
-        {/* Intense Header */}
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center gap-4 mb-4">
-            <div className="flex items-center gap-1">
-              <ChevronsUp className="h-6 w-6 text-primary animate-pulse" />
-              <div className="w-12 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent"></div>
-            </div>
-            <Swords className="h-10 w-10 text-primary drop-shadow-[0_0_15px_hsl(var(--primary))]" />
-            <h1 className="font-display text-4xl font-bold text-foreground">
-              SURVIVAL <span className="text-primary neon-text">ARENA</span>
-            </h1>
-            <Swords className="h-10 w-10 text-primary drop-shadow-[0_0_15px_hsl(var(--primary))]" />
-            <div className="flex items-center gap-1">
-              <div className="w-12 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent"></div>
-              <ChevronsUp className="h-6 w-6 text-primary animate-pulse" />
-            </div>
-          </div>
-          <p className="text-muted-foreground text-lg">
-            Every contest is a <span className="text-destructive font-bold">test of survival</span>. Miss one, and you <span className="text-status-warning font-semibold">fall behind</span>.
-          </p>
-        </div>
+        <PageHeader
+          sector="007"
+          tag="SURVIVAL_ARENA"
+          title={<>SURVIVAL <span className="text-neon text-glow">ARENA</span></>}
+          subtitle="Every contest is a test of survival. Miss one, and you fall behind."
+        />
 
         {/* Filter */}
         <div className="flex flex-wrap gap-2 mb-6">
@@ -78,7 +62,7 @@ export default function Contests() {
         </div>
 
         {/* Private Beta Empty State */}
-        <div className="arena-card p-12 text-center">
+        <GlassPanel corners padding="lg" className="text-center">
           <div className="max-w-md mx-auto">
             <div className="relative mb-6">
               <div className="absolute inset-0 bg-gradient-to-r from-status-warning/20 via-primary/20 to-status-warning/20 blur-3xl rounded-full" />
@@ -99,34 +83,34 @@ export default function Contests() {
               Weekly contests will be announced soon. As an early adopter, you'll be the first to compete when they launch.
             </p>
 
-            <div className="arena-card p-4 bg-primary/5 border-primary/20 mb-6">
+            <GlassPanel padding="md" className="bg-neon/5 border-neon/20 mb-6">
               <div className="flex items-center gap-3 text-left">
-                <div className="p-2 rounded-lg bg-primary/20">
-                  <Clock className="h-5 w-5 text-primary" />
+                <div className="p-2 rounded-lg bg-neon/20">
+                  <Clock className="h-5 w-5 text-neon" />
                 </div>
                 <div>
                   <p className="font-semibold text-sm">Get Notified</p>
-                  <p className="text-xs text-muted-foreground">We'll notify you when the first contest is scheduled.</p>
+                  <p className="text-xs text-text-dim">We'll notify you when the first contest is scheduled.</p>
                 </div>
               </div>
-            </div>
+            </GlassPanel>
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link to="/roadmap">
-                <Button variant="arena">
+                <Button variant="egoist">
                   <BookOpen className="h-4 w-4 mr-2" />
                   Continue Your Roadmap
                 </Button>
               </Link>
               <Link to="/battle">
-                <Button variant="outline">
+                <Button variant="egoistGhost">
                   <Swords className="h-4 w-4 mr-2" />
                   Practice in Battle Mode
                 </Button>
               </Link>
             </div>
           </div>
-        </div>
+        </GlassPanel>
       </div>
     </div>
   );

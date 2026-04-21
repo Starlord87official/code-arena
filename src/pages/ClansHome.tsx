@@ -13,6 +13,7 @@ import { useAllClans, useMyMembership } from '@/hooks/useClans';
 import { ClanCard } from '@/components/clans/ClanCard';
 import { ClanRankBadge } from '@/components/clans/ClanRankBadge';
 import { CLAN_BENEFITS } from '@/lib/clanSeedData';
+import { PageHeader } from '@/components/bl/PageHeader';
 
 const BENEFIT_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   TrendingUp, Target, Swords, ClipboardCheck, Crown,
@@ -42,53 +43,32 @@ export default function ClansHome() {
 
   return (
     <div className="min-h-screen pb-16">
-      {/* Hero */}
-      <section className="relative py-16 border-b border-border overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent" />
-        <div className="absolute inset-0 grid-pattern opacity-20" />
-
-        <div className="container mx-auto px-4 relative">
-          <div className="max-w-3xl mx-auto text-center">
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <Shield className="h-6 w-6 text-primary" />
-              <Badge variant="outline" className="border-primary/50 text-primary font-heading text-xs tracking-wider">
-                CLAN ARENA
-              </Badge>
-            </div>
-            <h1 className="font-display text-4xl md:text-5xl font-bold mb-4 leading-tight">
-              Build your squad.{' '}
-              <span className="text-gradient-electric">Dominate together.</span>
-            </h1>
-            <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
-              Train, compete, and climb as a clan — weekly wars, OA ranks, rewards.
-            </p>
-
-            <div className="flex items-center justify-center gap-3 flex-wrap">
-              <Button
-                size="lg"
-                onClick={() => navigate('/clans/create')}
-                className="gap-2 font-heading"
-              >
-                <Plus className="h-5 w-5" />
+      <div className="container mx-auto px-4 pt-6">
+        <PageHeader
+          sector="011"
+          tag="CLAN_ARENA"
+          title={<>Build your squad. <span className="text-neon text-glow">Dominate together.</span></>}
+          subtitle="Train, compete, and climb as a clan — weekly wars, OA ranks, rewards."
+          right={
+            <div className="flex items-center gap-2">
+              <Button variant="egoist" onClick={() => navigate('/clans/create')} className="gap-2">
+                <Plus className="h-4 w-4" />
                 Create Clan
               </Button>
               <Button
-                variant="outline"
-                size="lg"
+                variant="egoistGhost"
                 onClick={() =>
-                  document
-                    .getElementById('browse-section')
-                    ?.scrollIntoView({ behavior: 'smooth' })
+                  document.getElementById('browse-section')?.scrollIntoView({ behavior: 'smooth' })
                 }
-                className="gap-2 font-heading"
+                className="gap-2"
               >
-                <Search className="h-5 w-5" />
-                Browse Clans
+                <Search className="h-4 w-4" />
+                Browse
               </Button>
             </div>
-          </div>
-        </div>
-      </section>
+          }
+        />
+      </div>
 
       {/* Your Clan (quick card if user is in one) */}
       {membership && (

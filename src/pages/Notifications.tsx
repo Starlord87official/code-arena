@@ -15,6 +15,7 @@ import { useFriendRequests, FriendRequest } from '@/hooks/useFriendRequests';
 import { useNotifications, useMarkNotificationRead, useMarkAllNotificationsRead, Notification } from '@/hooks/useNotifications';
 import { getDivisionColor } from '@/lib/mockData';
 import { toast } from 'sonner';
+import { PageHeader } from '@/components/bl/PageHeader';
 
 // Priority levels for psychological impact
 type Priority = 'critical' | 'important' | 'info';
@@ -168,35 +169,19 @@ export default function Notifications() {
   };
 
   return (
-    <div className="min-h-screen bg-background py-8 px-4">
+    <div className="min-h-screen py-6 px-4">
       <div className="max-w-4xl mx-auto">
-        {/* Intense Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-4 mb-4">
-            <div className="flex items-center gap-1">
-              <ChevronsUp className="h-6 w-6 text-primary animate-pulse" />
-              <div className="w-12 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent"></div>
-            </div>
-            <div className="relative">
-              <Bell className="h-10 w-10 text-primary drop-shadow-[0_0_15px_hsl(var(--primary))]" />
-              {criticalCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center animate-pulse">
-                  {criticalCount}
-                </span>
-              )}
-            </div>
-            <h1 className="font-display text-4xl font-bold text-foreground">
-              COMMAND <span className="text-primary neon-text">CENTER</span>
-            </h1>
-            <div className="flex items-center gap-1">
-              <div className="w-12 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent"></div>
-              <ChevronsUp className="h-6 w-6 text-primary animate-pulse" />
-            </div>
-          </div>
-          <p className="text-muted-foreground">
-            Stay <span className="text-primary font-semibold">informed</span>. Stay <span className="text-status-warning font-semibold">alert</span>. Stay <span className="text-status-success font-semibold">ahead</span>.
-          </p>
-        </div>
+        <PageHeader
+          sector="016"
+          tag="COMMAND_CENTER"
+          title={<>COMMAND <span className="text-neon text-glow">CENTER</span></>}
+          subtitle="Stay informed. Stay alert. Stay ahead."
+          right={criticalCount > 0 ? (
+            <Badge className="bg-destructive/20 text-destructive border-destructive/50 animate-pulse font-mono">
+              {criticalCount} CRITICAL
+            </Badge>
+          ) : undefined}
+        />
 
         {/* Critical Alert Banner */}
         {criticalCount > 0 && (

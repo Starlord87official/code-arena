@@ -22,6 +22,7 @@ import {
   UserChampionshipStatus
 } from "@/lib/championshipData";
 import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/bl/PageHeader";
 
 // Default empty user status
 const EMPTY_USER_STATUS: UserChampionshipStatus = {
@@ -382,39 +383,30 @@ export default function Championship() {
 
   return (
     <div className="min-h-screen pb-12">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden border-b border-border/50">
-        {/* Background Effects */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-yellow-500/5" />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-primary/10 blur-[120px] rounded-full" />
+      <div className="container mx-auto px-4 pt-6">
+        <PageHeader
+          sector="010"
+          tag={`CHAMPIONSHIP_${season.year}`}
+          title={<><span className="text-neon text-glow">CodeLock Championship</span> <span className="text-gold">India {season.year}</span></>}
+          subtitle={season.subtitle}
+          right={
+            <div className="flex items-center gap-2">
+              <Badge className="bg-neon/20 text-neon border-neon/30 font-mono">Online Finals</Badge>
+              <Badge className="bg-gold/20 text-gold border-gold/30 font-mono">🇮🇳 India Only</Badge>
+            </div>
+          }
+        />
+      </div>
+      <section className="relative overflow-hidden border-b border-line/30">
+        <div className="absolute inset-0 bg-gradient-to-br from-neon/5 via-transparent to-gold/5" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-neon/10 blur-[120px] rounded-full" />
         
-        <div className="relative container mx-auto px-4 py-12">
+        <div className="relative container mx-auto px-4 py-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-center space-y-6"
           >
-            {/* Badges */}
-            <div className="flex items-center justify-center gap-3">
-              <Badge className="bg-primary/20 text-primary border-primary/30">
-                Online Finals
-              </Badge>
-              <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
-                🇮🇳 India Only
-              </Badge>
-            </div>
-
-            {/* Title */}
-            <div>
-              <h1 className="text-4xl md:text-5xl font-display font-bold tracking-tight">
-                <span className="text-gradient-electric">CodeLock Championship</span>
-                <br />
-                <span className="text-yellow-400">India {season.year}</span>
-              </h1>
-              <p className="text-lg text-muted-foreground mt-3 font-medium">
-                {season.subtitle}
-              </p>
-            </div>
 
             {/* Countdown */}
             <div className="flex flex-col items-center gap-2">

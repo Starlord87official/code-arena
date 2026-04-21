@@ -8,6 +8,7 @@ import {
   getCompanyDefinitionsByTier,
   CompanyWithChallengeCount 
 } from '@/hooks/useCompanyChallenges';
+import { PageHeader } from '@/components/bl/PageHeader';
 
 function CompanyCard({ company }: { company: CompanyWithChallengeCount }) {
   return (
@@ -137,21 +138,14 @@ export default function Companies() {
   // For now, show the sum which may include duplicates
 
   return (
-    <div className="min-h-screen bg-background py-8 px-4">
+    <div className="min-h-screen py-6 px-4">
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center gap-4 mb-4">
-            <Building2 className="h-10 w-10 text-primary drop-shadow-[0_0_15px_hsl(var(--primary))]" />
-            <h1 className="font-display text-4xl font-bold text-foreground">
-              COMPANY-WISE <span className="text-primary neon-text">PROBLEMS</span>
-            </h1>
-            <Building2 className="h-10 w-10 text-primary drop-shadow-[0_0_15px_hsl(var(--primary))]" />
-          </div>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Practice problems frequently asked at top companies. Filter by company to ace your interviews.
-          </p>
-        </div>
+        <PageHeader
+          sector="013"
+          tag="COMPANIES"
+          title={<>COMPANY-WISE <span className="text-neon text-glow">PROBLEMS</span></>}
+          subtitle="Practice problems frequently asked at top companies. Filter by company to ace your interviews."
+        />
 
         {/* Stats Overview */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
