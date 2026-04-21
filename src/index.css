@@ -33,85 +33,83 @@
     --text-dim: 218 32% 67%;
     --text-mute: 222 24% 46%;
 
-    --card: 222 47% 8%;
-    --card-foreground: 210 40% 98%;
+    --card: var(--panel);
+    --card-foreground: var(--text);
 
-    --popover: 222 47% 7%;
-    --popover-foreground: 210 40% 98%;
+    --popover: var(--panel);
+    --popover-foreground: var(--text);
 
-    /* Electric Blue Primary */
-    --primary: 199 100% 50%;
-    --primary-foreground: 222 47% 6%;
+    /* Neon-cyan primary (Blue Lock) */
+    --primary: var(--neon);
+    --primary-foreground: 220 100% 5%;
 
-    /* Deep Blue Secondary */
-    --secondary: 222 47% 12%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: var(--panel-2);
+    --secondary-foreground: var(--text);
 
-    --muted: 222 30% 15%;
-    --muted-foreground: 215 20% 55%;
+    --muted: var(--panel-2);
+    --muted-foreground: var(--text-dim);
 
-    /* Cyan Accent */
-    --accent: 185 100% 50%;
-    --accent-foreground: 222 47% 6%;
+    --accent: var(--panel-2);
+    --accent-foreground: var(--neon);
 
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: var(--blood);
+    --destructive-foreground: 0 100% 97%;
 
-    --border: 222 30% 18%;
-    --input: 222 30% 15%;
-    --ring: 199 100% 50%;
+    --border: var(--line);
+    --input: var(--line);
+    --ring: var(--neon);
 
     --radius: 0.5rem;
 
-    /* Custom CodeTrackX Colors */
-    --neon-blue: 199 100% 50%;
-    --neon-cyan: 185 100% 50%;
+    /* Legacy CodeTrackX aliases (back-compat) */
+    --neon-blue: var(--neon);
+    --neon-cyan: var(--neon-soft);
     --neon-purple: 265 100% 60%;
-    --electric-glow: 199 100% 60%;
-    --arena-dark: 222 47% 4%;
-    --arena-surface: 222 47% 8%;
-    --arena-border: 222 30% 20%;
-    
+    --electric-glow: var(--neon);
+    --arena-dark: var(--void);
+    --arena-surface: var(--panel);
+    --arena-border: var(--line);
+
     /* Rank Colors */
     --rank-bronze: 30 70% 45%;
     --rank-silver: 210 10% 60%;
-    --rank-gold: 45 90% 55%;
+    --rank-gold: var(--gold);
     --rank-platinum: 185 50% 65%;
-    --rank-diamond: 199 100% 60%;
+    --rank-diamond: var(--neon);
     --rank-master: 265 100% 60%;
     --rank-legend: 340 100% 60%;
 
     /* Status Colors */
     --success: 142 76% 45%;
     --warning: 45 93% 47%;
-    --info: 199 100% 50%;
+    --info: var(--neon);
 
-    /* Gradients as color stops */
-    --gradient-arena: linear-gradient(135deg, hsl(222 47% 6%) 0%, hsl(222 47% 10%) 50%, hsl(222 47% 6%) 100%);
-    --gradient-electric: linear-gradient(135deg, hsl(199 100% 50%) 0%, hsl(185 100% 50%) 100%);
-    --gradient-legendary: linear-gradient(135deg, hsl(265 100% 60%) 0%, hsl(340 100% 60%) 50%, hsl(199 100% 50%) 100%);
-    --gradient-card-glow: linear-gradient(180deg, hsla(199, 100%, 50%, 0.1) 0%, transparent 100%);
+    /* Gradients */
+    --gradient-arena: linear-gradient(135deg, hsl(var(--void)) 0%, hsl(var(--panel)) 50%, hsl(var(--void)) 100%);
+    --gradient-electric: linear-gradient(135deg, hsl(var(--neon)) 0%, hsl(var(--electric)) 100%);
+    --gradient-legendary: linear-gradient(135deg, hsl(265 100% 60%) 0%, hsl(340 100% 60%) 50%, hsl(var(--neon)) 100%);
+    --gradient-card-glow: linear-gradient(180deg, hsla(187, 100%, 50%, 0.1) 0%, transparent 100%);
 
     /* Shadows */
-    --shadow-neon: 0 0 20px hsla(199, 100%, 50%, 0.3);
-    --shadow-neon-strong: 0 0 40px hsla(199, 100%, 50%, 0.5);
-    --shadow-card: 0 4px 20px hsla(0, 0%, 0%, 0.3);
+    --shadow-neon: 0 0 20px hsla(187, 100%, 50%, 0.3);
+    --shadow-neon-strong: 0 0 40px hsla(187, 100%, 50%, 0.5);
+    --shadow-card: 0 4px 20px hsla(0, 0%, 0%, 0.4);
 
     /* Activity Heatmap tokens */
     --tile-empty-bg: rgba(255, 255, 255, 0.06);
     --tile-border: rgba(255, 255, 255, 0.10);
-    --ring-hover: hsla(199, 100%, 50%, 0.45);
-    --ring-selected: hsla(199, 100%, 50%, 0.85);
-    --trend-color: hsl(199, 100%, 60%);
+    --ring-hover: hsla(187, 100%, 50%, 0.45);
+    --ring-selected: hsla(187, 100%, 50%, 0.85);
+    --trend-color: hsl(187, 100%, 60%);
 
-    --sidebar-background: 222 47% 6%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 199 100% 50%;
-    --sidebar-primary-foreground: 222 47% 6%;
-    --sidebar-accent: 222 47% 12%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 222 30% 18%;
-    --sidebar-ring: 199 100% 50%;
+    --sidebar-background: var(--void);
+    --sidebar-foreground: var(--text);
+    --sidebar-primary: var(--neon);
+    --sidebar-primary-foreground: 220 100% 5%;
+    --sidebar-accent: var(--panel);
+    --sidebar-accent-foreground: var(--text);
+    --sidebar-border: var(--line);
+    --sidebar-ring: var(--neon);
   }
 
   /* Light Theme */
