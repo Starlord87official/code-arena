@@ -18,6 +18,7 @@ import { VerdictOverlay } from "@/components/battle-v2/workspace/VerdictOverlay"
 import type { Verdict } from "@/components/battle-v2/types";
 import { useBattleRealtime } from "@/hooks/useBattleRealtime";
 import { useBattleHeartbeat } from "@/hooks/useBattleHeartbeat";
+import { useBattleIntegrity } from "@/hooks/useBattleIntegrity";
 
 interface MatchProblem {
   id: string;
