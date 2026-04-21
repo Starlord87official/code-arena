@@ -572,39 +572,62 @@ export type Database = {
       }
       battle_queue: {
         Row: {
+          config_id: string | null
           created_at: string
+          dodge_until: string | null
           elo: number
           expires_at: string
           id: string
+          last_search_expansion_at: string
           matched_at: string | null
+          mmr: number
           mode: string
+          region: string | null
           status: string
           target_user_id: string | null
           user_id: string
         }
         Insert: {
+          config_id?: string | null
           created_at?: string
+          dodge_until?: string | null
           elo?: number
           expires_at?: string
           id?: string
+          last_search_expansion_at?: string
           matched_at?: string | null
+          mmr?: number
           mode: string
+          region?: string | null
           status?: string
           target_user_id?: string | null
           user_id: string
         }
         Update: {
+          config_id?: string | null
           created_at?: string
+          dodge_until?: string | null
           elo?: number
           expires_at?: string
           id?: string
+          last_search_expansion_at?: string
           matched_at?: string | null
+          mmr?: number
           mode?: string
+          region?: string | null
           status?: string
           target_user_id?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "battle_queue_config_id_fkey"
+            columns: ["config_id"]
+            isOneToOne: false
+            referencedRelation: "battle_configs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       battle_sessions: {
         Row: {
@@ -2319,6 +2342,45 @@ export type Database = {
         }
         Relationships: []
       }
+      mm_dodge_state: {
+        Row: {
+          dodge_count: number
+          dodge_until: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          dodge_count?: number
+          dodge_until?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          dodge_count?: number
+          dodge_until?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      mm_recent_opponents: {
+        Row: {
+          last_match_at: string
+          opponent_id: string
+          user_id: string
+        }
+        Insert: {
+          last_match_at?: string
+          opponent_id: string
+          user_id: string
+        }
+        Update: {
+          last_match_at?: string
+          opponent_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           action_label: string | null
@@ -3898,21 +3960,22 @@ export type Database = {
         Returns: string
       }
       mark_doubt_solved: { Args: { p_doubt_id: string }; Returns: Json }
-      mm_dequeue: { Args: { _reason?: string }; Returns: number }
-      mm_enqueue: {
-        Args: { _config_key?: string; _mode: string; _region?: string }
+      mm_apply_dodge: { Args: { p_user: string }; Returns: undefined }
+      mm_create_match: {
+        Args: {
+          p_config_id: string
+          p_mode: string
+          p_user_a: string
+          p_user_b: string
+        }
         Returns: string
       }
-      mm_status: {
-        Args: never
-        Returns: {
-          elo: number
-          matched_at: string
-          mode: string
-          queue_id: string
-          waiting_seconds: number
-        }[]
+      mm_dequeue: { Args: { p_reason?: string }; Returns: number }
+      mm_enqueue: {
+        Args: { p_config_key?: string; p_mode: string; p_target_user?: string }
+        Returns: string
       }
+      mm_status: { Args: never; Returns: Json }
       mm_tick: { Args: never; Returns: number }
       pick_topic: {
         Args: { p_match_id: string; p_topic: string }
