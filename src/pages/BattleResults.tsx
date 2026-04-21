@@ -7,14 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useMatchmaking, BattleSession } from '@/hooks/useMatchmaking';
+import { BattleSession } from '@/hooks/useMatchmaking';
 
 export default function BattleResults() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const { resetState } = useMatchmaking();
   const [isReturning, setIsReturning] = useState(false);
 
   // Fetch the completed session
