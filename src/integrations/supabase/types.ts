@@ -62,6 +62,120 @@ export type Database = {
         }
         Relationships: []
       }
+      anticheat_flags: {
+        Row: {
+          created_at: string
+          evidence: Json
+          id: string
+          kind: Database["public"]["Enums"]["anticheat_kind"]
+          match_id: string | null
+          reviewed_at: string | null
+          reviewer_id: string | null
+          severity: number
+          status: Database["public"]["Enums"]["anticheat_status"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          evidence?: Json
+          id?: string
+          kind: Database["public"]["Enums"]["anticheat_kind"]
+          match_id?: string | null
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          severity?: number
+          status?: Database["public"]["Enums"]["anticheat_status"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          evidence?: Json
+          id?: string
+          kind?: Database["public"]["Enums"]["anticheat_kind"]
+          match_id?: string | null
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          severity?: number
+          status?: Database["public"]["Enums"]["anticheat_status"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      battle_configs: {
+        Row: {
+          ban_count: number
+          created_at: string
+          difficulty_curve: Json
+          duration_minutes: number
+          id: string
+          is_active: boolean
+          is_rated: boolean
+          key: string
+          mode: string
+          pick_count: number
+          problem_count: number
+          submission_limit: number
+          tiebreak_rules: Json
+        }
+        Insert: {
+          ban_count?: number
+          created_at?: string
+          difficulty_curve?: Json
+          duration_minutes?: number
+          id?: string
+          is_active?: boolean
+          is_rated?: boolean
+          key: string
+          mode: string
+          pick_count?: number
+          problem_count?: number
+          submission_limit?: number
+          tiebreak_rules?: Json
+        }
+        Update: {
+          ban_count?: number
+          created_at?: string
+          difficulty_curve?: Json
+          duration_minutes?: number
+          id?: string
+          is_active?: boolean
+          is_rated?: boolean
+          key?: string
+          mode?: string
+          pick_count?: number
+          problem_count?: number
+          submission_limit?: number
+          tiebreak_rules?: Json
+        }
+        Relationships: []
+      }
+      battle_event_log: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          match_id: string
+          payload: Json
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          match_id: string
+          payload?: Json
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          match_id?: string
+          payload?: Json
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       battle_history: {
         Row: {
           battle_id: string
@@ -229,7 +343,11 @@ export type Database = {
       battle_match_submissions: {
         Row: {
           code: string
+          code_hash: string | null
+          compile_log: string | null
           id: string
+          idempotency_key: string | null
+          judged_at: string | null
           language: string
           match_id: string
           memory_kb: number | null
@@ -241,10 +359,16 @@ export type Database = {
           testcases_passed: number | null
           testcases_total: number | null
           user_id: string
+          verdict: Database["public"]["Enums"]["submission_verdict"]
+          verdict_payload: Json | null
         }
         Insert: {
           code?: string
+          code_hash?: string | null
+          compile_log?: string | null
           id?: string
+          idempotency_key?: string | null
+          judged_at?: string | null
           language?: string
           match_id: string
           memory_kb?: number | null
@@ -256,10 +380,16 @@ export type Database = {
           testcases_passed?: number | null
           testcases_total?: number | null
           user_id: string
+          verdict?: Database["public"]["Enums"]["submission_verdict"]
+          verdict_payload?: Json | null
         }
         Update: {
           code?: string
+          code_hash?: string | null
+          compile_log?: string | null
           id?: string
+          idempotency_key?: string | null
+          judged_at?: string | null
           language?: string
           match_id?: string
           memory_kb?: number | null
@@ -271,6 +401,8 @@ export type Database = {
           testcases_passed?: number | null
           testcases_total?: number | null
           user_id?: string
+          verdict?: Database["public"]["Enums"]["submission_verdict"]
+          verdict_payload?: Json | null
         }
         Relationships: [
           {
@@ -291,54 +423,87 @@ export type Database = {
       }
       battle_matches: {
         Row: {
+          config_id: string | null
           created_at: string
           created_by: string
           duration_minutes: number
           ended_at: string | null
           hints_enabled: boolean
           id: string
+          invalidated_reason: string | null
           invite_id: string | null
           is_draw: boolean | null
           is_rated: boolean
+          judge_provider: string
           mode: string
+          phase_started_at: string
           problem_count: number
+          season_id: string | null
           started_at: string | null
+          state: Database["public"]["Enums"]["match_state"]
           status: string
           winner_id: string | null
         }
         Insert: {
+          config_id?: string | null
           created_at?: string
           created_by: string
           duration_minutes?: number
           ended_at?: string | null
           hints_enabled?: boolean
           id?: string
+          invalidated_reason?: string | null
           invite_id?: string | null
           is_draw?: boolean | null
           is_rated?: boolean
+          judge_provider?: string
           mode?: string
+          phase_started_at?: string
           problem_count?: number
+          season_id?: string | null
           started_at?: string | null
+          state?: Database["public"]["Enums"]["match_state"]
           status?: string
           winner_id?: string | null
         }
         Update: {
+          config_id?: string | null
           created_at?: string
           created_by?: string
           duration_minutes?: number
           ended_at?: string | null
           hints_enabled?: boolean
           id?: string
+          invalidated_reason?: string | null
           invite_id?: string | null
           is_draw?: boolean | null
           is_rated?: boolean
+          judge_provider?: string
           mode?: string
+          phase_started_at?: string
           problem_count?: number
+          season_id?: string | null
           started_at?: string | null
+          state?: Database["public"]["Enums"]["match_state"]
           status?: string
           winner_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "battle_matches_config_id_fkey"
+            columns: ["config_id"]
+            isOneToOne: false
+            referencedRelation: "battle_configs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "battle_matches_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       battle_participants: {
         Row: {
@@ -1692,6 +1857,38 @@ export type Database = {
         }
         Relationships: []
       }
+      leaderboard_snapshots: {
+        Row: {
+          captured_at: string
+          id: string
+          payload: Json
+          season_id: string
+          tier: Database["public"]["Enums"]["rank_tier"] | null
+        }
+        Insert: {
+          captured_at?: string
+          id?: string
+          payload: Json
+          season_id: string
+          tier?: Database["public"]["Enums"]["rank_tier"] | null
+        }
+        Update: {
+          captured_at?: string
+          id?: string
+          payload?: Json
+          season_id?: string
+          tier?: Database["public"]["Enums"]["rank_tier"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leaderboard_snapshots_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lockin_contract_missions: {
         Row: {
           completed_at: string | null
@@ -2028,6 +2225,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      match_topic_actions: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          match_id: string
+          order_index: number
+          topic: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          match_id: string
+          order_index?: number
+          topic: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          match_id?: string
+          order_index?: number
+          topic?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      match_topic_pool: {
+        Row: {
+          id: string
+          match_id: string
+          source: string
+          topic: string
+        }
+        Insert: {
+          id?: string
+          match_id: string
+          source?: string
+          topic: string
+        }
+        Update: {
+          id?: string
+          match_id?: string
+          source?: string
+          topic?: string
+        }
+        Relationships: []
       }
       mentor_invites: {
         Row: {
@@ -2639,6 +2887,183 @@ export type Database = {
         }
         Relationships: []
       }
+      promotion_series: {
+        Row: {
+          closed_at: string | null
+          created_at: string
+          id: string
+          losses: number
+          losses_allowed: number
+          season_id: string
+          status: Database["public"]["Enums"]["promotion_status"]
+          target_tier: Database["public"]["Enums"]["rank_tier"]
+          user_id: string
+          wins: number
+          wins_required: number
+        }
+        Insert: {
+          closed_at?: string | null
+          created_at?: string
+          id?: string
+          losses?: number
+          losses_allowed?: number
+          season_id: string
+          status?: Database["public"]["Enums"]["promotion_status"]
+          target_tier: Database["public"]["Enums"]["rank_tier"]
+          user_id: string
+          wins?: number
+          wins_required?: number
+        }
+        Update: {
+          closed_at?: string | null
+          created_at?: string
+          id?: string
+          losses?: number
+          losses_allowed?: number
+          season_id?: string
+          status?: Database["public"]["Enums"]["promotion_status"]
+          target_tier?: Database["public"]["Enums"]["rank_tier"]
+          user_id?: string
+          wins?: number
+          wins_required?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promotion_series_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rank_states: {
+        Row: {
+          decay_applied_at: string | null
+          demotion_shield: number
+          division: Database["public"]["Enums"]["rank_division"]
+          games_played: number
+          id: string
+          last_match_at: string | null
+          loss_streak: number
+          lp: number
+          mmr: number
+          mmr_deviation: number
+          placements_remaining: number
+          season_id: string
+          tier: Database["public"]["Enums"]["rank_tier"]
+          updated_at: string
+          user_id: string
+          win_streak: number
+        }
+        Insert: {
+          decay_applied_at?: string | null
+          demotion_shield?: number
+          division?: Database["public"]["Enums"]["rank_division"]
+          games_played?: number
+          id?: string
+          last_match_at?: string | null
+          loss_streak?: number
+          lp?: number
+          mmr?: number
+          mmr_deviation?: number
+          placements_remaining?: number
+          season_id: string
+          tier?: Database["public"]["Enums"]["rank_tier"]
+          updated_at?: string
+          user_id: string
+          win_streak?: number
+        }
+        Update: {
+          decay_applied_at?: string | null
+          demotion_shield?: number
+          division?: Database["public"]["Enums"]["rank_division"]
+          games_played?: number
+          id?: string
+          last_match_at?: string | null
+          loss_streak?: number
+          lp?: number
+          mmr?: number
+          mmr_deviation?: number
+          placements_remaining?: number
+          season_id?: string
+          tier?: Database["public"]["Enums"]["rank_tier"]
+          updated_at?: string
+          user_id?: string
+          win_streak?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rank_states_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rating_history: {
+        Row: {
+          actual_score: number
+          created_at: string
+          expected_score: number
+          id: string
+          k_factor: number
+          lp_after: number
+          lp_before: number
+          match_id: string | null
+          mmr_after: number
+          mmr_before: number
+          reason: string
+          season_id: string
+          tier_after: Database["public"]["Enums"]["rank_tier"]
+          tier_before: Database["public"]["Enums"]["rank_tier"]
+          user_id: string
+        }
+        Insert: {
+          actual_score: number
+          created_at?: string
+          expected_score: number
+          id?: string
+          k_factor: number
+          lp_after: number
+          lp_before: number
+          match_id?: string | null
+          mmr_after: number
+          mmr_before: number
+          reason: string
+          season_id: string
+          tier_after: Database["public"]["Enums"]["rank_tier"]
+          tier_before: Database["public"]["Enums"]["rank_tier"]
+          user_id: string
+        }
+        Update: {
+          actual_score?: number
+          created_at?: string
+          expected_score?: number
+          id?: string
+          k_factor?: number
+          lp_after?: number
+          lp_before?: number
+          match_id?: string | null
+          mmr_after?: number
+          mmr_before?: number
+          reason?: string
+          season_id?: string
+          tier_after?: Database["public"]["Enums"]["rank_tier"]
+          tier_before?: Database["public"]["Enums"]["rank_tier"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rating_history_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       revision_queue: {
         Row: {
           completed_at: string | null
@@ -2728,6 +3153,36 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
+        }
+        Relationships: []
+      }
+      seasons: {
+        Row: {
+          created_at: string
+          ends_at: string
+          id: string
+          name: string
+          soft_reset_factor: number
+          starts_at: string
+          status: Database["public"]["Enums"]["season_status"]
+        }
+        Insert: {
+          created_at?: string
+          ends_at: string
+          id?: string
+          name: string
+          soft_reset_factor?: number
+          starts_at: string
+          status?: Database["public"]["Enums"]["season_status"]
+        }
+        Update: {
+          created_at?: string
+          ends_at?: string
+          id?: string
+          name?: string
+          soft_reset_factor?: number
+          starts_at?: string
+          status?: Database["public"]["Enums"]["season_status"]
         }
         Relationships: []
       }
@@ -3134,11 +3589,36 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_invalidate_match: {
+        Args: { _match_id: string; _reason: string }
+        Returns: undefined
+      }
+      apply_submission_verdict: {
+        Args: {
+          _payload?: Json
+          _submission_id: string
+          _verdict: Database["public"]["Enums"]["submission_verdict"]
+        }
+        Returns: undefined
+      }
       apply_to_clan: { Args: { p_clan_id: string }; Returns: Json }
       approve_clan_application: {
         Args: { p_application_id: string }
         Returns: Json
       }
+      ban_topic: {
+        Args: { _match_id: string; _topic: string }
+        Returns: undefined
+      }
+      battle_transition: {
+        Args: {
+          _actor?: string
+          _match_id: string
+          _to: Database["public"]["Enums"]["match_state"]
+        }
+        Returns: Database["public"]["Enums"]["match_state"]
+      }
+      cancel_battle_queue: { Args: never; Returns: number }
       check_battle_queue_status: { Args: never; Returns: Json }
       check_daily_streak: { Args: never; Returns: Json }
       claim_invite_code: {
@@ -3193,7 +3673,36 @@ export type Database = {
         }
         Returns: Json
       }
+      current_season_id: { Args: never; Returns: string }
       delete_doubt_comment: { Args: { p_comment_id: string }; Returns: Json }
+      ensure_rank_state: {
+        Args: { _user_id: string }
+        Returns: {
+          decay_applied_at: string | null
+          demotion_shield: number
+          division: Database["public"]["Enums"]["rank_division"]
+          games_played: number
+          id: string
+          last_match_at: string | null
+          loss_streak: number
+          lp: number
+          mmr: number
+          mmr_deviation: number
+          placements_remaining: number
+          season_id: string
+          tier: Database["public"]["Enums"]["rank_tier"]
+          updated_at: string
+          user_id: string
+          win_streak: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "rank_states"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      finalize_match: { Args: { _match_id: string }; Returns: Json }
       get_activity_summary: { Args: never; Returns: Json }
       get_ai_usage_today: { Args: never; Returns: Json }
       get_battle_opponent_profile: {
@@ -3226,6 +3735,19 @@ export type Database = {
       }
       get_invite_info: { Args: { invite_token: string }; Returns: Json }
       get_invite_status_by_token: { Args: { p_token: string }; Returns: Json }
+      get_leaderboard: {
+        Args: {
+          _limit?: number
+          _season_id?: string
+          _tier?: Database["public"]["Enums"]["rank_tier"]
+        }
+        Returns: {
+          games_played: number
+          lp: number
+          tier: Database["public"]["Enums"]["rank_tier"]
+          user_id: string
+        }[]
+      }
       get_leaderboard_data: {
         Args: { p_division?: string; p_limit?: number }
         Returns: {
@@ -3238,6 +3760,19 @@ export type Database = {
           xp: number
         }[]
       }
+      get_match_history: {
+        Args: { _limit?: number; _user_id?: string }
+        Returns: {
+          ended_at: string
+          match_id: string
+          mode: string
+          opponents: Json
+          score: number
+          state: Database["public"]["Enums"]["match_state"]
+          winner_id: string
+        }[]
+      }
+      get_match_state: { Args: { _match_id: string }; Returns: Json }
       get_my_mentor_invites: {
         Args: never
         Returns: {
@@ -3289,6 +3824,10 @@ export type Database = {
           xp: number
         }[]
       }
+      get_rank_snapshot: {
+        Args: { _season_id?: string; _user_id?: string }
+        Returns: Json
+      }
       get_revision_queue: { Args: never; Returns: Json }
       get_user_battle_stats: { Args: never; Returns: Json }
       get_user_level: { Args: { p_user_id: string }; Returns: number }
@@ -3329,9 +3868,60 @@ export type Database = {
         Returns: boolean
       }
       is_reading_public_fields: { Args: never; Returns: boolean }
+      join_battle_queue: {
+        Args: { p_mode: string; p_target_user_id?: string }
+        Returns: string
+      }
       join_clan: { Args: { p_clan_id: string }; Returns: Json }
       leave_clan_v2: { Args: never; Returns: Json }
+      log_anticheat_event: {
+        Args: {
+          _evidence?: Json
+          _kind: Database["public"]["Enums"]["anticheat_kind"]
+          _match_id: string
+          _severity?: number
+        }
+        Returns: string
+      }
       mark_doubt_solved: { Args: { p_doubt_id: string }; Returns: Json }
+      mm_dequeue: { Args: { _reason?: string }; Returns: number }
+      mm_enqueue: {
+        Args: { _config_key?: string; _mode: string; _region?: string }
+        Returns: string
+      }
+      mm_status: {
+        Args: never
+        Returns: {
+          elo: number
+          matched_at: string
+          mode: string
+          queue_id: string
+          waiting_seconds: number
+        }[]
+      }
+      mm_tick: { Args: never; Returns: number }
+      pick_topic: {
+        Args: { _match_id: string; _topic: string }
+        Returns: undefined
+      }
+      re_apply_match: { Args: { _match_id: string }; Returns: undefined }
+      re_decay_inactive: { Args: { _season_id: string }; Returns: number }
+      re_expected_score: {
+        Args: { _mmr_a: number; _mmr_b: number }
+        Returns: number
+      }
+      re_k_factor: {
+        Args: { _deviation: number; _games: number; _is_placement: boolean }
+        Returns: number
+      }
+      re_tier_from_lp: {
+        Args: { _lp: number }
+        Returns: Database["public"]["Enums"]["rank_tier"]
+      }
+      ready_check_respond: {
+        Args: { _match_id: string; _ready: boolean }
+        Returns: Database["public"]["Enums"]["match_state"]
+      }
       record_activity: { Args: { p_problems_solved?: number }; Returns: Json }
       record_ai_usage: {
         Args: {
@@ -3366,8 +3956,41 @@ export type Database = {
         Args: { p_accept: boolean; p_request_id: string }
         Returns: Json
       }
+      review_anticheat_flag: {
+        Args: {
+          _decision: Database["public"]["Enums"]["anticheat_status"]
+          _flag_id: string
+        }
+        Returns: undefined
+      }
+      score_match: {
+        Args: { _match_id: string }
+        Returns: {
+          is_draw: boolean
+          winner_id: string
+        }[]
+      }
+      score_problem: {
+        Args: {
+          _base: number
+          _limit_sec: number
+          _solve_sec: number
+          _wrong: number
+        }
+        Returns: number
+      }
       send_friend_request: { Args: { p_receiver_id: string }; Returns: Json }
       start_roadmap: { Args: { p_roadmap_id: string }; Returns: Json }
+      submit_battle_solution: {
+        Args: {
+          _code: string
+          _idempotency_key?: string
+          _language: string
+          _match_id: string
+          _problem_id: string
+        }
+        Returns: string
+      }
       transfer_clan_leadership: {
         Args: { p_new_leader_id: string }
         Returns: Json
@@ -3390,12 +4013,60 @@ export type Database = {
       validate_invite_code: { Args: { p_code: string }; Returns: Json }
     }
     Enums: {
+      anticheat_kind:
+        | "tab_blur"
+        | "paste_burst"
+        | "ai_pattern"
+        | "dup_submission"
+        | "collusion_window"
+        | "plagiarism_score"
+        | "solve_anomaly"
+        | "disconnect_abuse"
+      anticheat_status:
+        | "pending_review"
+        | "dismissed"
+        | "warning"
+        | "penalty"
+        | "match_invalidated"
       app_role: "mentor" | "student"
       doubt_category: "study" | "job" | "internship" | "referral"
       doubt_difficulty: "beginner" | "intermediate" | "advanced"
       friend_status: "pending" | "accepted" | "rejected"
       invite_status: "pending" | "accepted" | "expired"
+      match_state:
+        | "idle"
+        | "queued"
+        | "match_found"
+        | "ready_check"
+        | "ban_pick"
+        | "active"
+        | "judging"
+        | "completed"
+        | "cancelled"
+        | "abandoned"
+        | "invalidated"
       mentor_expertise: "dsa" | "cp" | "web" | "system_design"
+      promotion_status: "active" | "promoted" | "failed"
+      rank_division: "IV" | "III" | "II" | "I"
+      rank_tier:
+        | "bronze"
+        | "silver"
+        | "gold"
+        | "platinum"
+        | "diamond"
+        | "master"
+        | "grandmaster"
+        | "challenger"
+      season_status: "upcoming" | "active" | "ended"
+      submission_verdict:
+        | "pending"
+        | "accepted"
+        | "wrong_answer"
+        | "time_limit"
+        | "runtime_error"
+        | "compile_error"
+        | "memory_limit"
+        | "internal_error"
       topic_state: "not_started" | "in_progress" | "completed"
     }
     CompositeTypes: {
@@ -3524,12 +4195,65 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      anticheat_kind: [
+        "tab_blur",
+        "paste_burst",
+        "ai_pattern",
+        "dup_submission",
+        "collusion_window",
+        "plagiarism_score",
+        "solve_anomaly",
+        "disconnect_abuse",
+      ],
+      anticheat_status: [
+        "pending_review",
+        "dismissed",
+        "warning",
+        "penalty",
+        "match_invalidated",
+      ],
       app_role: ["mentor", "student"],
       doubt_category: ["study", "job", "internship", "referral"],
       doubt_difficulty: ["beginner", "intermediate", "advanced"],
       friend_status: ["pending", "accepted", "rejected"],
       invite_status: ["pending", "accepted", "expired"],
+      match_state: [
+        "idle",
+        "queued",
+        "match_found",
+        "ready_check",
+        "ban_pick",
+        "active",
+        "judging",
+        "completed",
+        "cancelled",
+        "abandoned",
+        "invalidated",
+      ],
       mentor_expertise: ["dsa", "cp", "web", "system_design"],
+      promotion_status: ["active", "promoted", "failed"],
+      rank_division: ["IV", "III", "II", "I"],
+      rank_tier: [
+        "bronze",
+        "silver",
+        "gold",
+        "platinum",
+        "diamond",
+        "master",
+        "grandmaster",
+        "challenger",
+      ],
+      season_status: ["upcoming", "active", "ended"],
+      submission_verdict: [
+        "pending",
+        "accepted",
+        "wrong_answer",
+        "time_limit",
+        "runtime_error",
+        "compile_error",
+        "memory_limit",
+        "internal_error",
+      ],
       topic_state: ["not_started", "in_progress", "completed"],
     },
   },
