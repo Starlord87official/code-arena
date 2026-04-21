@@ -68,6 +68,21 @@ export default function BattleSessionPage() {
 
   const isEndingRef = useRef(false);
 
+  // Defensive validation: detect zombie sessions before mounting workspace
+  const { data: validation, isLoading: validationLoading } = useQuery({
+    queryKey: ["battle-session-validate", sessionId],
+    queryFn: async () => {
+      const { data, error } = await (supabase.rpc as any)("validate_battle_session", { p_session_id: sessionId });
+      if (error) return { valid: false, reason: "no_match" } as { valid: boolean; reason: string };
+      return (data ?? { valid: false, reason: "no_match" }) as { valid: boolean; reason: string };
+    },
+    enabled: !!sessionId && !!user,
+    staleTime: 30_000,
+    retry: false,
+  });
+
+  const isSessionValid = validation?.valid === true;
+
   // Session
   const { data: session, isLoading: sessionLoading, error: sessionError } = useQuery({
     queryKey: ["battle-session", sessionId],
@@ -92,15 +107,18 @@ export default function BattleSessionPage() {
   // Realtime subscription — drives instant opponent + completion updates
   const { match: rtMatch, participants: rtParticipants, latestSubmission, isConnected: rtConnected } = useBattleRealtime(sessionId);
 
-  // Heartbeat to prevent reconnect-sweep forfeit
-  useBattleHeartbeat(sessionId, !!user && session?.status !== "completed");
+  // Heartbeat to prevent reconnect-sweep forfeit; auto-eject on invalid
+  useBattleHeartbeat(sessionId, isSessionValid && !!user && session?.status !== "completed", () => {
+    toast.error("Battle session no longer valid");
+    navigate("/battle", { replace: true });
+  });
 
   // Anti-cheat integrity tracking
   const myParticipant = rtParticipants.find((p) => p.user_id === user?.id);
   const myIntegrityScore = (myParticipant as any)?.integrity_score ?? null;
   const { reportPaste, getPasteRatio, resetPasteTally } = useBattleIntegrity({
     matchId: sessionId,
-    enabled: !!user && session?.status !== "completed",
+    enabled: isSessionValid && !!user && session?.status !== "completed",
     integrityScore: myIntegrityScore,
   });
 
@@ -466,20 +484,27 @@ export default function BattleSessionPage() {
   }, [handleRun, handleSubmit]);
 
   // ─── Loading / Error ───
-  if (sessionLoading) {
+  if (sessionLoading || validationLoading) {
     return (
       <div className="min-h-screen bg-void flex items-center justify-center">
         <Loader2 className="h-12 w-12 text-neon animate-spin" />
       </div>
     );
   }
-  if (sessionError || !session) {
+  if (sessionError || !session || validation?.valid === false) {
+    const reason = validation?.reason;
+    const message =
+      reason === "expired" ? "This battle has expired."
+      : reason === "completed" ? "This battle has already ended."
+      : reason === "not_participant" ? "You're not a participant in this battle."
+      : reason === "no_match" ? "This battle session is no longer active."
+      : "This battle session doesn't exist or has ended.";
     return (
       <div className="min-h-screen bg-void flex items-center justify-center px-4">
         <div className="text-center bl-glass border border-blood/40 p-8 max-w-md">
           <AlertCircle className="h-12 w-12 text-blood mx-auto mb-4" />
-          <h2 className="font-display text-xl font-bold text-text mb-2">Battle Not Found</h2>
-          <p className="font-mono text-sm text-text-dim mb-4">This battle session doesn't exist or has ended.</p>
+          <h2 className="font-display text-xl font-bold text-text mb-2">Battle Unavailable</h2>
+          <p className="font-mono text-sm text-text-dim mb-4">{message}</p>
           <button
             onClick={() => navigate("/battle")}
             className="bl-btn-primary bl-clip-notch px-5 py-2.5 text-[11px] tracking-[0.22em]"
