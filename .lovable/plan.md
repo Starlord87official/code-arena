@@ -1,46 +1,61 @@
 
 
-## Fix: Opponent Name Shows as "Opponent" in Battle
+## Make `/challenges` Feel Native to the Dashboard
 
-### Root Cause
+Bring the Challenge Arena's visual language in line with the Dashboard by adopting the same Blue Lock glass surfaces, sector header, and tile rhythm that already exist in `globals.css` / `index.css` and shared `bl/*` components.
 
-The `public_profiles` view is created with `security_invoker=on`, which means it enforces the RLS of the underlying `profiles` table. The only SELECT policy on `profiles` is `profiles_strict_owner_only` (`id = auth.uid()`) — so users can **only read their own profile row** through this view.
+### Scope
 
-When Player A queries `public_profiles` for Player B's row, RLS silently returns no rows → the UI falls back to the literal string `"Opponent"`. The same happens for Player B looking up Player A. Any time it "works", it's because the row was hydrated from another cached source.
+Only visual/structural alignment of `/challenges` (and the cards it renders). No changes to challenge data, routing, unlock logic, or beta-status gating.
 
-This affects both `BattleSession.tsx` and `BattleResults.tsx`.
+### Changes
 
-### Fix
+1. **`src/pages/Challenges.tsx` — adopt dashboard shell**
+   - Wrap the page in the same outer container the Dashboard uses (max width, padding, vertical rhythm).
+   - Replace the current ad-hoc title block with `PageHeader` from `src/components/bl/PageHeader.tsx`:
+     - `sector="002"` (Dashboard is `001`), `tag="ARENA"`, display title "Challenge Arena", subtitle matching current copy.
+     - Move any right-side actions (filters, search, view toggle) into the `right` slot for parity with Dashboard.
+   - Group sections (Daily Challenge, Packs, Companies, All Problems, etc.) using `SectionHeader` from `src/components/bl/SectionHeader.tsx` so spacing and type scale match the Dashboard.
+   - Convert section wrappers from raw `div`s / legacy `arena-card` to `GlassPanel` (`src/components/bl/GlassPanel.tsx`) with `corners` on hero-level panels and `sideStripe` on key call-out blocks (Daily Challenge, Pack of the Day) — same pattern Dashboard uses for `StatTile` rows.
+   - Use the existing `grid-pattern` background already provided by `Layout` — no new background work.
 
-1. **Create a SECURITY DEFINER RPC** `get_battle_opponent_profile(p_session_id uuid)`
-   - Verifies `auth.uid()` is one of `player_a_id` / `player_b_id` of the given `battle_sessions` row
-   - Returns the opponent's safe public fields: `id, username, avatar_url, division, xp`
-   - Returns `null` if the caller is not a participant (no info leak)
-   - This is the same authorization pattern used by `complete_duo_battle`
+2. **`src/components/cards/ChallengeCard.tsx` — align with Dashboard tile language**
+   - Replace `arena-card p-5 rounded-xl` with `GlassPanel` (`padding="md"`, optional `corners` on hover state).
+   - Tighten internal spacing to match `StatTile` rhythm (header row, body, footer separator).
+   - Keep all current content: difficulty pill, solved check, title, description, tag chips, company badges, revision button, XP, solved count, success rate.
+   - Update difficulty pill, tag chips, and meta row to use the dashboard's token classes (`text-text`, `text-text-dim`, `text-text-mute`, `text-neon`, `text-electric`) instead of `text-muted-foreground` / `text-primary` so it visually matches Dashboard tiles.
+   - Hover state: subtle neon edge + chevron translate, consistent with Dashboard cards.
 
-2. **Update `src/pages/BattleSession.tsx`**
-   - Replace the direct `public_profiles` query with `supabase.rpc('get_battle_opponent_profile', { p_session_id: sessionId })`
-   - Keep the same query key shape but key by `sessionId` instead of `opponentId` to avoid the stale `undefined` first render
-   - Keep "Opponent" only as a true loading fallback
+3. **Sub-cards used on `/challenges`**
+   - `src/components/challenge/DailyChallengeBanner.tsx`: re-skin to `GlassPanel strong corners sideStripe` with the same hero treatment as the Dashboard's top "today" tile.
+   - `src/components/cards/ContestCard.tsx` (if rendered on this page) and any "pack" tiles: switch outer wrapper to `GlassPanel` and align typography tokens. No content/logic changes.
 
-3. **Update `src/pages/BattleResults.tsx`**
-   - Same RPC swap so the post-match results screen shows the real opponent username, avatar, and division
+4. **Typography + tokens**
+   - Section titles: `font-display` with the same size/tracking as Dashboard `SectionHeader`.
+   - Body and meta text: dashboard's `text-text-dim` / `text-text-mute` instead of `text-muted-foreground`.
+   - Numerics (XP, solve count, success rate): `font-mono` like Dashboard stat values.
 
-4. **No regression to other flows**
-   - Public profile pages keep using `get_public_profile(p_username)` (already SECURITY DEFINER, already works)
-   - Leaderboard / friends / etc. use `get_public_profiles(...)` which is already SECURITY DEFINER and unaffected
-   - Battle matchmaking, scoring, results loop fixes all stay intact
+5. **No changes**
+   - Do not touch `globals.css` / `index.css` (utilities already exist).
+   - Do not change routing, unlock rules, beta-status badges, mock data, or any hooks.
+   - Keep all existing accessibility (links, focus states) intact.
 
-### Files Touched
+### Files to Update
 
-- `supabase/migrations/<new>.sql` — add `get_battle_opponent_profile` RPC
-- `src/pages/BattleSession.tsx` — swap opponent fetch to RPC
-- `src/pages/BattleResults.tsx` — swap opponent fetch to RPC
+- `src/pages/Challenges.tsx`
+- `src/components/cards/ChallengeCard.tsx`
+- `src/components/challenge/DailyChallengeBanner.tsx`
+- `src/components/cards/ContestCard.tsx` *(only if it renders on `/challenges`; otherwise skip)*
+
+### Expected Result
+
+`/challenges` reads as a sibling page of `/dashboard`: same sector header, same glass panels with neon corners and side stripes, same type scale and color tokens, same tile rhythm — without any change to challenge logic, data, or gating.
 
 ### Acceptance
 
-- Both players in `/battle/session/:id` see each other's real username, avatar, and division (not "Opponent")
-- Both players on `/battle/results/:id` see the real opponent identity
-- A non-participant calling the RPC with someone else's session ID gets `null`
-- No change to redirect/loop behavior fixed in previous turns
+- `/challenges` header matches Dashboard's `PageHeader` style (`SECTOR // 002_ARENA`).
+- Sections use `SectionHeader` and `GlassPanel`, not legacy `arena-card`.
+- Challenge tiles use the same surface, typography tokens, and hover treatment as Dashboard tiles.
+- Daily Challenge banner reads as a hero glass panel consistent with Dashboard's hero tile.
+- No regression to challenge navigation, revision marking, company badges, or beta-locked arenas.
 
