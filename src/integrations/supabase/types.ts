@@ -3207,6 +3207,7 @@ export type Database = {
       rank_states: {
         Row: {
           decay_applied_at: string | null
+          decay_bank_days: number
           demotion_shield: number
           division: Database["public"]["Enums"]["rank_division"]
           dodge_count_24h: number
@@ -3218,6 +3219,10 @@ export type Database = {
           lp: number
           mmr: number
           mmr_deviation: number
+          peak_division: Database["public"]["Enums"]["rank_division"] | null
+          peak_lp: number | null
+          peak_mmr: number | null
+          peak_tier: Database["public"]["Enums"]["rank_tier"] | null
           placements_remaining: number
           season_id: string
           tier: Database["public"]["Enums"]["rank_tier"]
@@ -3227,6 +3232,7 @@ export type Database = {
         }
         Insert: {
           decay_applied_at?: string | null
+          decay_bank_days?: number
           demotion_shield?: number
           division?: Database["public"]["Enums"]["rank_division"]
           dodge_count_24h?: number
@@ -3238,6 +3244,10 @@ export type Database = {
           lp?: number
           mmr?: number
           mmr_deviation?: number
+          peak_division?: Database["public"]["Enums"]["rank_division"] | null
+          peak_lp?: number | null
+          peak_mmr?: number | null
+          peak_tier?: Database["public"]["Enums"]["rank_tier"] | null
           placements_remaining?: number
           season_id: string
           tier?: Database["public"]["Enums"]["rank_tier"]
@@ -3247,6 +3257,7 @@ export type Database = {
         }
         Update: {
           decay_applied_at?: string | null
+          decay_bank_days?: number
           demotion_shield?: number
           division?: Database["public"]["Enums"]["rank_division"]
           dodge_count_24h?: number
@@ -3258,6 +3269,10 @@ export type Database = {
           lp?: number
           mmr?: number
           mmr_deviation?: number
+          peak_division?: Database["public"]["Enums"]["rank_division"] | null
+          peak_lp?: number | null
+          peak_mmr?: number | null
+          peak_tier?: Database["public"]["Enums"]["rank_tier"] | null
           placements_remaining?: number
           season_id?: string
           tier?: Database["public"]["Enums"]["rank_tier"]
@@ -3428,6 +3443,68 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      season_history: {
+        Row: {
+          archived_at: string
+          final_division: Database["public"]["Enums"]["rank_division"]
+          final_lp: number
+          final_mmr: number
+          final_tier: Database["public"]["Enums"]["rank_tier"]
+          id: string
+          losses: number
+          peak_division: Database["public"]["Enums"]["rank_division"] | null
+          peak_lp: number | null
+          peak_mmr: number | null
+          peak_tier: Database["public"]["Enums"]["rank_tier"] | null
+          season_id: string
+          total_matches: number
+          user_id: string
+          wins: number
+        }
+        Insert: {
+          archived_at?: string
+          final_division: Database["public"]["Enums"]["rank_division"]
+          final_lp?: number
+          final_mmr?: number
+          final_tier: Database["public"]["Enums"]["rank_tier"]
+          id?: string
+          losses?: number
+          peak_division?: Database["public"]["Enums"]["rank_division"] | null
+          peak_lp?: number | null
+          peak_mmr?: number | null
+          peak_tier?: Database["public"]["Enums"]["rank_tier"] | null
+          season_id: string
+          total_matches?: number
+          user_id: string
+          wins?: number
+        }
+        Update: {
+          archived_at?: string
+          final_division?: Database["public"]["Enums"]["rank_division"]
+          final_lp?: number
+          final_mmr?: number
+          final_tier?: Database["public"]["Enums"]["rank_tier"]
+          id?: string
+          losses?: number
+          peak_division?: Database["public"]["Enums"]["rank_division"] | null
+          peak_lp?: number | null
+          peak_mmr?: number | null
+          peak_tier?: Database["public"]["Enums"]["rank_tier"] | null
+          season_id?: string
+          total_matches?: number
+          user_id?: string
+          wins?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "season_history_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       seasons: {
         Row: {
@@ -4016,6 +4093,7 @@ export type Database = {
         Args: { _user_id: string }
         Returns: {
           decay_applied_at: string | null
+          decay_bank_days: number
           demotion_shield: number
           division: Database["public"]["Enums"]["rank_division"]
           dodge_count_24h: number
@@ -4027,6 +4105,10 @@ export type Database = {
           lp: number
           mmr: number
           mmr_deviation: number
+          peak_division: Database["public"]["Enums"]["rank_division"] | null
+          peak_lp: number | null
+          peak_mmr: number | null
+          peak_tier: Database["public"]["Enums"]["rank_tier"] | null
           placements_remaining: number
           season_id: string
           tier: Database["public"]["Enums"]["rank_tier"]
@@ -4319,8 +4401,13 @@ export type Database = {
         Args: { p_match_id: string; p_topic: string }
         Returns: Json
       }
+      re_apply_decay: { Args: never; Returns: number }
       re_apply_dodge_penalty: { Args: { p_user_id: string }; Returns: Json }
       re_apply_match: { Args: { _match_id: string }; Returns: undefined }
+      re_close_and_open_season: {
+        Args: { p_ends: string; p_name: string; p_starts: string }
+        Returns: Json
+      }
       re_decay_inactive: { Args: { _season_id: string }; Returns: number }
       re_division_from_rank: {
         Args: { _n: number }
