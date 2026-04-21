@@ -3067,15 +3067,61 @@ export type Database = {
         }
         Relationships: []
       }
+      promotion_attempts: {
+        Row: {
+          created_at: string
+          id: string
+          match_id: string
+          series_id: string
+          user_id: string
+          won: boolean
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          match_id: string
+          series_id: string
+          user_id: string
+          won: boolean
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          match_id?: string
+          series_id?: string
+          user_id?: string
+          won?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promotion_attempts_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "battle_matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotion_attempts_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "promotion_series"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       promotion_series: {
         Row: {
           closed_at: string | null
           created_at: string
+          from_division: Database["public"]["Enums"]["rank_division"] | null
+          from_tier: Database["public"]["Enums"]["rank_tier"] | null
           id: string
+          kind: string
           losses: number
           losses_allowed: number
           season_id: string
           status: Database["public"]["Enums"]["promotion_status"]
+          target_division: Database["public"]["Enums"]["rank_division"] | null
           target_tier: Database["public"]["Enums"]["rank_tier"]
           user_id: string
           wins: number
@@ -3084,11 +3130,15 @@ export type Database = {
         Insert: {
           closed_at?: string | null
           created_at?: string
+          from_division?: Database["public"]["Enums"]["rank_division"] | null
+          from_tier?: Database["public"]["Enums"]["rank_tier"] | null
           id?: string
+          kind?: string
           losses?: number
           losses_allowed?: number
           season_id: string
           status?: Database["public"]["Enums"]["promotion_status"]
+          target_division?: Database["public"]["Enums"]["rank_division"] | null
           target_tier: Database["public"]["Enums"]["rank_tier"]
           user_id: string
           wins?: number
@@ -3097,11 +3147,15 @@ export type Database = {
         Update: {
           closed_at?: string | null
           created_at?: string
+          from_division?: Database["public"]["Enums"]["rank_division"] | null
+          from_tier?: Database["public"]["Enums"]["rank_tier"] | null
           id?: string
+          kind?: string
           losses?: number
           losses_allowed?: number
           season_id?: string
           status?: Database["public"]["Enums"]["promotion_status"]
+          target_division?: Database["public"]["Enums"]["rank_division"] | null
           target_tier?: Database["public"]["Enums"]["rank_tier"]
           user_id?: string
           wins?: number
@@ -3998,6 +4052,32 @@ export type Database = {
             Returns: undefined
           }
       forfeit_match: { Args: { p_match_id: string }; Returns: Json }
+      get_active_promotion_series: {
+        Args: { p_user_id?: string }
+        Returns: {
+          closed_at: string | null
+          created_at: string
+          from_division: Database["public"]["Enums"]["rank_division"] | null
+          from_tier: Database["public"]["Enums"]["rank_tier"] | null
+          id: string
+          kind: string
+          losses: number
+          losses_allowed: number
+          season_id: string
+          status: Database["public"]["Enums"]["promotion_status"]
+          target_division: Database["public"]["Enums"]["rank_division"] | null
+          target_tier: Database["public"]["Enums"]["rank_tier"]
+          user_id: string
+          wins: number
+          wins_required: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "promotion_series"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       get_activity_summary: { Args: never; Returns: Json }
       get_ai_usage_today: { Args: never; Returns: Json }
       get_battle_opponent_profile: {
@@ -4217,6 +4297,14 @@ export type Database = {
       }
       re_apply_match: { Args: { _match_id: string }; Returns: undefined }
       re_decay_inactive: { Args: { _season_id: string }; Returns: number }
+      re_division_from_rank: {
+        Args: { _n: number }
+        Returns: Database["public"]["Enums"]["rank_division"]
+      }
+      re_division_rank: {
+        Args: { _d: Database["public"]["Enums"]["rank_division"] }
+        Returns: number
+      }
       re_expected_score: {
         Args: { _mmr_a: number; _mmr_b: number }
         Returns: number
@@ -4226,9 +4314,69 @@ export type Database = {
         Args: { _deviation: number; _games: number; _is_placement: boolean }
         Returns: number
       }
+      re_record_promotion_result: {
+        Args: { p_match_id: string; p_user_id: string; p_won: boolean }
+        Returns: {
+          closed_at: string | null
+          created_at: string
+          from_division: Database["public"]["Enums"]["rank_division"] | null
+          from_tier: Database["public"]["Enums"]["rank_tier"] | null
+          id: string
+          kind: string
+          losses: number
+          losses_allowed: number
+          season_id: string
+          status: Database["public"]["Enums"]["promotion_status"]
+          target_division: Database["public"]["Enums"]["rank_division"] | null
+          target_tier: Database["public"]["Enums"]["rank_tier"]
+          user_id: string
+          wins: number
+          wins_required: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "promotion_series"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      re_start_promotion_series: {
+        Args: { p_kind?: string; p_user_id: string }
+        Returns: {
+          closed_at: string | null
+          created_at: string
+          from_division: Database["public"]["Enums"]["rank_division"] | null
+          from_tier: Database["public"]["Enums"]["rank_tier"] | null
+          id: string
+          kind: string
+          losses: number
+          losses_allowed: number
+          season_id: string
+          status: Database["public"]["Enums"]["promotion_status"]
+          target_division: Database["public"]["Enums"]["rank_division"] | null
+          target_tier: Database["public"]["Enums"]["rank_tier"]
+          user_id: string
+          wins: number
+          wins_required: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "promotion_series"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       re_tier_from_lp: {
         Args: { _lp: number }
         Returns: Database["public"]["Enums"]["rank_tier"]
+      }
+      re_tier_from_rank: {
+        Args: { _n: number }
+        Returns: Database["public"]["Enums"]["rank_tier"]
+      }
+      re_tier_rank: {
+        Args: { _t: Database["public"]["Enums"]["rank_tier"] }
+        Returns: number
       }
       ready_check_respond: {
         Args: { p_match_id: string; p_ready: boolean }
