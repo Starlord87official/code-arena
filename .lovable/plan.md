@@ -1,93 +1,92 @@
 
 
-# Plan: Apply Blue Lock Design to 8 Remaining Dashboard Components
+# Plan: Fix Battle Match Redirect — Both Players Land in Session
 
-You've sent the final 8 reference components. I'll port each into the matching existing CodeTrackX file, preserving all real-data hooks (Supabase queries, mutations, loading/empty states) — only swapping visual class names and structure.
+## The Bug
 
----
+When two players match, only **one** gets routed to `/battle/session/:id`. The other stays on `/battle`.
 
-## File Mapping (Reference → Existing File)
+## Root Cause
 
-| Reference Upload | Target File in Project |
-|---|---|
-| `start-solving.tsx` | `src/components/dashboard/RecommendedNextStep.tsx` *(or inline section in `Dashboard.tsx`)* |
-| `recommended-step.tsx` | Inline `Recommended Next Step` block in `src/pages/Dashboard.tsx` |
-| `learning-path.tsx` | `src/components/dashboard/LearningPathCard.tsx` *(new — extracts roadmap preview from Dashboard)* |
-| `daily-goals.tsx` | `src/components/dashboard/TargetCard.tsx` |
-| `interview-readiness.tsx` | `src/components/dashboard/InterviewReadinessCard.tsx` |
-| `areas-to-improve.tsx` | `src/components/dashboard/AreasToImproveCard.tsx` |
-| `revision-queue.tsx` | `src/components/dashboard/RevisionQueueCard.tsx` |
-| `spaced-repetition.tsx` | `src/components/revision/RevisionSummaryCard.tsx` |
-| `rivals-nearby.tsx` | `src/components/dashboard/RivalsSection.tsx` |
+In `useMatchmaking.ts`, the `activeSession` query is **gated** by:
+```ts
+enabled: !!user && (matchmakingState.status === 'matched' || matchmakingState.status === 'in_battle')
+```
 
----
+And `Battle.tsx` waits for **both** conditions before navigating:
+```ts
+if (isMatched && matchmakingState.sessionId && activeSession?.status === 'active') navigate(...)
+```
 
-## What Changes in Each File
+**Player A** (joins queue first): polls every 2s via `check_battle_queue_status` → state flips to `matched` → `activeSession` query enables → fetches session → redirects ✅
 
-For every component the pattern is **identical**:
+**Player B** (joins second, gets matched immediately by `join_battle_queue` RPC): the `joinQueue.onSuccess` sets `status: 'matched'` with `sessionId`. But then `checkInitialState` (mount effect) and other timing can reset state, OR `activeSession` query races and returns stale/empty before the session row is committed-visible to this client → redirect condition never satisfied → user stuck on `/battle`.
 
-1. **Outer wrapper** → `relative bl-glass overflow-hidden` (drop `arena-card`, `rounded-xl`)
-2. **Header tags** → `font-display text-[10px]–[11px] font-bold tracking-[0.28em]` w/ neon/ember icon
-3. **Active badges** → bordered chips: `border border-neon/40 bg-neon/10 text-neon font-display text-[9px] tracking-[0.2em]`
-4. **Numbers** → `font-display tabular-nums` + `text-glow` / `text-glow-ember` for hero values
-5. **Progress bars** → `h-1.5 bl-bar-track` w/ `bg-gradient-to-r from-neon to-electric` (or ember variants)
-6. **List rows** → `border border-line/60 bg-void/40` + `hover:border-neon/40 hover:bg-neon/[0.03]` w/ `font-mono` numeric prefix
-7. **Buttons** → `bl-btn-primary bl-pulse` for CTAs
-8. **Body text** → `text-text-dim` / `text-text-mute`
-9. **Empty-state hero icons** → `bl-clip-notch` w/ `bl-pulse` / `bl-pulse-ember` halo + blurred glow
+Also: requiring `activeSession?.status === 'active'` is **redundant** — the RPC already returns `session_id` only after inserting a row with `status='active'`. The extra round-trip introduces the race.
 
----
+## The Fix
 
-## Logic Preserved (Untouched)
+### File: `src/pages/Battle.tsx` (lines 72–77)
 
-| Component | Real-data hook kept |
-|---|---|
-| `TargetCard` | `useTargets()` — daily/weekly/monthly + streak + edit mode |
-| `InterviewReadinessCard` | `useInterviewReadiness()` — 0–100 IRS w/ trend |
-| `AreasToImproveCard` | `useWeaknessDetection()` — stuck >14d, missed revisions |
-| `RevisionQueueCard` | `useRevisionQueue()` + `useCompleteRevisionItem()` — overdue/due/upcoming + complete mutation |
-| `RevisionSummaryCard` | `useRevisions()` due/upcoming counts |
-| `RivalsSection` | empty-state Pioneer card driven by current user |
-| `LearningPathCard` *(new)* | `useRoadmap()` — currently learning topics + XP + progress |
-| Dashboard "Recommended Next Step" | `useRoadmap()` first unlocked topic |
+Remove the `activeSession?.status === 'active'` gate. Trust the RPC response — if we have a `sessionId` from a `matched` or `in_battle` state, navigate immediately.
 
-The reference designs use mock arrays — those become props/hook output in the real components. Empty states, loading skeletons, and error paths from existing code are kept and re-skinned.
+```ts
+useEffect(() => {
+  if ((isMatched || matchmakingState.status === 'in_battle') && matchmakingState.sessionId) {
+    navigate(`/battle/session/${matchmakingState.sessionId}`, { replace: true });
+  }
+}, [isMatched, matchmakingState.status, matchmakingState.sessionId, navigate]);
+```
 
----
+### File: `src/hooks/useMatchmaking.ts`
 
-## Special Notes
+**Change 1 — `joinQueue.onSuccess` (lines 179–186):** when the RPC returns `matched: true`, the session is already created in DB. Set state to `matched` (already done) — no change needed here, this is correct.
 
-- **`TargetCard` rename**: visual title becomes `KILL COUNT` per reference, but edit-mode (`Edit2/Check/X` controls) and the `Flame` streak block are retained inline above the goals. Streak block re-skinned w/ ember tokens.
-- **`LearningPathCard` (new file)**: extracted as its own component so Dashboard can mount the rich roadmap preview without bloating `Dashboard.tsx`. Fed by existing `useRoadmap()`. Lock/learning/complete states map to reference's `Topic.status`.
-- **`RecommendedNextStep`**: implemented as inline JSX inside `Dashboard.tsx` (replacing current placeholder), since it's a single hero strip that links to roadmap.
-- **`RivalsSection`**: keeps `hasRivals = false` Pioneer empty state. Pioneer badge uses gold + ember halo + `bl-clip-notch`. Real-rivals branch (currently `return null`) re-skinned for future use.
-- **`SpacedRepetition` ↔ `RevisionSummaryCard`**: 2-card grid (DUE TODAY / UPCOMING) wired to `useRevisions()` counts; replaces existing detailed list (RevisionQueueCard already handles the list).
-- **`Dashboard.tsx`**: insert `<LearningPathCard />` and `<RecommendedNextStep />` (or inline block) into existing grid; remove redundant placeholders.
+**Change 2 — `checkInitialState` mount effect (lines 132–151):** currently overwrites state from RPC even right after a successful match. Add a guard to skip if we already have a `sessionId` in state, preventing the just-set match from being clobbered:
 
----
+```ts
+useEffect(() => {
+  const checkInitialState = async () => {
+    if (!user) return;
+    // Skip if we already have a fresh match in local state
+    if (matchmakingState.sessionId) return;
+    const result = await checkQueueStatus();
+    if (result?.success && result.status !== 'idle') {
+      setMatchmakingState({
+        status: result.status,
+        queueId: result.queue_id,
+        sessionId: result.session_id,
+        battleId: result.battle_id,
+        opponentId: result.opponent_id,
+        waitTime: result.wait_time,
+        mode: result.mode,
+      });
+    }
+  };
+  checkInitialState();
+}, [user]); // remove checkQueueStatus from deps to avoid re-running
+```
+
+**Change 3 — Polling effect (lines 90–104):** when poll detects `matched` or `in_battle`, it currently sets state correctly. Confirmed fine — no change.
+
+**Change 4 — Remove now-unused `activeSession` query gating dependency from `Battle.tsx`:** since we no longer read `activeSession.status` for redirect, can leave the query (still useful for `BattleSession.tsx`) but don't destructure it in Battle.tsx.
+
+## Why This Works
+
+- **Player A** (waiting in queue): poll detects match → `setMatchmakingState({status:'matched', sessionId})` → effect fires → navigates ✅
+- **Player B** (joins and matches instantly): `joinQueue.onSuccess` sets `{status:'matched', sessionId}` → effect fires → navigates ✅
+- Mount-effect race eliminated by sessionId guard
+- DB session row is guaranteed to exist (RPC inserts before returning) — no need to re-verify via separate query
+- `replace: true` prevents back-button bounce to `/battle`
 
 ## Files Touched
 
-**Edited (7):**
-- `src/components/dashboard/TargetCard.tsx`
-- `src/components/dashboard/InterviewReadinessCard.tsx`
-- `src/components/dashboard/AreasToImproveCard.tsx`
-- `src/components/dashboard/RevisionQueueCard.tsx`
-- `src/components/dashboard/RivalsSection.tsx`
-- `src/components/revision/RevisionSummaryCard.tsx`
-- `src/pages/Dashboard.tsx` *(mount new pieces, re-skin Recommended Next Step inline)*
+- `src/pages/Battle.tsx` — simplify redirect effect (5 lines)
+- `src/hooks/useMatchmaking.ts` — guard mount effect against clobbering fresh match (3 lines)
 
-**Created (1):**
-- `src/components/dashboard/LearningPathCard.tsx`
+## Acceptance
 
----
-
-## Acceptance Criteria
-
-- All 8 dashboard cards visually match the uploaded references
-- Real data still flows from existing Supabase hooks (no mock arrays)
-- Loading / empty / error states re-skinned, not removed
-- TypeScript compiles, no prop-shape regressions
-- Light theme still functions (Blue Lock dark-only — light mode unchanged)
-- No routing, RBAC, or RLS impact
+- Two clients joining quick match → both auto-navigate to the same `/battle/session/:id`
+- No regressions to cancel/timeout/in-battle reconnect flows
+- Existing `BattleSession.tsx` lifecycle (memory: `battle-result-routing-split`, `battle-state-lifecycle-cleanup`) untouched
 
