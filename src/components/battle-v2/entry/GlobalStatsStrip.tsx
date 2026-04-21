@@ -1,19 +1,23 @@
 import { Activity, BarChart3, Radar, Users } from "lucide-react";
+import type { GlobalBattleStats } from "@/hooks/useBattleEntryData";
 
 interface Props {
-  online: number;
-  liveBattles: number;
-  avgQueue: string;
-  queueHealth: number;
+  stats?: GlobalBattleStats;
+  avgQueue?: string;
 }
 
-export function GlobalStatsStrip({ online, liveBattles, avgQueue, queueHealth }: Props) {
+export function GlobalStatsStrip({ stats, avgQueue = "—" }: Props) {
+  const online = stats?.players_online ?? 0;
+  const live = stats?.live_matches ?? 0;
+  const today = stats?.matches_today ?? 0;
+  const health = online + live > 0 ? Math.min(100, 70 + Math.floor((live / Math.max(1, online + live)) * 30)) : 100;
+
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       <Tile icon={Users} label="ONLINE" value={online.toLocaleString()} accent="neon" />
-      <Tile icon={Radar} label="LIVE BATTLES" value={liveBattles.toLocaleString()} accent="ember" />
-      <Tile icon={Activity} label="AVG QUEUE" value={avgQueue} accent="gold" />
-      <Tile icon={BarChart3} label="QUEUE HEALTH" value={`${queueHealth}%`} accent="neon" />
+      <Tile icon={Radar} label="LIVE BATTLES" value={live.toLocaleString()} accent="ember" />
+      <Tile icon={Activity} label="TODAY" value={today.toLocaleString()} accent="gold" />
+      <Tile icon={BarChart3} label="QUEUE HEALTH" value={`${health}%`} accent="neon" />
     </div>
   );
 }
