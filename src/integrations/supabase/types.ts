@@ -3946,6 +3946,7 @@ export type Database = {
         Returns: boolean
       }
       hash_invite_code: { Args: { p_code: string }; Returns: string }
+      heartbeat_match: { Args: { p_match_id: string }; Returns: undefined }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_challenge_unlocked: {
         Args: { p_challenge_id: string; p_user_id: string }
@@ -3976,6 +3977,10 @@ export type Database = {
         Returns: string
       }
       mark_doubt_solved: { Args: { p_doubt_id: string }; Returns: Json }
+      mark_participant_disconnected: {
+        Args: { p_match_id: string; p_user_id: string }
+        Returns: undefined
+      }
       mm_apply_dodge: { Args: { p_user: string }; Returns: undefined }
       mm_create_match: {
         Args: {
@@ -4015,6 +4020,7 @@ export type Database = {
         Args: { p_match_id: string; p_ready: boolean }
         Returns: Json
       }
+      reconnect_sweep: { Args: never; Returns: number }
       record_activity: { Args: { p_problems_solved?: number }; Returns: Json }
       record_ai_usage: {
         Args: {
