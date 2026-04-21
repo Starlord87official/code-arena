@@ -106,12 +106,13 @@ export default function BattleSessionPage() {
 
   // Track when each problem was first focused for time-since-open
   const problemOpenAtRef = useRef<Record<string, number>>({});
+  const selectedProblemIdRef = useRef<string | null>(null);
   const handleEditorFirstFocus = useCallback(() => {
-    const pid = matchProblems?.[selectedProblemIdx]?.id;
+    const pid = selectedProblemIdRef.current;
     if (pid && !problemOpenAtRef.current[pid]) {
       problemOpenAtRef.current[pid] = Date.now();
     }
-  }, [selectedProblemIdx]);
+  }, []);
   // When realtime says match is completed, kick navigation immediately (don't wait for poll)
   useEffect(() => {
     if (rtMatch?.state === "completed" && sessionId) {
