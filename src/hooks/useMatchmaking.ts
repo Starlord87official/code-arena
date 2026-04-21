@@ -80,8 +80,30 @@ export function useMatchmaking() {
     });
   }, []);
 
+  // Try the new battle_matches row first; fall back to legacy battle_sessions for in-flight rows.
   const getLiveSession = useCallback(async (sessionId?: string) => {
     if (!sessionId) return null;
+
+    const { data: match } = await supabase
+      .from('battle_matches')
+      .select('id, state, status')
+      .eq('id', sessionId)
+      .maybeSingle();
+
+    if (match && ['match_found', 'ready_check', 'ban_pick', 'active', 'judging'].includes((match as any).state)) {
+      const { data: parts } = await supabase
+        .from('battle_participants')
+        .select('user_id')
+        .eq('match_id', sessionId);
+      const opponent = (parts ?? []).find((p: any) => p.user_id !== user?.id);
+      return {
+        id: match.id,
+        battle_id: match.id,
+        player_a_id: user?.id ?? '',
+        player_b_id: opponent?.user_id ?? '',
+        status: 'active' as const,
+      };
+    }
 
     const { data, error } = await supabase
       .from('battle_sessions')
@@ -93,31 +115,32 @@ export function useMatchmaking() {
       console.error('Error validating battle session:', error);
       return null;
     }
-
     if (!data || data.status !== 'active') return null;
     return data;
-  }, []);
+  }, [user?.id]);
 
   // Check queue status
   const checkQueueStatus = useCallback(async () => {
     if (!user) return null;
-    
+
     const { data, error } = await supabase.rpc('check_battle_queue_status');
-    
+
     if (error) {
       console.error('Error checking queue status:', error);
       return null;
     }
-    
-    return data as {
+
+    return data as unknown as {
       success: boolean;
       status: MatchmakingStatus;
       queue_id?: string;
       session_id?: string;
       battle_id?: string;
+      match_id?: string;
       opponent_id?: string;
       wait_time?: number;
       mode?: BattleMode;
+      dodge_remaining?: number;
     };
   }, [user]);
 
