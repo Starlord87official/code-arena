@@ -1,88 +1,83 @@
 
 
-# Step 5 — Rating Engine + Match Completion
+# Step 6 — Real-Time Sync + Reconnect Policy
 
 ## Goal
-Server-authoritative match completion: when an active match ends (all problems solved, time expired, forfeit, or both inactive), compute final scores, apply ELO/MMR deltas, persist to `battle_history`, award XP, log events, and transition state to `completed`. No client involvement in scoring.
+Wire the duo battle frontend into Supabase Realtime so both participants see live state without polling, enforce the 60-second reconnect grace, and auto-forfeit disconnected players. Match completion already pushes through `battle_matches.state='completed'` (Step 5) — this step makes that change *instant* on the opponent's screen.
 
 ## Backend changes
 
-### 1. Migration: rating + completion
+### 1. Migration: realtime + presence
 
-**New table `rank_states`** (per-user, per-season MMR ledger; created if not present):
-- `user_id uuid`, `season_id uuid null`, `mmr int default 1000`, `peak_mmr int default 1000`, `wins int`, `losses int`, `draws int`, `games_played int`, `placement_remaining int default 5`, `updated_at timestamptz`
-- PK `(user_id, coalesce(season_id, '00000000-0000-0000-0000-000000000000'::uuid))`
-- RLS: read own row + admins; no direct writes.
+- Set `REPLICA IDENTITY FULL` on `battle_matches`, `battle_participants`, `battle_match_submissions`, `battle_event_log`.
+- Add all four tables to `supabase_realtime` publication.
+- Add columns on `battle_participants` (already has `disconnected_at`, `reconnected_at` — no schema change needed).
 
-**Helper functions:**
-- `compute_elo_delta(rating_a, rating_b, score_a, k_factor)` → standard ELO formula. `k = 40` during placement (`placement_remaining > 0`), `k = 24` casual, `k = 32` ranked.
-- `score_match(match_id)` → recomputes per-participant `score`, `problems_solved`, `total_solve_time_sec`, `wrong_submissions` from `battle_match_submissions` using config tiebreak rules. Internal only.
+### 2. RPCs
 
-### 2. Core RPCs
+- **`heartbeat_match(p_match_id uuid)`** — caller-only. Updates `battle_participants.reconnected_at = now()` and clears `disconnected_at` if set. Cheap; called every 15s by client.
+- **`mark_participant_disconnected(p_match_id uuid, p_user_id uuid)`** — `SECURITY DEFINER`, internal. Sets `disconnected_at = now()` if null. Logs `participant_disconnected` event.
+- **`reconnect_sweep()`** — `SECURITY DEFINER`, cron-callable.
+  - For each `active`/`ready_check`/`ban_pick` match, find participants where `disconnected_at < now() - interval '60 seconds'` AND `reconnected_at < disconnected_at` (or null).
+  - Marks them `is_forfeit = true` and calls `finalize_match(match_id, 'reconnect_timeout')`.
+  - Returns count of forfeits processed.
+- **`detect_stale_participants()`** — internal helper called by `reconnect_sweep`: any participant whose last heartbeat (`reconnected_at`) is older than 30s in an active match is auto-marked disconnected via `mark_participant_disconnected`.
 
-- **`finalize_match(p_match_id uuid, p_reason text)`** — `SECURITY DEFINER`, internal-callable.
-  - Guards: match must be `active` or `judging`; idempotent (no-op if already `completed`).
-  - Steps:
-    1. `battle_transition(match_id, 'judging', reason)`.
-    2. Run `score_match(match_id)`.
-    3. Determine winner via tiebreak ladder from `battle_configs.tiebreak_rules` (`solved` → `score` → `earliest_last_solve`). Set `is_draw=true` if all keys tied.
-    4. If `is_rated`: read both participants' current `mmr` from `rank_states`, compute deltas via `compute_elo_delta`, write `elo_before/elo_after/elo_change` on `battle_participants`, upsert new mmr + win/loss/draw counters into `rank_states`, decrement `placement_remaining`.
-    5. Award XP per participant: `base + (problems_solved * 25) + (winner ? 100 : 0)` capped at config max.
-    6. Insert one row into `battle_history` (legacy compatibility) + one `match_completed` event into `battle_event_log` with full payload.
-    7. `battle_transition(match_id, 'completed', reason)`, set `winner_id`, `is_draw`, `ended_at = now()`.
-  - Returns `jsonb { success, winner_id, is_draw, deltas: [{user_id, mmr_before, mmr_after, xp}] }`.
+### 3. Edge function update
 
-- **`forfeit_match(p_match_id uuid)`** — caller-facing.
-  - Verifies caller is participant; marks them `is_forfeit=true`, sets opponent as winner, calls `finalize_match(p_match_id, 'forfeit')`.
+`supabase/functions/match-ticker/index.ts` — extend the existing cron entry:
+- Add `reconnect_sweep()` to the sequence after `tick_active_matches()`.
+- Returns `{ matches_finalized, matches_created, forfeits_processed }`.
 
-- **`tick_active_matches()`** — `SECURITY DEFINER`, cron-callable.
-  - For each `active` match where `phase_started_at + duration_minutes < now()`, calls `finalize_match(id, 'time_expired')`.
-  - For each `active` match where all problems have an `accepted` submission from one participant AND the config's first-to-finish rule holds, calls `finalize_match(id, 'all_solved')`.
-  - Returns `int` (count finalized).
+## Frontend changes
 
-### 3. Auto-completion hook
+### 1. New hook: `src/hooks/useBattleRealtime.ts`
+- Subscribes to three Postgres-changes channels scoped to `match_id`:
+  - `battle_matches:id=eq.{matchId}` → state/winner/ended_at updates.
+  - `battle_participants:match_id=eq.{matchId}` → score/solved/forfeit/disconnect.
+  - `battle_match_submissions:match_id=eq.{matchId}` → new verdicts (for opponent ticker).
+- Returns `{ match, participants, latestSubmission, isConnected }`.
+- Cleans up on unmount; reconnects with exponential backoff on `CHANNEL_ERROR`.
 
-Update `apply_submission_verdict` (from Step 2):
-- After awarding score on `accepted`, if every problem in the match has at least one accepted submission from the caller, call `finalize_match(match_id, 'all_solved')` inline. This makes solo-finish instant without waiting for cron.
+### 2. New hook: `src/hooks/useBattleHeartbeat.ts`
+- `setInterval(15s)` calling `supabase.rpc('heartbeat_match', { p_match_id })`.
+- Pauses on `document.visibilitychange === 'hidden'` for >60s → triggers local "Disconnected" toast and stops heartbeat (server will sweep).
+- Resumes immediately on visibility restore + sends heartbeat.
 
-### 4. Shim rewrite
+### 3. `src/pages/BattleSession.tsx` wiring
+- Replace the existing 2-second polling interval inside the page with `useBattleRealtime(matchId)`.
+- Mount `useBattleHeartbeat(matchId)` once participant is loaded.
+- Listen for `match.state === 'completed'` from realtime → trigger existing post-battle navigation immediately (no waiting for next poll tick).
+- Surface `participant.disconnected_at` for the opponent slot as a "RECONNECTING… (Xs)" badge with a 60s countdown driven by `Date.now() - disconnected_at`.
 
-`complete_duo_battle(p_session_id)` (legacy):
-- If `p_session_id` matches a row in `battle_matches`, route to `finalize_match(p_session_id, 'manual_complete')` and return legacy `{success, winner_id, ...}` shape.
-- Else fall through to existing legacy path on `battle_sessions`.
+### 4. `src/components/battle-v2/workspace/OpponentTicker.tsx`
+- Accept new props `opponentDisconnected: boolean`, `secondsRemaining: number`.
+- Render an ember-toned "RECONNECTING" pill replacing live score when disconnected.
+- No layout change to other components.
 
-### 5. Edge function: `match-ticker`
-
-`supabase/functions/match-ticker/index.ts`
-- Validates shared secret header `x-mm-cron-secret`.
-- Calls `tick_active_matches()` and `mm_tick()` in sequence (single cron entry can drive both).
-- Returns `{matches_finalized, matches_created}`.
-
-## Frontend wiring (minimal)
-
-`src/pages/BattleSession.tsx`:
-- The auto-redirect on `session?.status === 'completed'` already exists — no change needed.
-- `handleForfeit` switches from `complete_duo_battle` to `forfeit_match(p_match_id)` (kept as a fallback chain: try new RPC, fall back to legacy on error).
-- Polling interval already pulls `battle_matches` via the `getLiveMatch` adapter from Step 4 — completion will surface automatically.
-
-`src/hooks/useBattleData.ts` (post-battle data):
-- No code change required; `battle_history` continues to be the source for results pages.
+### 5. `src/hooks/useMatchmaking.ts`
+- Drop the 2s polling once a `match_id` is known and a realtime subscription is active. Polling is still used pre-match (queue → match_found transition) since `battle_queue` is not on realtime by design.
 
 ## Files touched
 
-- `supabase/migrations/<new>.sql` — `rank_states`, ELO helpers, `finalize_match`, `forfeit_match`, `tick_active_matches`, `apply_submission_verdict` patch, `complete_duo_battle` shim.
-- `supabase/functions/match-ticker/index.ts` — cron entry.
-- `src/pages/BattleSession.tsx` — `handleForfeit` swap.
+- `supabase/migrations/<new>.sql` — publication + heartbeat/sweep RPCs.
+- `supabase/functions/match-ticker/index.ts` — adds `reconnect_sweep()` call.
+- `src/hooks/useBattleRealtime.ts` — new.
+- `src/hooks/useBattleHeartbeat.ts` — new.
+- `src/pages/BattleSession.tsx` — swap polling for realtime + heartbeat mount.
+- `src/components/battle-v2/workspace/OpponentTicker.tsx` — disconnect badge.
+- `src/hooks/useMatchmaking.ts` — stop polling post-match.
 
 ## Verification
 
-1. Two test users matched via Step 4 → both submit accepted on all problems → match auto-finalizes → `battle_matches.state='completed'`, winner set, `battle_history` row appears, `rank_states` updated.
-2. `tick_active_matches()` manually invoked on a stalled match → finalizes with `time_expired`.
-3. Forfeit from one participant → opponent wins, `is_forfeit=true` on forfeiter, ELO penalty applied.
+1. Two browsers in same match → user A submits accepted → user B's score updates within ~200ms (no 2s poll lag).
+2. User A closes tab → after 60s, user B's screen shows match completed with A as forfeiter.
+3. User A closes tab and reopens within 50s → heartbeat resumes, no forfeit applied, `disconnected_at` cleared.
+4. `reconnect_sweep()` manual call cleans up any stale matches from prior sessions.
 
 ## Out of scope (deferred)
 
-- Season rollover automation.
-- Anti-cheat-driven match invalidation (hook present via `invalidated_reason`, no worker yet).
-- Per-tier reward chests / cosmetic unlocks.
+- Spectator realtime channels (read-only viewers).
+- Cross-region realtime fanout tuning.
+- Toast UX for "Opponent reconnected" event (event is logged; UI in next pass).
 
