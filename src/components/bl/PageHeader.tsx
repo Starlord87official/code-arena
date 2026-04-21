@@ -29,7 +29,7 @@ export function PageHeader({
   right,
   className,
 }: PageHeaderProps) {
-  const computedTag = (tag ?? title).toUpperCase().replace(/\s+/g, '_');
+  const computedTag = (tag ?? (typeof title === 'string' ? title : 'PAGE')).toUpperCase().replace(/\s+/g, '_');
 
   return (
     <section className={cn('relative mb-8 overflow-hidden', className)}>
