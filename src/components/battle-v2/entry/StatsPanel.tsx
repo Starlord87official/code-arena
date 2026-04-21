@@ -3,6 +3,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { usePromotionSeries } from "@/hooks/usePromotionSeries";
 import { PromoSeriesTracker } from "@/components/battle-v2/PromoSeriesTracker";
 import { useDecayWarning } from "@/hooks/useDecayWarning";
+import { useRankState } from "@/hooks/useRankState";
+import { RankBadge } from "@/components/rank/RankBadge";
+import { RankProgressBar } from "@/components/rank/RankProgressBar";
 
 interface Stats {
   elo: number;
