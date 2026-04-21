@@ -1,12 +1,11 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
-import { useBattleData } from "@/hooks/useBattleData";
+import { useBattleEntryData } from "@/hooks/useBattleEntryData";
+import { useBattleResult } from "@/hooks/useBattleResult";
 import { useMatchmaking, type BattleMode } from "@/hooks/useMatchmaking";
-import { supabase } from "@/integrations/supabase/client";
 
-import type { BattlePhase, BattleTeam, RoundResult } from "@/components/battle-v2/types";
+import type { BattlePhase } from "@/components/battle-v2/types";
 import { PhaseToggle } from "@/components/battle-v2/PhaseToggle";
 
 // Entry
@@ -21,64 +20,25 @@ import { SectionLabel } from "@/components/battle-v2/entry/SectionLabel";
 import { OnlineWarriorsList } from "@/components/battle-v2/entry/OnlineWarriorsList";
 import { RecentBattlesList } from "@/components/battle-v2/entry/RecentBattlesList";
 
-// Pre-battle
-import { LobbyHeader } from "@/components/battle-v2/pre-battle/LobbyHeader";
-import { ReadyRoster } from "@/components/battle-v2/pre-battle/ReadyRoster";
-import { MatchBriefing } from "@/components/battle-v2/pre-battle/MatchBriefing";
-import { CountdownLauncher } from "@/components/battle-v2/pre-battle/CountdownLauncher";
-
 // Post-battle
 import { ResultBanner } from "@/components/battle-v2/post-battle/ResultBanner";
 import { FinalScoreboard } from "@/components/battle-v2/post-battle/FinalScoreboard";
 import { LpSummary } from "@/components/battle-v2/post-battle/LpSummary";
-import { PlayerStatsTable, type PlayerPerf } from "@/components/battle-v2/post-battle/PlayerStatsTable";
+import { PlayerStatsTable } from "@/components/battle-v2/post-battle/PlayerStatsTable";
 import { PostActions } from "@/components/battle-v2/post-battle/PostActions";
-
-// Demo data for dev-only phase preview (never seen in production unless toggled)
-const DEMO_BLUE: BattleTeam = {
-  id: "blue",
-  name: "Bastard München",
-  seed: "1",
-  elo: 2480,
-  accent: "neon",
-  players: [
-    { id: "u1", handle: "Isagi", initial: "I", rank: "Diamond II", lp: 2480, role: "STRIKER" },
-    { id: "u2", handle: "Bachira", initial: "B", rank: "Diamond III", lp: 2310, role: "DRIBBLER" },
-  ],
-};
-const DEMO_RED: BattleTeam = {
-  id: "red",
-  name: "Manshine City",
-  seed: "4",
-  elo: 2392,
-  accent: "ember",
-  players: [
-    { id: "u3", handle: "Kaiser", initial: "K", rank: "Diamond II", lp: 2455, role: "EMPEROR" },
-    { id: "u4", handle: "Ness", initial: "N", rank: "Diamond IV", lp: 2240, role: "SUPPORT" },
-  ],
-};
-
-const DEMO_ROUNDS: RoundResult[] = [
-  { round: 1, problem: "Two Sum", difficulty: "Easy", winner: "blue", blueTime: "01:24", redTime: "02:11", margin: "47s" },
-  { round: 2, problem: "LRU Cache", difficulty: "Medium", winner: "red", blueTime: "08:42", redTime: "06:18", margin: "2:24" },
-  { round: 3, problem: "Word Ladder", difficulty: "Hard", winner: "blue", blueTime: "11:05", redTime: "12:38", margin: "1:33" },
-];
 
 export default function Battle() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user, isAuthenticated } = useAuth();
 
-  // Entry state
   const [selectedMode, setSelectedMode] = useState<ModeId>("ranked");
   const [selectedFormat, setSelectedFormat] = useState<BattleFormat>("duo");
   const [selectedRegion, setSelectedRegion] = useState<string>("AP-S");
   const [warriorQuery, setWarriorQuery] = useState("");
-
-  // Phase state — production drives from real signals; PhaseToggle overrides only in DEV
   const [devPhase, setDevPhase] = useState<BattlePhase | null>(null);
 
-  const { onlineWarriors, isLoadingOnline, recentBattles, isLoadingRecent } = useBattleData();
+  const entryData = useBattleEntryData();
   const {
     matchmakingState,
     findOpponent,
@@ -86,38 +46,18 @@ export default function Battle() {
     isSearching,
     isMatched,
     isFindingOpponent,
-    battleStats,
-    isLoadingStats,
   } = useMatchmaking();
 
-  // Detect post-battle return: ?completed=<sessionId>
-  const completedSessionId = searchParams.get("completed");
-  const { data: completedSession } = useQuery({
-    queryKey: ["battle-result-summary", completedSessionId],
-    queryFn: async () => {
-      if (!completedSessionId) return null;
-      const { data, error } = await supabase
-        .from("battle_sessions")
-        .select("*")
-        .eq("id", completedSessionId)
-        .single();
-      if (error) return null;
-      return data;
-    },
-    enabled: !!completedSessionId,
-  });
+  const completedMatchId = searchParams.get("completed");
+  const { data: result } = useBattleResult(completedMatchId, !!completedMatchId);
 
   const phase: BattlePhase = useMemo(() => {
     if (devPhase) return devPhase;
-    if (completedSession?.status === "completed") return "post_battle";
+    if (completedMatchId && result) return "post_battle";
     if (isMatched || matchmakingState.status === "in_battle") return "pre_battle";
     if (isSearching) return "searching";
     return "entry";
-  }, [devPhase, completedSession, isMatched, isSearching, matchmakingState.status]);
-
-  useEffect(() => {
-    if (devPhase) return;
-  }, [devPhase, isMatched, matchmakingState]);
+  }, [devPhase, completedMatchId, result, isMatched, isSearching, matchmakingState.status]);
 
   const handleFindOpponent = () => {
     if (!isAuthenticated) {
@@ -128,20 +68,19 @@ export default function Battle() {
     findOpponent(mode);
   };
 
-  const handleLaunch = () => {
-    if (matchmakingState.sessionId) {
-      navigate(`/battle/session/${matchmakingState.sessionId}`, { replace: true });
-    } else if (devPhase) {
-      setDevPhase("live");
-    }
-  };
-
   const handleExitPostBattle = () => {
     setDevPhase(null);
     navigate("/battle", { replace: true });
   };
 
-  // Combatant data sourced from real auth + battle stats
+  const handleRematch = () => {
+    setDevPhase(null);
+    navigate("/battle", { replace: true });
+    const mode: BattleMode = selectedMode === "practice" ? "quick" : selectedMode;
+    setTimeout(() => findOpponent(mode), 100);
+  };
+
+  const summary = entryData.summary;
   const combatant: CombatantData | undefined = user
     ? {
         pid: (user.id ?? "0000").slice(0, 4).toUpperCase(),
@@ -156,18 +95,18 @@ export default function Battle() {
         )
           .slice(0, 1)
           .toUpperCase(),
-        level: Math.max(1, Math.floor((battleStats.total_xp_earned ?? 0) / 1000)),
-        rank: battleStats.next_rank?.replace(/^Next: /, "") ?? "Bronze",
+        level: Math.max(1, Math.floor((summary?.elo ?? 1000) / 100)),
+        rank: summary?.rank_label ?? "Bronze",
         topPercent: undefined,
-        lpCurrent: battleStats.elo,
-        lpTarget: battleStats.elo + (battleStats.elo_to_next || 100),
-        nextRank: battleStats.next_rank,
+        lpCurrent: summary?.elo ?? 1000,
+        lpTarget: (summary?.elo ?? 1000) + 200,
+        nextRank: summary?.rank_label ?? "Bronze",
         isCaptain: selectedFormat === "duo",
-        wins: battleStats.wins,
-        losses: battleStats.losses,
-        winRate: battleStats.win_rate,
-        streak: battleStats.win_streak,
-        mvps: battleStats.best_win_streak,
+        wins: summary?.wins ?? 0,
+        losses: summary?.losses ?? 0,
+        winRate: summary?.win_rate ?? 0,
+        streak: summary?.current_streak ?? 0,
+        mvps: summary?.mvp_count ?? 0,
         dailyDone: 0,
         dailyTotal: 3,
         dailyLabel: "Win 3 Ranked duels",
@@ -190,12 +129,19 @@ export default function Battle() {
     }
   }, [selectedMode]);
 
+  // Auto-redirect to live session route when matched
+  useEffect(() => {
+    if ((isMatched || matchmakingState.status === "in_battle") && matchmakingState.sessionId) {
+      navigate(`/battle/session/${matchmakingState.sessionId}`, { replace: true });
+    }
+  }, [isMatched, matchmakingState, navigate]);
+
   return (
     <div className="min-h-screen bg-void text-text">
       {phase === "entry" && (
         <EntryView
           combatant={combatant}
-          isLoadingStats={isLoadingStats}
+          isLoadingStats={entryData.isLoadingSummary}
           selectedMode={selectedMode}
           onSelectMode={setSelectedMode}
           selectedFormat={selectedFormat}
@@ -204,10 +150,7 @@ export default function Battle() {
           onSelectRegion={setSelectedRegion}
           warriorQuery={warriorQuery}
           onWarriorQuery={setWarriorQuery}
-          onlineWarriors={onlineWarriors}
-          isLoadingOnline={isLoadingOnline}
-          recentBattles={recentBattles}
-          isLoadingRecent={isLoadingRecent}
+          entryData={entryData}
           isSearching={isSearching}
           isFindingOpponent={isFindingOpponent}
           waitTime={matchmakingState.waitTime}
@@ -216,7 +159,6 @@ export default function Battle() {
           modeLabel={modeMeta.label}
           modeAccent={modeMeta.accent}
           stakesLabel={modeMeta.stakes}
-          onlineCount={onlineWarriors.length}
           phase={phase}
           onPhaseChange={setDevPhase}
         />
@@ -227,42 +169,22 @@ export default function Battle() {
       )}
 
       {phase === "pre_battle" && (
-        <PreBattleView
-          blue={DEMO_BLUE}
-          red={DEMO_RED}
-          matchId={matchmakingState.battleId ?? "DEMO-MATCH"}
-          onLaunch={handleLaunch}
-        />
-      )}
-
-      {phase === "live" && devPhase && (
-        // Dev-only preview placeholder (real "live" routes to /battle/session/:id)
         <div className="flex min-h-[60vh] items-center justify-center p-10 text-center">
           <div className="bl-glass border border-neon/40 p-8 max-w-md">
             <div className="font-display text-[10px] font-bold tracking-[0.3em] text-neon mb-3">
-              DEV PREVIEW · LIVE PHASE
+              MATCH FOUND · ENTERING ARENA
             </div>
             <p className="font-mono text-[12px] text-text-dim">
-              In production, the live workspace renders at{" "}
-              <span className="text-neon">/battle/session/:id</span>.
-              Use the phase toggle to preview other screens.
+              Routing to live workspace…
             </p>
           </div>
         </div>
       )}
 
-      {phase === "post_battle" && (
-        <PostBattleView
-          blue={DEMO_BLUE}
-          red={DEMO_RED}
-          rounds={DEMO_ROUNDS}
-          completedSession={completedSession}
-          userId={user?.id}
-          onExit={handleExitPostBattle}
-        />
+      {phase === "post_battle" && result && (
+        <PostBattleView result={result} userId={user?.id} onExit={handleExitPostBattle} onRematch={handleRematch} />
       )}
 
-      {/* Floating dev switcher for non-entry phases (entry renders it inline) */}
       {phase !== "entry" && import.meta.env.DEV && (
         <div className="fixed bottom-4 right-4 z-[100] max-w-md">
           <PhaseToggle current={phase} onChange={setDevPhase} />
@@ -284,10 +206,7 @@ function EntryView(props: {
   onSelectRegion: (r: string) => void;
   warriorQuery: string;
   onWarriorQuery: (s: string) => void;
-  onlineWarriors: any[];
-  isLoadingOnline: boolean;
-  recentBattles: any[];
-  isLoadingRecent: boolean;
+  entryData: ReturnType<typeof useBattleEntryData>;
   isSearching: boolean;
   isFindingOpponent: boolean;
   waitTime?: number;
@@ -296,15 +215,14 @@ function EntryView(props: {
   modeLabel: string;
   modeAccent: "neon" | "ember" | "gold";
   stakesLabel: string;
-  onlineCount: number;
   phase: BattlePhase;
   onPhaseChange: (p: BattlePhase) => void;
 }) {
   const formatLabel = props.selectedFormat === "duo" ? "2 V 2" : "1 V 1";
+  const { entryData } = props;
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-6 md:py-8 space-y-6">
-      {/* Sector header */}
       <div className="flex flex-col gap-1">
         <div className="font-mono text-[10px] tracking-[0.22em] text-text-mute">
           SECTOR <span className="text-neon">// 007_ENTRY</span>
@@ -315,29 +233,15 @@ function EntryView(props: {
       </div>
 
       <PhaseToggle current={props.phase} onChange={props.onPhaseChange} />
-
       <EntryHero />
 
-      {/* Section 01 — Configure your loadout */}
-      <SectionLabel
-        step="01"
-        subtitle="CONFIGURE YOUR LOADOUT"
-        title="Profile, format, region."
-      />
+      <SectionLabel step="01" subtitle="CONFIGURE YOUR LOADOUT" title="Profile, format, region." />
       <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr_1fr]">
         <CombatantProfile data={props.combatant} isLoading={props.isLoadingStats} />
-        <FormatSelector
-          selected={props.selectedFormat}
-          onSelect={props.onSelectFormat}
-        />
-        <RegionSelector
-          regions={[]}
-          selected={props.selectedRegion}
-          onSelect={props.onSelectRegion}
-        />
+        <FormatSelector selected={props.selectedFormat} onSelect={props.onSelectFormat} />
+        <RegionSelector regions={[]} selected={props.selectedRegion} onSelect={props.onSelectRegion} />
       </div>
 
-      {/* Section 02 — Choose your war */}
       <SectionLabel
         step="02"
         subtitle="SELECT BATTLE MODE"
@@ -350,7 +254,6 @@ function EntryView(props: {
       />
       <ModeGrid selected={props.selectedMode} onSelect={props.onSelectMode} />
 
-      {/* Loadout bar + CTA */}
       <LoadoutBar
         modeLabel={props.modeLabel}
         modeAccent={props.modeAccent}
@@ -364,25 +267,21 @@ function EntryView(props: {
         onCancel={props.onCancel}
       />
 
-      {/* Global stats strip */}
       <GlobalStatsStrip
-        online={props.onlineCount}
-        liveBattles={0}
+        stats={entryData.global}
         avgQueue={props.waitTime ? `${Math.floor(props.waitTime)}s` : "—"}
-        queueHealth={97}
       />
 
-      {/* Section 03 — Warriors & history */}
       <div className="grid gap-6 lg:grid-cols-2">
         <OnlineWarriorsList
-          warriors={props.onlineWarriors}
-          isLoading={props.isLoadingOnline}
+          warriors={entryData.online}
+          isLoading={entryData.isLoadingOnline}
           query={props.warriorQuery}
           onQuery={props.onWarriorQuery}
         />
         <RecentBattlesList
-          battles={props.recentBattles}
-          isLoading={props.isLoadingRecent}
+          battles={entryData.recent}
+          isLoading={entryData.isLoadingRecent}
         />
       </div>
     </div>
@@ -425,163 +324,54 @@ function SearchingView({ waitTime, onCancel }: { waitTime?: number; onCancel: ()
   );
 }
 
-// ─────────── PRE-BATTLE ───────────
-function PreBattleView({
-  blue,
-  red,
-  matchId,
-  onLaunch,
-}: {
-  blue: BattleTeam;
-  red: BattleTeam;
-  matchId: string;
-  onLaunch: () => void;
-}) {
-  const readiness = Object.fromEntries(
-    [...blue.players, ...red.players].map((p) => [p.handle, "ready" as const]),
-  );
-
-  return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-8 md:px-6 md:py-10 space-y-6">
-      <LobbyHeader blue={blue} red={red} matchId={matchId} />
-      <ReadyRoster blue={blue} red={red} readiness={readiness} />
-      <MatchBriefing />
-      <CountdownLauncher onLaunch={onLaunch} duration={5} />
-    </div>
-  );
-}
-
 // ─────────── POST-BATTLE ───────────
 function PostBattleView({
-  blue,
-  red,
-  rounds,
-  completedSession,
+  result,
   userId,
   onExit,
+  onRematch,
 }: {
-  blue: BattleTeam;
-  red: BattleTeam;
-  rounds: RoundResult[];
-  completedSession: any;
+  result: NonNullable<ReturnType<typeof useBattleResult>["data"]>;
   userId?: string;
   onExit: () => void;
+  onRematch: () => void;
 }) {
-  // Use real session data when available; fall back to demo for dev preview
-  const real = completedSession;
-  const isWinner = real?.winner_id === userId;
-  const isDraw = real ? !real.winner_id : false;
+  const me = result.players.find((p) => p.user_id === userId);
+  const opp = result.players.find((p) => p.user_id !== userId);
 
-  const winnerName = real
-    ? isDraw
-      ? "Stalemate"
-      : isWinner
-        ? "You"
-        : "Opponent"
-    : blue.name;
-  const loserName = real
-    ? isDraw
-      ? "Stalemate"
-      : isWinner
-        ? "Opponent"
-        : "You"
-    : red.name;
+  const outcome: "win" | "loss" | "draw" =
+    result.is_draw ? "draw"
+    : result.winner_id && result.winner_id === userId ? "win"
+    : result.winner_id ? "loss"
+    : "draw";
 
-  const myScore = real
-    ? real.player_a_id === userId
-      ? real.player_a_score
-      : real.player_b_score
-    : 3;
-  const oppScore = real
-    ? real.player_a_id === userId
-      ? real.player_b_score
-      : real.player_a_score
-    : 2;
-
-  const lpGain = real?.elo_change ? Math.abs(real.elo_change) : 28;
-  const lpLoss = real?.elo_change ? Math.abs(real.elo_change) : 24;
-
-  const finalScore = `${myScore} – ${oppScore}`;
-
-  // Compute duration from real session
-  const duration = real?.start_time && real?.end_time
-    ? formatDuration(new Date(real.end_time).getTime() - new Date(real.start_time).getTime())
-    : "27:45";
-
-  const playerRows: PlayerPerf[] = [
-    ...blue.players.map((p, i) => ({
-      handle: p.handle,
-      initial: p.initial,
-      isCaptain: i === 0,
-      accent: "neon" as const,
-      solved: 2,
-      submissions: 3,
-      attempts: 4,
-      accuracy: 85,
-      wpm: 62,
-      avgTime: "06:24",
-      impact: 78 - i * 8,
-      mvp: i === 0,
-    })),
-    ...red.players.map((p, i) => ({
-      handle: p.handle,
-      initial: p.initial,
-      isCaptain: i === 0,
-      accent: "ember" as const,
-      solved: 1,
-      submissions: 2,
-      attempts: 3,
-      accuracy: 75,
-      wpm: 58,
-      avgTime: "07:48",
-      impact: 60 - i * 6,
-    })),
-  ];
+  const callerName = me?.handle ?? "You";
+  const opponentName = opp?.handle ?? "Opponent";
+  const finalScore = `${me?.score ?? 0} – ${opp?.score ?? 0}`;
+  const duration = formatDuration(result.duration_sec * 1000);
+  const lpDelta = me?.elo_change ?? 0;
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-8 md:px-6 md:py-10 space-y-6">
       <ResultBanner
-        winnerName={winnerName}
-        loserName={loserName}
+        outcome={outcome}
+        callerName={callerName}
+        opponentName={opponentName}
         finalScore={finalScore}
         duration={duration}
-        lpGain={lpGain}
-        lpLoss={lpLoss}
-        isDraw={isDraw}
+        lpDelta={lpDelta}
       />
 
       <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-        <FinalScoreboard rounds={rounds} blueTotal={myScore} redTotal={oppScore} />
-        <LpSummary
-          blue={{
-            tone: "neon",
-            teamName: blue.name,
-            direction: isWinner ? "up" : "down",
-            amount: isWinner ? lpGain : lpLoss,
-            fromLp: 2480,
-            toLp: isWinner ? 2480 + lpGain : 2480 - lpLoss,
-            rankFrom: "Diamond II",
-            rankTo: "Diamond II",
-            badge: isWinner ? "Win streak +1" : undefined,
-          }}
-          red={{
-            tone: "ember",
-            teamName: red.name,
-            direction: isWinner ? "down" : "up",
-            amount: isWinner ? lpLoss : lpGain,
-            fromLp: 2392,
-            toLp: isWinner ? 2392 - lpLoss : 2392 + lpGain,
-            rankFrom: "Diamond II",
-            rankTo: "Diamond II",
-          }}
-        />
+        <FinalScoreboard rounds={result.rounds} players={result.players} callerId={userId} />
+        <LpSummary players={result.players} callerId={userId} />
       </div>
 
-      <PlayerStatsTable rows={playerRows} />
+      <PlayerStatsTable players={result.players} callerId={userId} />
 
       <PostActions
-        onRematch={onExit}
-        onDetails={() => completedSession && (window.location.href = `/battle/results/${completedSession.id}`)}
+        onRematch={onRematch}
+        onDetails={onExit}
         onExit={onExit}
       />
     </div>

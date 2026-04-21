@@ -1,9 +1,9 @@
 import { Search, Swords, Users, Wifi } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { OnlineWarrior } from "@/hooks/useBattleData";
+import type { OnlineWarriorRow } from "@/hooks/useBattleEntryData";
 
 interface Props {
-  warriors: OnlineWarrior[];
+  warriors: OnlineWarriorRow[];
   isLoading: boolean;
   query: string;
   onQuery: (q: string) => void;
@@ -11,7 +11,7 @@ interface Props {
 }
 
 export function OnlineWarriorsList({ warriors, isLoading, query, onQuery, onChallenge }: Props) {
-  const filtered = warriors.filter((w) => w.username.toLowerCase().includes(query.toLowerCase()));
+  const filtered = warriors.filter((w) => w.handle.toLowerCase().includes(query.toLowerCase()));
 
   return (
     <div className="relative overflow-hidden border border-line bg-panel/60 bl-glass bl-corners">
@@ -54,33 +54,33 @@ export function OnlineWarriorsList({ warriors, isLoading, query, onQuery, onChal
               NO WARRIORS ONLINE
             </p>
             <p className="font-mono text-[10px] text-text-mute mt-1">
-              The arena is quiet. Be the first to lock in.
+              {"// no data yet — be the first to lock in."}
             </p>
           </div>
         ) : (
           <ul className="space-y-2">
             {filtered.map((w) => (
               <li
-                key={w.id}
+                key={w.user_id}
                 className="group flex items-center gap-3 border border-line/50 bg-void/40 p-3 transition hover:border-neon/40 hover:bg-neon/5"
               >
                 <div className="flex h-10 w-10 items-center justify-center border border-neon/40 bg-neon/10 font-display text-[14px] font-black text-neon bl-clip-notch">
-                  {w.username.slice(0, 2).toUpperCase()}
+                  {w.handle.slice(0, 2).toUpperCase()}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="truncate font-display text-[13px] font-bold text-text">{w.username}</span>
+                    <span className="truncate font-display text-[13px] font-bold text-text">{w.handle}</span>
                     <span className="font-display text-[9px] font-bold tracking-[0.2em] text-neon uppercase">
-                      {w.division}
+                      {w.rank_label}
                     </span>
                   </div>
                   <div className="font-mono text-[10px] tracking-[0.1em] text-text-dim">
-                    {w.xp.toLocaleString()} XP · streak {w.streak}
+                    {w.elo} ELO · {w.status === "in_match" ? "IN MATCH" : "QUEUEING"}
                   </div>
                 </div>
-                {onChallenge && (
+                {onChallenge && w.status === "queueing" && (
                   <button
-                    onClick={() => onChallenge(w.id)}
+                    onClick={() => onChallenge(w.user_id)}
                     className="opacity-0 transition group-hover:opacity-100 inline-flex items-center gap-1 border border-neon/50 bg-neon/10 px-2.5 py-1.5 font-display text-[10px] font-bold tracking-[0.2em] text-neon hover:bg-neon/20 bl-clip-chevron"
                   >
                     <Swords className="h-3 w-3" />
