@@ -6,6 +6,8 @@ import { Pencil, MapPin, Crown, UserPlus, UserCheck, Clock, Check } from 'lucide
 import { cn } from '@/lib/utils';
 import { getDivisionColor } from '@/lib/mockData';
 import { format } from 'date-fns';
+import { useRankState } from '@/hooks/useRankState';
+import { RankBadge } from '@/components/rank/RankBadge';
 
 interface ProfileHeroBannerProps {
   profile: {
@@ -137,22 +139,14 @@ export function ProfileHeroBanner({
           <div className="flex-1 p-6 flex flex-col justify-between">
             {/* Top section - Username and info */}
             <div>
-              <div className="flex items-center gap-3 mb-2">
+              <div className="flex items-center gap-3 mb-2 flex-wrap">
                 <h1 className="font-display text-3xl font-bold text-foreground tracking-wide">
                   {profile.username}
                 </h1>
                 <Badge className="bg-primary/20 text-primary border-primary/30 font-display text-xs px-2">
                   LV {level}
                 </Badge>
-                <Badge className={cn(
-                  "border font-display text-xs px-3",
-                  division === 'gold' ? 'bg-rank-gold/20 text-rank-gold border-rank-gold/30' :
-                  division === 'platinum' ? 'bg-rank-platinum/20 text-rank-platinum border-rank-platinum/30' :
-                  division === 'diamond' ? 'bg-rank-diamond/20 text-rank-diamond border-rank-diamond/30' :
-                  'bg-rank-gold/20 text-rank-gold border-rank-gold/30'
-                )}>
-                  <Crown className="h-3 w-3 mr-1" />
-                </Badge>
+                <ProfileRankBadge userId={profile.id} />
               </div>
 
               {/* Location */}
