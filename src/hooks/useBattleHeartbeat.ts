@@ -5,19 +5,48 @@ import { toast } from "sonner";
 const HEARTBEAT_MS = 15_000;
 const HIDDEN_GRACE_MS = 60_000;
 
-export function useBattleHeartbeat(matchId: string | undefined, enabled: boolean = true) {
+export function useBattleHeartbeat(
+  matchId: string | undefined,
+  enabled: boolean = true,
+  onInvalid?: () => void,
+) {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const hiddenSinceRef = useRef<number | null>(null);
   const warnedRef = useRef(false);
+  const invalidFiredRef = useRef(false);
+  const onInvalidRef = useRef(onInvalid);
+
+  useEffect(() => {
+    onInvalidRef.current = onInvalid;
+  }, [onInvalid]);
 
   useEffect(() => {
     if (!matchId || !enabled) return;
+    invalidFiredRef.current = false;
+
+    const handleInvalid = () => {
+      if (invalidFiredRef.current) return;
+      invalidFiredRef.current = true;
+      stop();
+      onInvalidRef.current?.();
+    };
 
     const beat = async () => {
       try {
-        await supabase.rpc("heartbeat_match", { p_match_id: matchId });
+        const { data, error } = await supabase.rpc("heartbeat_match", { p_match_id: matchId });
+        // RPC returns void/null on success; an explicit { success:false } means stop
+        if (error) {
+          const msg = String(error.message || "").toLowerCase();
+          if (msg.includes("not_participant") || msg.includes("not a participant") || msg.includes("invalid") || msg.includes("expired")) {
+            handleInvalid();
+          }
+          return;
+        }
+        if (data && typeof data === "object" && (data as any).success === false) {
+          handleInvalid();
+        }
       } catch {
-        /* swallow — sweep will catch us */
+        /* network blip — sweep will catch us */
       }
     };
 
