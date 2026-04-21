@@ -78,6 +78,13 @@ export default function BattleSessionPage() {
     },
   });
 
+  // Side effect: navigate to results when session is completed
+  useEffect(() => {
+    if (session?.status === 'completed' && sessionId) {
+      navigate(`/battle/results/${sessionId}`, { replace: true });
+    }
+  }, [session?.status, sessionId, navigate]);
+
   // Fetch opponent profile
   const opponentId = session?.player_a_id === user?.id ? session?.player_b_id : session?.player_a_id;
   const { data: opponentProfile } = useQuery({
