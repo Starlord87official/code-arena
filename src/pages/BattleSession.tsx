@@ -347,10 +347,8 @@ export default function BattleSessionPage() {
     );
   }
 
-  // ─── Completed → redirect to results route ───
+  // ─── Completed → redirect to results route (side effect, not in render) ───
   if (session.status === 'completed') {
-    // Redirect to the dedicated results page — never render results here
-    navigate(`/battle/results/${sessionId}`, { replace: true });
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="h-12 w-12 text-primary animate-spin" />
