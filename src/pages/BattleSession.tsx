@@ -523,7 +523,14 @@ export default function BattleSessionPage() {
             submitting={submitting}
           />
           <div className="flex-1 min-h-0">
-            <CodeEditor value={code} onChange={setCode} disabled={submitting} language={LANGUAGES.find((l) => l.id === language)?.label} />
+            <CodeEditor
+              value={code}
+              onChange={setCode}
+              disabled={submitting}
+              language={LANGUAGES.find((l) => l.id === language)?.label}
+              onPaste={reportPaste}
+              onFirstFocus={handleEditorFirstFocus}
+            />
           </div>
           <ConsolePanel
             collapsed={consoleCollapsed}
