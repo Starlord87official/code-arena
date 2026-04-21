@@ -3,3 +3,11 @@ project_id = "pnbgztjeutkbvsqhtniq"
 [functions.ai-insights]
 enabled = true
 verify_jwt = false
+
+[functions.rank-decay-tick]
+enabled = true
+verify_jwt = false
+
+[functions.rank-season-reset]
+enabled = true
+verify_jwt = false
