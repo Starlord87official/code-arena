@@ -184,6 +184,12 @@ export default function BattleSessionPage() {
 
   const selectedMatchProblem = matchProblems?.[selectedProblemIdx];
 
+  // Sync the ref + reset paste tally when the problem changes
+  useEffect(() => {
+    selectedProblemIdRef.current = selectedMatchProblem?.id ?? null;
+    resetPasteTally();
+  }, [selectedMatchProblem?.id, resetPasteTally]);
+
   // Build ProblemDetail for the panel
   const problemDetail: ProblemDetail | null = useMemo(() => {
     if (!selectedMatchProblem) return null;
