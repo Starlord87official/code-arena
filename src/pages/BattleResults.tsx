@@ -35,20 +35,17 @@ export default function BattleResults() {
     staleTime: Infinity,
   });
 
-  // Fetch opponent profile
-  const opponentId = session?.player_a_id === user?.id ? session?.player_b_id : session?.player_a_id;
+  // Fetch opponent profile via SECURITY DEFINER RPC (bypasses owner-only RLS on profiles)
   const { data: opponentProfile } = useQuery({
-    queryKey: ['profile', opponentId],
+    queryKey: ['battle-opponent-profile', sessionId],
     queryFn: async () => {
-      if (!opponentId) return null;
-      const { data } = await supabase
-        .from('public_profiles')
-        .select('username, avatar_url, division')
-        .eq('id', opponentId)
-        .maybeSingle();
-      return data;
+      if (!sessionId) return null;
+      const { data, error } = await supabase
+        .rpc('get_battle_opponent_profile', { p_session_id: sessionId });
+      if (error) return null;
+      return Array.isArray(data) && data.length > 0 ? data[0] : null;
     },
-    enabled: !!opponentId,
+    enabled: !!sessionId && !!user,
   });
 
   // GUARD: If session is NOT completed (still active or doesn't exist), redirect away
