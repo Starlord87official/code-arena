@@ -63,17 +63,15 @@ export default function BattleResults() {
     if (isReturning) return;
     setIsReturning(true);
 
-    // 1. Clear all battle-related caches
-    queryClient.removeQueries({ queryKey: ['battle-session', sessionId] });
-    queryClient.removeQueries({ queryKey: ['battle-result', sessionId] });
-    queryClient.removeQueries({ queryKey: ['battle-problems', sessionId] });
-    queryClient.removeQueries({ queryKey: ['active-battle-session'] });
+    // Fully evict all battle-related caches so the lobby cannot bounce
+    // back from stale active-session data.
+    queryClient.removeQueries({ queryKey: ['active-battle-session'], exact: false });
+    queryClient.removeQueries({ queryKey: ['battle-session'], exact: false });
+    queryClient.removeQueries({ queryKey: ['battle-result'], exact: false });
+    queryClient.removeQueries({ queryKey: ['battle-problems'], exact: false });
+    queryClient.removeQueries({ queryKey: ['recent-duo-battles'], exact: false });
     queryClient.invalidateQueries({ queryKey: ['user-battle-stats'] });
 
-    // 2. Reset matchmaking state to idle (prevents redirect loop)
-    resetState();
-
-    // 3. Hard navigate with replace
     navigate('/battle', { replace: true });
   };
 
