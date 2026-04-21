@@ -100,6 +100,31 @@ export function ProblemPanel({ problem, collapsed, onToggle, problems, selectedI
         )}
       </div>
 
+      {problems && problems.length > 1 && (
+        <div className="relative flex items-center gap-1 overflow-x-auto border-b border-line/60 bg-void/40 px-2 py-1.5">
+          {problems.map((p, i) => {
+            const active = i === selectedIndex;
+            return (
+              <button
+                key={p.id}
+                onClick={() => onSelectProblem?.(i)}
+                className={`shrink-0 inline-flex items-center gap-1.5 border px-2 py-1 font-display text-[9px] font-bold tracking-[0.2em] transition bl-clip-chevron ${
+                  active
+                    ? "border-neon/60 bg-neon/10 text-neon"
+                    : p.solved
+                      ? "border-neon/30 bg-neon/5 text-neon/70 hover:border-neon/50"
+                      : "border-line/60 bg-panel/40 text-text-dim hover:border-neon/40 hover:text-text"
+                }`}
+              >
+                <span className="font-mono text-[10px]">{String.fromCharCode(65 + i)}</span>
+                <span className="truncate max-w-[120px]">{p.title}</span>
+                {p.solved && <Check className="h-2.5 w-2.5 text-neon" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       <div className="relative border-b border-line/60 px-4 pt-4 pb-3">
         <h2 className="font-display text-xl font-bold leading-tight tracking-tight text-text">{problem.title}</h2>
         {(problem.acceptance !== undefined || problem.stake !== undefined) && (
