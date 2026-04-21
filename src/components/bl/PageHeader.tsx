@@ -5,8 +5,8 @@ interface PageHeaderProps {
   sector: string;
   /** Sector tag, e.g. "DASHBOARD" — auto-uppercased */
   tag?: string;
-  /** Big display title */
-  title: string;
+  /** Big display title (string or JSX) */
+  title: React.ReactNode;
   /** Optional subtitle below */
   subtitle?: string;
   /** Optional ambient orbs behind */

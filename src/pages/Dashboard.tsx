@@ -70,16 +70,15 @@ export default function Dashboard() {
         <PageHeader
           sector="001"
           title={
-            (
-              <>
-                Welcome to the arena,{' '}
-                <span className="relative inline-block text-neon text-glow bl-glitch">
-                  {profile?.username || 'Warrior'}
-                  <span className="absolute -bottom-1 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-neon to-transparent" />
-                </span>
-              </>
-            ) as unknown as string
+            <>
+              Welcome to the arena,{' '}
+              <span className="relative inline-block text-neon text-glow bl-glitch">
+                {profile?.username || 'Warrior'}
+                <span className="absolute -bottom-1 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-neon to-transparent" />
+              </span>
+            </>
           }
+          tag="DASHBOARD"
           subtitle="You're among the first warriors. Build your foundation and rise. Every challenge is another kill. Only the Egoists make it to the top."
           right={
             <>
