@@ -69,16 +69,15 @@ export default function Battle() {
     activeSession,
   } = useMatchmaking();
 
-  // Redirect to battle session as soon as we have a sessionId — either from
-  // matched/in_battle local state, or recovered from the active-session query.
+  // Redirect to battle session ONLY when local matchmaking state confirms a
+  // live match. We deliberately do NOT redirect from `activeSession?.id` alone,
+  // because cached active-session data can briefly survive a return-to-lobby
+  // transition and cause a loop back into the just-finished match.
   useEffect(() => {
-    const sessionId =
-      ((isMatched || matchmakingState.status === 'in_battle') && matchmakingState.sessionId) ||
-      activeSession?.id;
-    if (sessionId) {
-      navigate(`/battle/session/${sessionId}`, { replace: true });
+    if ((isMatched || matchmakingState.status === 'in_battle') && matchmakingState.sessionId) {
+      navigate(`/battle/session/${matchmakingState.sessionId}`, { replace: true });
     }
-  }, [isMatched, matchmakingState.status, matchmakingState.sessionId, activeSession?.id, navigate]);
+  }, [isMatched, matchmakingState.status, matchmakingState.sessionId, navigate]);
 
   // Filter online warriors by search
   const filteredWarriors = onlineWarriors.filter(w => 
