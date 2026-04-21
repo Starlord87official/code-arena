@@ -1,74 +1,51 @@
 
 
-# Step 10 — Phase E: Rank Surfaces + Leaderboard + Topic Picks
+# Fix: Stuck `/battle/session/...` page (zombie session, no participants)
 
-Final phase of Step 10. Phases A–D built the engine (rating, promo, matchmaking, decay, seasons). Phase E exposes it everywhere in the UI, replaces the last mock data, and ships the topic ban/pick lobby flow.
+## What's actually wrong
 
-## 0. Hotfix: "Rendered more hooks than during the previous render"
+1. **Zombie session**: `battle_sessions` row `fb55f841-...` is `status='active'` but has no matching `battle_matches`/`battle_participants` rows. Started 2026-04-21 14:11 UTC (~4 hours ago) and is way past its 30-min window.
+2. **Page never gives up**: `BattleSession.tsx` only shows "Battle Not Found" when the `battle_sessions` row is missing. It does **not** check whether a `battle_matches` row exists, whether the user is a participant, or whether the session has expired — so it renders the workspace UI against a dead match while heartbeat/submit RPCs keep returning `not_participant`.
+3. **Heartbeat is silent on failure**: `useBattleHeartbeat` swallows all errors. When `heartbeat_match` returns `{ success: false, error: 'not_participant' }`, the page should auto-eject — instead it just keeps polling forever.
 
-Runtime error currently in preview. Most likely culprit is `StatsPanel.tsx` after Phase D — `useDecayWarning` was added alongside `usePromotionSeries`, and one of them is being called conditionally or after an early return. Audit `StatsPanel.tsx` and any component touched in B/D, move every `useX()` call above any `if (...) return` branch.
+## Fixes
 
-## 1. Unified rank state hook + badge
+### A. Defensive guard in `BattleSession.tsx`
 
-- **`src/hooks/useRankState.ts`** — single source of truth. Reads `rank_states` for current user (and accepts optional `userId` for other players). Subscribes to realtime updates. Returns `{ tier, division, lp, mmr, peak, demotionShield, placementsRemaining, decayBankDays, isLoading }`.
-- **`src/components/rank/RankBadge.tsx`** — visual badge (tier crest + division roman numeral + LP). Three sizes: `sm` (inline chip), `md` (cards), `lg` (profile hero). Uses existing premium esports gradients per tier.
-- **`src/components/rank/RankProgressBar.tsx`** — LP bar with tier color, peak marker, and shield/decay indicators. Replaces the inline LP bar in `StatsPanel`.
+After the session loads, add a one-shot validation query that calls a new RPC `validate_battle_session(p_session_id)`. The RPC returns:
+```
+{ valid: boolean, reason: 'ok' | 'no_match' | 'not_participant' | 'expired' | 'completed' }
+```
+- If `valid === false`: show the existing "Battle Not Found" panel with a tailored message ("This battle has expired", "You're not a participant", etc.) and a `RETURN TO LOBBY` button. Do NOT mount the workspace, heartbeat, or integrity hooks.
+- If `valid === true`: proceed as today.
 
-## 2. Replace mocks across the app
+### B. Auto-eject on heartbeat rejection
 
-- **`src/components/dashboard/DivisionProgress.tsx`** — currently mock. Wire to `useRankState`; show real tier, LP bar, next-division target, decay/promo state.
-- **`src/components/profile/premium/ProfileHeroBanner.tsx`** — add `RankBadge` (lg) next to username for own + public profiles.
-- **`src/components/cards/PlayerCard.tsx`** — add `RankBadge` (sm) to player chips used in friends list, online warriors, recent battles.
-- **`src/components/battle-v2/post-battle/FinalScoreboard.tsx`** — show each player's `RankBadge` next to their name.
+`useBattleHeartbeat` currently catches errors silently. Change it so when the RPC response is `{ success: false }` (any reason), it fires a single toast (`Battle session no longer valid`) and calls an `onInvalid` callback passed by the page, which navigates to `/battle`.
 
-## 3. Ranked leaderboard page
+### C. Server-side cleanup of the zombie session
 
-- **New RPC `get_ranked_leaderboard(p_tier_filter, p_limit, p_offset)`** — SECURITY DEFINER, returns top N from `rank_states` joined to `profiles` (username, avatar) for the active season, ordered by `(tier desc, division asc, lp desc, mmr desc)`. Includes caller's own row + rank position even if outside the page.
-- **New page `src/pages/RankedLeaderboard.tsx`** at `/leaderboard/ranked`:
-  - Top 3 podium (Challenger crowns)
-  - Tier filter chips (All / Iron / … / Challenger)
-  - Paginated table: rank, badge, username, LP, MMR, W/L
-  - Sticky "Your rank" row at bottom
-  - Empty state when season has no ranked games yet
-- **Route**: add to `App.tsx`. Link from existing `/leaderboard` page header ("Ranked Ladder" tab).
+Run a one-off migration that closes any `battle_sessions` rows where `status='active'` AND `start_time < now() - (duration_minutes + 5) * interval '1 minute'` AND no participants exist — set `status='cancelled'`, `end_time=now()`. This unsticks the current user immediately and prevents the same class of orphan sessions from haunting the UI.
 
-## 4. Topic ban/pick (lobby pre-battle)
+### D. Stop new orphans at the source
 
-Blueprint calls for both players to ban 1 topic and pick 1 topic before the match locks problems.
+Search for any code path that still inserts into `battle_sessions` without inserting matching `battle_matches` + `battle_participants` (legacy `useMatchmaking` join flow is the suspect). For each, either:
+- Stop using `battle_sessions` (V2 is `battle_matches`-only), or
+- Wrap inserts in a transaction that always creates both, or
+- Add a deferred FK / trigger that prevents an `active` `battle_sessions` row without participants.
 
-- **Schema**: extend `battle_matches` with `banned_topics text[]` and `picked_topics text[]` (default `'{}'`).
-- **New RPC `mm_submit_topic_choice(p_match_id, p_kind, p_topic)`** — `kind` in `('ban','pick')`. Validates caller is participant, append-only, max 1 ban + 1 pick per user. When all participants have submitted, triggers problem selection that excludes banned topics and biases toward picked ones.
-- **`src/components/battle-v2/pre-battle/TopicDraftPanel.tsx`** — appears in lobby after both players ready. Two-step UI:
-  1. **Ban phase** (15s timer): each player picks one topic from a chip cloud (Arrays, DP, Graphs, Trees, Strings, Greedy, Math, BitMagic). Auto-pick random if timer expires.
-  2. **Pick phase** (15s timer): same UI, opposite intent.
-- **`src/components/battle-v2/pre-battle/MatchBriefing.tsx`** — show resolved bans (red strike) + picks (green glow) before countdown.
-
-## 5. Penalty/promotion toast system unification
-
-Several toasts are scattered across phases. Consolidate into:
-
-- **`src/hooks/useRankToasts.ts`** — subscribes to `rank_states` + `promotion_series` realtime. Diffs against last-seen state in localStorage and fires deduped toasts: tier up/down, promo started/passed/failed, decay applied, demotion shield consumed, placement match X/5.
-- Mounted once in `App.tsx` so toasts fire from any page.
+I'll inspect `useMatchmaking.ts` and the `mm_*` RPCs to identify the exact path and pick the minimal fix.
 
 ## Files touched
 
-- **New migration**: `banned_topics`/`picked_topics` columns, `mm_submit_topic_choice` RPC, `get_ranked_leaderboard` RPC.
-- **New hook/components**: `useRankState`, `useRankToasts`, `RankBadge`, `RankProgressBar`, `TopicDraftPanel`, `RankedLeaderboard` page.
-- **Updated**: `StatsPanel.tsx` (hotfix + use new components), `DivisionProgress.tsx`, `ProfileHeroBanner.tsx`, `PlayerCard.tsx`, `FinalScoreboard.tsx`, `MatchBriefing.tsx`, `App.tsx` (route + toasts mount).
+- **New migration**: `validate_battle_session` RPC + one-off cleanup of expired/orphan `battle_sessions`.
+- **Updated**: `src/pages/BattleSession.tsx` (validation gate before rendering workspace), `src/hooks/useBattleHeartbeat.ts` (surface invalid response, accept `onInvalid` callback).
+- **Possibly updated**: `src/hooks/useMatchmaking.ts` or a `mm_*` migration if the legacy orphan path is still live.
 
 ## Verification
 
-1. Preview loads with no "Rendered more hooks" error.
-2. Dashboard `DivisionProgress` shows real tier/LP from `rank_states`, updates after a match.
-3. Profile hero shows `RankBadge`; public profiles show opponent badges.
-4. `/leaderboard/ranked` lists real users sorted by tier+LP; own row pinned at bottom; tier filter works.
-5. Lobby: both players see ban/pick draft after ready; resolved choices appear in briefing; problems exclude banned topics.
-6. Tier up after a win → toast `Promoted to Gold IV` fires once across any page.
-
-## Out of scope (Step 11)
-
-- AI-generated code detection, behavioral biometrics.
-- Cosmetics (borders, emotes, themes) + achievement engine.
-- Replay/timeline scrubber, spectator entry.
-- Regional / country leaderboards.
+1. Reload `/battle/session/fb55f841-...` → page shows "Battle session expired — return to lobby" instead of the zombie workspace.
+2. Manually mark a `battle_sessions` row `active` with no participants → reload → same eject screen, no `not_participant` toasts in network logs.
+3. Quick-queue a fresh match end-to-end → still works (validation passes, heartbeats succeed).
+4. After fix deploys, no `battle_sessions` row stays in `active` past `start_time + duration + 5 min` without participants.
 
