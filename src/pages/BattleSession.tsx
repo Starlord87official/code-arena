@@ -73,8 +73,40 @@ export default function BattleSessionPage() {
     queryKey: ["battle-session-validate", sessionId],
     queryFn: async () => {
       const { data, error } = await (supabase.rpc as any)("validate_battle_session", { p_session_id: sessionId });
-      if (error) return { valid: false, reason: "no_match" } as { valid: boolean; reason: string };
-      return (data ?? { valid: false, reason: "no_match" }) as { valid: boolean; reason: string };
+      if (!error) {
+        return (data ?? { valid: false, reason: "no_match" }) as { valid: boolean; reason: string };
+      }
+      // Fallback: if the RPC is missing (PGRST202) or other transient error,
+      // verify participation directly so users aren't ejected from a real match.
+      const code = (error as any)?.code ?? "";
+      const msg = String((error as any)?.message ?? "").toLowerCase();
+      const rpcMissing = code === "PGRST202" || msg.includes("could not find the function");
+      try {
+        const { data: match } = await supabase
+          .from("battle_matches")
+          .select("id, state")
+          .eq("id", sessionId!)
+          .maybeSingle();
+        if (match && ["match_found","ready_check","ban_pick","active","judging"].includes((match as any).state)) {
+          const { data: parts } = await supabase
+            .from("battle_participants")
+            .select("user_id")
+            .eq("match_id", sessionId!);
+          const isParticipant = (parts ?? []).some((p: any) => p.user_id === user?.id);
+          if (isParticipant) return { valid: true, reason: "" };
+          return { valid: false, reason: "not_participant" };
+        }
+        const { data: legacy } = await supabase
+          .from("battle_sessions")
+          .select("status, player_a_id, player_b_id")
+          .eq("id", sessionId!)
+          .maybeSingle();
+        if (legacy && (legacy as any).status === "active" &&
+            ((legacy as any).player_a_id === user?.id || (legacy as any).player_b_id === user?.id)) {
+          return { valid: true, reason: "" };
+        }
+      } catch {/* ignore */}
+      return { valid: false, reason: rpcMissing ? "no_match" : "no_match" };
     },
     enabled: !!sessionId && !!user,
     staleTime: 30_000,
