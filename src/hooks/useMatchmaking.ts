@@ -132,7 +132,10 @@ export function useMatchmaking() {
   useEffect(() => {
     const checkInitialState = async () => {
       if (!user) return;
-      
+      // Skip if we already have a fresh match in local state — avoid clobbering
+      // the result of a just-resolved join_battle_queue RPC.
+      if (matchmakingState.sessionId) return;
+
       const result = await checkQueueStatus();
       if (result?.success && result.status !== 'idle') {
         setMatchmakingState({
@@ -146,9 +149,10 @@ export function useMatchmaking() {
         });
       }
     };
-    
+
     checkInitialState();
-  }, [user, checkQueueStatus]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   // Join queue mutation
   const joinQueue = useMutation({
