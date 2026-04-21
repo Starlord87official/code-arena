@@ -95,6 +95,23 @@ export default function BattleSessionPage() {
   // Heartbeat to prevent reconnect-sweep forfeit
   useBattleHeartbeat(sessionId, !!user && session?.status !== "completed");
 
+  // Anti-cheat integrity tracking
+  const myParticipant = rtParticipants.find((p) => p.user_id === user?.id);
+  const myIntegrityScore = (myParticipant as any)?.integrity_score ?? null;
+  const { reportPaste, getPasteRatio, resetPasteTally } = useBattleIntegrity({
+    matchId: sessionId,
+    enabled: !!user && session?.status !== "completed",
+    integrityScore: myIntegrityScore,
+  });
+
+  // Track when each problem was first focused for time-since-open
+  const problemOpenAtRef = useRef<Record<string, number>>({});
+  const handleEditorFirstFocus = useCallback(() => {
+    const pid = matchProblems?.[selectedProblemIdx]?.id;
+    if (pid && !problemOpenAtRef.current[pid]) {
+      problemOpenAtRef.current[pid] = Date.now();
+    }
+  }, [selectedProblemIdx]);
   // When realtime says match is completed, kick navigation immediately (don't wait for poll)
   useEffect(() => {
     if (rtMatch?.state === "completed" && sessionId) {
