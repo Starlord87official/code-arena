@@ -1,6 +1,8 @@
 import { Flag, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ResultPlayer, ResultRound } from "@/hooks/useBattleResult";
+import { useRankState } from "@/hooks/useRankState";
+import { RankBadge } from "@/components/rank/RankBadge";
 
 interface Props {
   rounds: ResultRound[];
@@ -13,6 +15,8 @@ export function FinalScoreboard({ rounds, players, callerId }: Props) {
   const opp = players.find((p) => p.user_id !== callerId);
   const myScore = me?.score ?? 0;
   const oppScore = opp?.score ?? 0;
+  const { rank: myRank } = useRankState(me?.user_id);
+  const { rank: oppRank } = useRankState(opp?.user_id);
 
   return (
     <div className="relative overflow-hidden border border-line bg-panel/60 bl-glass bl-corners">
@@ -58,9 +62,15 @@ export function FinalScoreboard({ rounds, players, callerId }: Props) {
                 FINAL TOTAL
               </span>
               <div className="flex items-center gap-4 font-display text-[13px] font-bold tabular-nums">
-                <span className="text-neon text-glow">YOU {myScore}</span>
+                <span className="inline-flex items-center gap-2 text-neon text-glow">
+                  YOU {myScore}
+                  {myRank && <RankBadge tier={myRank.tier} division={myRank.division} lp={myRank.lp} size="sm" />}
+                </span>
                 <span className="text-text-mute">·</span>
-                <span className="text-ember text-glow-ember">OPP {oppScore}</span>
+                <span className="inline-flex items-center gap-2 text-ember text-glow-ember">
+                  OPP {oppScore}
+                  {oppRank && <RankBadge tier={oppRank.tier} division={oppRank.division} lp={oppRank.lp} size="sm" />}
+                </span>
               </div>
             </div>
           </>

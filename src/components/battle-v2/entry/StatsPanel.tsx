@@ -3,6 +3,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { usePromotionSeries } from "@/hooks/usePromotionSeries";
 import { PromoSeriesTracker } from "@/components/battle-v2/PromoSeriesTracker";
 import { useDecayWarning } from "@/hooks/useDecayWarning";
+import { useRankState } from "@/hooks/useRankState";
+import { RankBadge } from "@/components/rank/RankBadge";
+import { RankProgressBar } from "@/components/rank/RankProgressBar";
 
 interface Stats {
   elo: number;
@@ -20,8 +23,10 @@ interface Props {
 }
 
 export function StatsPanel({ stats, isLoading }: Props) {
+  // All hooks at top — order must remain stable across renders.
   const { series } = usePromotionSeries();
   const { data: decay } = useDecayWarning();
+  const { rank } = useRankState();
   return (
     <div className="relative overflow-hidden border border-line bg-panel/60 bl-glass bl-corners">
       <div className="pointer-events-none absolute inset-0 bl-grid opacity-15" />
@@ -65,6 +70,14 @@ export function StatsPanel({ stats, isLoading }: Props) {
             />
 
             <div className="pt-3 border-t border-line/40">
+              {rank && (
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="font-display text-[10px] font-bold tracking-[0.2em] text-text-mute">
+                    RANK
+                  </span>
+                  <RankBadge tier={rank.tier} division={rank.division} lp={rank.lp} size="sm" />
+                </div>
+              )}
               {decay?.active && (
                 <div className="mb-2 flex items-center gap-1.5 border border-amber-500/40 bg-amber-500/10 px-2 py-1.5 font-mono text-[10px] tracking-[0.14em] text-amber-300">
                   <AlertTriangle className="h-3 w-3 shrink-0" />
@@ -75,6 +88,13 @@ export function StatsPanel({ stats, isLoading }: Props) {
               )}
               {series ? (
                 <PromoSeriesTracker series={series} />
+              ) : rank ? (
+                <RankProgressBar
+                  tier={rank.tier}
+                  lp={rank.lp}
+                  demotionShield={rank.demotion_shield}
+                  decayActive={decay?.active}
+                />
               ) : (
                 <>
                   <div className="flex items-center justify-between mb-1.5 font-mono text-[10px] tracking-[0.14em] text-text-dim">

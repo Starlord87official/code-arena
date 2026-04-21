@@ -341,6 +341,15 @@ export default function Leaderboard() {
           tag="LEADERBOARD"
           title={<>THE <span className="text-neon text-glow">ARENA</span></>}
           subtitle="Only the elite rise. Prove your dominance."
+          right={
+            <Link
+              to="/leaderboard/ranked"
+              className="inline-flex items-center gap-2 border border-gold/50 bg-gold/10 px-3 py-1.5 font-display text-[10px] font-bold tracking-[0.2em] text-gold hover:bg-gold/20 bl-clip-chevron"
+            >
+              <Crown className="h-3 w-3" />
+              RANKED LADDER →
+            </Link>
+          }
         />
         {stats && stats.totalUsers > 0 && (
           <div className="flex items-center justify-center gap-4 mb-6 text-sm">
