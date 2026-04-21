@@ -313,9 +313,9 @@ export default function BattleSessionPage() {
         accepted: "AC",
         wrong_answer: "WA",
         tle: "TLE",
-        mle: "MLE",
+        mle: "RE",
         runtime_error: "RE",
-        compile_error: "CE",
+        compile_error: "RE",
         rejected: "WA",
       };
       const v: Verdict = verdictMap[finalRow.verdict] ?? "WA";
