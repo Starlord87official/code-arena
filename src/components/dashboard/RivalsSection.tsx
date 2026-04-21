@@ -1,76 +1,84 @@
-import { User, getDivisionColor } from '@/lib/mockData';
-import { ArrowUp, ArrowDown, Swords, Users, Sparkles, Target } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Swords, Sparkles, Target } from 'lucide-react';
+import { User } from '@/lib/mockData';
 
 interface RivalsSectionProps {
   currentUser: User;
   rivals: User[];
 }
 
-export function RivalsSection({ currentUser, rivals }: RivalsSectionProps) {
-  // In private beta, we don't have real rival data
-  const hasRivals = false; // Will be true when we have real user data
+export function RivalsSection({ currentUser }: RivalsSectionProps) {
+  const hasRivals = false; // Private beta: no rival data yet
 
   if (!hasRivals) {
     return (
-      <div className="arena-card rounded-xl overflow-hidden">
+      <div className="relative bl-glass overflow-hidden">
         {/* Header */}
-        <div className="p-4 border-b border-border bg-gradient-to-r from-primary/10 via-transparent to-accent/10">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Swords className="h-5 w-5 text-status-warning" />
-              <h3 className="font-display font-bold">RIVALS NEARBY</h3>
-            </div>
-            <Badge className="bg-primary/10 text-primary border-primary/30 text-xs">
-              PRIVATE BETA
-            </Badge>
+        <div className="flex items-center justify-between px-5 py-3 border-b border-line/50 bg-void/40">
+          <div className="flex items-center gap-2">
+            <Swords className="h-4 w-4 text-ember" />
+            <span className="font-display text-[11px] font-bold tracking-[0.28em] text-ember">
+              RIVALS NEARBY
+            </span>
           </div>
+          <span className="inline-flex items-center px-2 py-0.5 border border-neon/40 bg-neon/10 text-neon font-display text-[9px] font-bold tracking-[0.2em]">
+            PRIVATE BETA
+          </span>
         </div>
 
-        {/* Empty State */}
-        <div className="p-8 text-center">
-          <div className="relative mb-4">
-            <div className="absolute inset-0 bg-gradient-to-r from-status-warning/20 via-primary/20 to-status-warning/20 blur-2xl rounded-full" />
-            <div className="relative inline-flex items-center justify-center p-4 rounded-full bg-gradient-to-br from-status-warning/10 to-primary/10 border border-status-warning/20">
-              <Sparkles className="h-8 w-8 text-status-warning" />
-            </div>
-          </div>
+        {/* Body */}
+        <div className="relative p-6 text-center">
+          <div className="absolute inset-0 bl-dots opacity-40" />
 
-          <h4 className="font-display font-bold text-lg mb-2">
-            You're a Pioneer
-          </h4>
-          
-          <p className="text-muted-foreground text-sm mb-4 max-w-xs mx-auto">
-            As more warriors join the arena, rivals will appear here based on your XP and division.
-          </p>
-
-          {/* Current User Position Preview */}
-          <div className="p-3 rounded-lg bg-primary/10 border border-primary/30 mb-4">
-            <div className="flex items-center justify-center gap-3">
-              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center font-display font-bold text-sm">
-                {currentUser.username[0]}
-              </div>
-              <div className="text-left">
-                <p className="font-heading font-semibold text-sm">{currentUser.username}</p>
-                <p className="text-xs text-primary">{currentUser.xp.toLocaleString()} XP</p>
+          <div className="relative flex flex-col items-center">
+            {/* Pioneer badge */}
+            <div className="relative">
+              <div className="absolute inset-0 bg-gold/40 blur-2xl" />
+              <div className="relative flex h-16 w-16 items-center justify-center bg-gradient-to-br from-gold/30 to-ember/20 border-2 border-gold/60 bl-clip-notch bl-pulse-ember">
+                <Sparkles className="h-7 w-7 text-gold" />
               </div>
             </div>
-          </div>
 
-          <Link to="/challenges">
-            <Button variant="outline" size="sm" className="gap-2">
-              <Target className="h-4 w-4" />
-              Solve Challenges to Climb
-            </Button>
-          </Link>
+            <h3 className="mt-4 font-display text-2xl font-bold tracking-tight text-text">
+              You're a <span className="text-gold text-glow-ember">Pioneer</span>
+            </h3>
+            <p className="mt-2 max-w-sm text-[13px] text-text-dim leading-relaxed">
+              As more warriors join the arena, rivals will appear here based on your XP and division.
+            </p>
+
+            {/* Current user card */}
+            <div className="mt-5 w-full max-w-sm border border-neon/30 bg-void/60 p-3 flex items-center gap-3">
+              <div className="relative">
+                <span className="absolute inset-0 bg-neon/40 blur-md" />
+                <span className="relative flex h-10 w-10 items-center justify-center bg-gradient-to-br from-neon to-electric font-display text-[15px] font-bold text-void uppercase">
+                  {currentUser.username[0]}
+                </span>
+              </div>
+              <div className="text-left flex-1 min-w-0">
+                <div className="font-display text-[14px] font-bold text-text truncate">
+                  {currentUser.username}
+                </div>
+                <div className="font-mono text-[11px] text-neon">
+                  {currentUser.xp.toLocaleString()} XP
+                </div>
+              </div>
+              <span className="inline-flex items-center px-2 py-1 border border-ember/40 bg-ember/5 text-ember font-display text-[9px] font-bold tracking-[0.2em] shrink-0">
+                YOU
+              </span>
+            </div>
+
+            {/* CTA */}
+            <Link to="/challenges">
+              <button className="bl-btn-primary bl-pulse mt-5 px-5 py-3 text-[12px]">
+                <Target className="h-4 w-4" />
+                SOLVE CHALLENGES TO CLIMB
+              </button>
+            </Link>
+          </div>
         </div>
       </div>
     );
   }
 
-  // This code will be used once we have real rival data
-  // For now, return the empty state above
   return null;
 }

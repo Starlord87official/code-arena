@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { RivalsSection } from '@/components/dashboard/RivalsSection';
 import { LiveActivityFeed } from '@/components/dashboard/LiveActivityFeed';
 import { DivisionProgress } from '@/components/dashboard/DivisionProgress';
-import { RoadmapCard } from '@/components/roadmap/RoadmapCard';
+import { LearningPathCard } from '@/components/dashboard/LearningPathCard';
 import { RevisionSummaryCard } from '@/components/revision/RevisionSummaryCard';
 import { TargetCard } from '@/components/dashboard/TargetCard';
 import { RevisionQueueCard } from '@/components/dashboard/RevisionQueueCard';
@@ -139,22 +139,39 @@ export default function Dashboard() {
           />
         </div>
 
-        {/* Recommendation banner */}
-        <GlassPanel padding="md" className="mb-8 bl-side-stripe">
-          <div className="flex items-start gap-3 pl-2">
-            <div className="p-2 bg-neon/15 border border-neon/30 flex-shrink-0">
-              <BookOpen className="h-5 w-5 text-neon" />
-            </div>
-            <div>
-              <h3 className="font-display font-semibold text-sm text-text mb-1 tracking-wide">
-                RECOMMENDED NEXT STEP
-              </h3>
-              <p className="text-sm text-text-dim">
-                Start with the first unlocked topic in your roadmap to begin building strong fundamentals.
-              </p>
+        {/* Recommended Next Step */}
+        <Link to="/roadmap" className="block mb-8">
+          <div className="relative bl-glass overflow-hidden group cursor-pointer">
+            <div className="bl-side-stripe absolute inset-0 pointer-events-none" />
+            <div className="absolute inset-0 bl-stripes opacity-50 pointer-events-none" />
+            <div className="relative p-5 flex items-center gap-4">
+              <div className="relative shrink-0">
+                <div className="absolute inset-0 bg-neon/30 blur-md" />
+                <div className="relative flex h-11 w-11 items-center justify-center bg-neon/10 border border-neon/40 bl-clip-notch">
+                  <BookOpen className="h-[18px] w-[18px] text-neon" />
+                </div>
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-mono text-[10px] text-neon/70 tracking-wider">
+                    // NEXT_MOVE
+                  </span>
+                  <span className="h-px flex-1 bg-gradient-to-r from-neon/30 to-transparent" />
+                </div>
+                <h3 className="font-display text-[17px] font-bold text-text leading-tight">
+                  Recommended Next Step
+                </h3>
+                <p className="mt-1 text-[13px] text-text-dim leading-relaxed">
+                  Start with the first unlocked topic in your roadmap to begin building strong fundamentals.
+                </p>
+              </div>
+              <div className="shrink-0 hidden sm:flex items-center gap-2 text-neon font-display text-[12px] font-bold tracking-[0.2em] opacity-80 group-hover:opacity-100 transition-opacity">
+                BEGIN
+                <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </div>
             </div>
           </div>
-        </GlassPanel>
+        </Link>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main column */}
@@ -211,10 +228,10 @@ export default function Dashboard() {
               </div>
             </GlassPanel>
 
-            {/* Roadmap */}
+            {/* Learning Path */}
             <div>
               <SectionHeader tag="LEARNING PATH ACTIVE" />
-              <RoadmapCard roadmapId="dsa" />
+              <LearningPathCard roadmapId="dsa" />
             </div>
 
             {/* Rivals */}
