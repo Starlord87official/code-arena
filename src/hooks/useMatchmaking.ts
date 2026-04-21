@@ -233,7 +233,13 @@ export function useMatchmaking() {
       });
       
       if (error) throw error;
-      return data as {
+      // New shim returns a queue_id (uuid string) directly; normalize to legacy shape.
+      const queueId = typeof data === 'string' ? data : undefined;
+      return {
+        success: true,
+        matched: false,
+        queue_id: queueId,
+      } as {
         success: boolean;
         matched: boolean;
         queue_id?: string;
@@ -299,7 +305,8 @@ export function useMatchmaking() {
         return { success: true, deleted_count: 0 };
       }
       
-      return data as { success: boolean; deleted_count?: number };
+      const deletedCount = typeof data === 'number' ? data : 0;
+      return { success: true, deleted_count: deletedCount };
     },
     onSuccess: () => {
       setMatchmakingState({ status: 'idle' });
