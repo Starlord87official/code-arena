@@ -1,21 +1,16 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { 
-  Crown, Trophy, User, Users, Shield, Clock, CheckCircle2, 
-  ChevronRight, Verified, AlertCircle, Calendar, Zap, Target
+import {
+  Crown, Trophy, User, Users, Shield, CheckCircle2,
+  ChevronRight, Calendar, Zap, Target
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Skeleton } from "@/components/ui/skeleton";
-import { AvatarWithFrame, AvatarWithCrown } from "@/components/championship/AvatarWithFrame";
-import { 
+import {
   TRACKS,
   TrackType,
   UserTrackStatus,
-  getStageStatusLabel,
   getUserStatusLabel,
   getRefreshedSeasonData,
   getNextPhaseForCountdown,
@@ -23,6 +18,8 @@ import {
 } from "@/lib/championshipData";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/bl/PageHeader";
+import { SectionHeader } from "@/components/bl/SectionHeader";
+import { GlassPanel } from "@/components/bl/GlassPanel";
 
 // Default empty user status
 const EMPTY_USER_STATUS: UserChampionshipStatus = {
@@ -58,12 +55,12 @@ function CountdownTimer({ targetDate }: { targetDate: string }) {
     <div className="flex gap-3">
       {Object.entries(timeLeft).map(([unit, value]) => (
         <div key={unit} className="text-center">
-          <div className="bg-secondary/50 rounded-lg px-3 py-2 min-w-[50px]">
-            <span className="font-display text-xl font-bold text-primary">
+          <div className="bl-glass rounded-lg px-3 py-2 min-w-[56px]">
+            <span className="font-mono text-xl font-bold text-neon">
               {value.toString().padStart(2, '0')}
             </span>
           </div>
-          <span className="text-[10px] uppercase text-muted-foreground mt-1">
+          <span className="text-[10px] uppercase font-mono text-text-mute mt-1 block tracking-wider">
             {unit}
           </span>
         </div>
@@ -72,28 +69,29 @@ function CountdownTimer({ targetDate }: { targetDate: string }) {
   );
 }
 
-// Track Card Component
-function TrackCard({ 
-  track, 
+// Track Card
+function TrackCard({
+  track,
   userStatus,
-  nextStage 
-}: { 
+  nextStage
+}: {
   track: TrackType;
   userStatus?: { status: UserTrackStatus; rank?: number; partner?: { username: string } };
   nextStage?: { name: string; date: string };
 }) {
   const trackInfo = TRACKS[track];
   const navigate = useNavigate();
-  
+
   const TrackIcon = track === 'solo' ? User : track === 'duo' ? Users : Shield;
-  
+  const isElite = track === 'clan';
+
   const statusColors: Record<UserTrackStatus, string> = {
-    not_registered: 'text-muted-foreground',
-    registered: 'text-primary',
+    not_registered: 'text-text-mute',
+    registered: 'text-neon',
     qualified: 'text-green-400',
     eliminated: 'text-destructive',
     finalist: 'text-purple-400',
-    champion: 'text-yellow-400'
+    champion: 'text-gold'
   };
 
   const getCTA = () => {
@@ -102,9 +100,6 @@ function TrackCard({
     }
     if (userStatus.status === 'eliminated') {
       return { label: 'View Results', action: () => navigate('/championship/my-progress') };
-    }
-    if (userStatus.status === 'qualified' || userStatus.status === 'registered') {
-      return { label: 'View Progress', action: () => navigate('/championship/my-progress') };
     }
     return { label: 'View Progress', action: () => navigate('/championship/my-progress') };
   };
@@ -117,77 +112,74 @@ function TrackCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <Card 
-        className={cn(
-          "relative overflow-hidden border-border/50 bg-card/80 backdrop-blur-sm",
-          "hover:border-primary/30 hover:shadow-lg hover:shadow-primary/10 transition-all duration-300",
-          track === 'clan' && "ring-1 ring-yellow-500/20"
-        )}
+      <GlassPanel
+        padding="md"
+        corners
+        sideStripe={isElite ? 'ember' : false}
+        className="group transition-all duration-300 hover:-translate-y-0.5 hover:border-neon/40"
       >
-        {/* Glow accent */}
-        <div 
-          className="absolute top-0 left-0 right-0 h-1 opacity-60"
+        {/* subtle 1px top accent line */}
+        <div
+          className="absolute top-0 left-0 right-0 h-px opacity-70"
           style={{ background: trackInfo.accentColor }}
         />
 
-        <CardHeader className="pb-3">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <div 
-                className="p-2.5 rounded-lg"
-                style={{ 
-                  background: `linear-gradient(135deg, ${trackInfo.accentColor}20, ${trackInfo.accentColor}10)`,
-                  boxShadow: `0 0 20px ${trackInfo.accentColor}20`
-                }}
-              >
-                <TrackIcon className="h-5 w-5" style={{ color: trackInfo.accentColor }} />
-              </div>
-              <div>
-                <CardTitle className="text-lg font-display">{trackInfo.title}</CardTitle>
-                <p className="text-xs text-muted-foreground mt-0.5">{trackInfo.description}</p>
-              </div>
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <div
+              className="p-2.5 rounded-lg flex-shrink-0"
+              style={{
+                background: `linear-gradient(135deg, ${trackInfo.accentColor}20, ${trackInfo.accentColor}10)`,
+                boxShadow: `0 0 20px ${trackInfo.accentColor}20`
+              }}
+            >
+              <TrackIcon className="h-5 w-5" style={{ color: trackInfo.accentColor }} />
             </div>
-            {track === 'clan' && (
-              <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-[10px]">
-                ELITE PATH
-              </Badge>
-            )}
+            <div className="min-w-0">
+              <h3 className="font-display text-lg text-text leading-tight">{trackInfo.title}</h3>
+              <p className="text-xs text-text-dim mt-0.5">{trackInfo.description}</p>
+            </div>
           </div>
-        </CardHeader>
+          {isElite && (
+            <Badge className="bg-gold/20 text-gold border-gold/30 text-[10px] font-mono flex-shrink-0">
+              ELITE PATH
+            </Badge>
+          )}
+        </div>
 
-        <CardContent className="space-y-4">
+        <div className="space-y-3">
           {/* Prize */}
           <div className="flex items-center gap-2">
-            <Crown className="h-4 w-4 text-yellow-400" />
-            <span className="text-sm font-medium text-yellow-400">{trackInfo.prize}</span>
+            <Crown className="h-4 w-4 text-gold" />
+            <span className="text-sm font-medium text-gold">{trackInfo.prize}</span>
           </div>
 
           {/* User Status */}
           <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-secondary/30">
-            <span className="text-xs text-muted-foreground">Your Status</span>
+            <span className="text-xs text-text-mute">Your Status</span>
             <span className={cn("text-sm font-semibold", statusColors[userStatus?.status || 'not_registered'])}>
               {getUserStatusLabel(userStatus?.status || 'not_registered')}
-              {userStatus?.rank && ` (#${userStatus.rank})`}
+              {userStatus?.rank && <span className="font-mono"> (#{userStatus.rank})</span>}
             </span>
           </div>
 
-          {/* Duo Partner Info */}
+          {/* Duo Partner */}
           {track === 'duo' && userStatus?.partner && (
             <div className="flex items-center gap-2 py-2 px-3 rounded-lg bg-secondary/30">
-              <Users className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">Partner:</span>
-              <span className="text-sm font-medium">{userStatus.partner.username}</span>
+              <Users className="h-3.5 w-3.5 text-text-mute" />
+              <span className="text-xs text-text-mute">Partner:</span>
+              <span className="text-sm font-medium text-text">{userStatus.partner.username}</span>
             </div>
           )}
 
           {/* Next Stage */}
           {nextStage && (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2 text-xs text-text-dim">
               <Calendar className="h-3.5 w-3.5" />
               <span>Next: {nextStage.name}</span>
-              <span className="text-primary">
-                {new Date(nextStage.date).toLocaleDateString('en-IN', { 
-                  day: 'numeric', 
+              <span className="text-neon font-mono">
+                {new Date(nextStage.date).toLocaleDateString('en-IN', {
+                  day: 'numeric',
                   month: 'short',
                   hour: '2-digit',
                   minute: '2-digit',
@@ -197,193 +189,156 @@ function TrackCard({
             </div>
           )}
 
-          {/* CTA Button */}
-          <Button 
-            className="w-full group"
+          {/* CTA */}
+          <Button
+            className="w-full group/btn"
             variant={userStatus?.status === 'not_registered' ? 'default' : 'outline'}
             onClick={cta.action}
           >
             {cta.label}
-            <ChevronRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+            <ChevronRight className="ml-2 h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
           </Button>
-        </CardContent>
-      </Card>
+        </div>
+      </GlassPanel>
     </motion.div>
   );
 }
 
-// Stage Timeline Component
+// Stage Timeline
 function StageTimeline() {
   const season = getRefreshedSeasonData();
   const stages = season.stages;
 
   return (
-    <Card className="bg-card/80 backdrop-blur-sm border-border/50">
-      <CardHeader>
-        <CardTitle className="text-lg font-display flex items-center gap-2">
-          <Target className="h-5 w-5 text-primary" />
-          Selection Path
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="relative">
-          {/* Progress line */}
-          <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-border" />
-          
-          <div className="space-y-4">
-            {stages.map((stage, index) => {
-              const isActive = stage.status === 'active';
-              const isCompleted = stage.status === 'completed';
-              
-              return (
-                <div key={stage.id} className="relative flex gap-4 items-start">
-                  {/* Node */}
-                  <div 
-                    className={cn(
-                      "relative z-10 w-8 h-8 rounded-full flex items-center justify-center",
-                      isCompleted && "bg-green-500/20 text-green-400",
-                      isActive && "bg-primary/20 text-primary ring-2 ring-primary animate-pulse",
-                      !isCompleted && !isActive && "bg-secondary text-muted-foreground"
-                    )}
-                  >
-                    {isCompleted ? (
-                      <CheckCircle2 className="h-4 w-4" />
-                    ) : isActive ? (
-                      <Zap className="h-4 w-4" />
-                    ) : (
-                      <span className="text-xs font-bold">{index + 1}</span>
-                    )}
-                  </div>
+    <GlassPanel padding="md">
+      <div className="relative">
+        <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-line/40" />
 
-                  {/* Content */}
-                  <div className="flex-1 pb-4">
-                    <div className="flex items-center gap-2">
-                      <span className={cn(
-                        "font-semibold text-sm",
-                        isActive && "text-primary",
-                        isCompleted && "text-green-400"
-                      )}>
-                        {stage.name}
-                      </span>
-                      {isActive && (
-                        <Badge className="bg-primary/20 text-primary border-primary/30 text-[10px] animate-pulse">
-                          LIVE
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {new Date(stage.startDate).toLocaleDateString('en-IN', {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric',
-                        timeZone: 'Asia/Kolkata'
-                      })}
-                    </p>
-                    <p className="text-xs text-muted-foreground/70 mt-1">{stage.format}</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
+        <div className="space-y-4">
+          {stages.map((stage, index) => {
+            const isActive = stage.status === 'active';
+            const isCompleted = stage.status === 'completed';
 
-// Live Standings Preview - Empty state (no mock data)
-function LiveStandingsPreview() {
-  return (
-    <Card className="bg-card/80 backdrop-blur-sm border-border/50">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-lg font-display flex items-center gap-2">
-          <Trophy className="h-5 w-5 text-yellow-400" />
-          Live Standings
-        </CardTitle>
-        <Link to="/championship/standings">
-          <Button variant="ghost" size="sm" className="text-xs">
-            View All <ChevronRight className="ml-1 h-3 w-3" />
-          </Button>
-        </Link>
-      </CardHeader>
-      <CardContent>
-        <div className="text-center py-6">
-          <Trophy className="h-10 w-10 mx-auto text-muted-foreground/30 mb-3" />
-          <p className="text-sm text-muted-foreground">
-            Standings will appear once competitions begin.
-          </p>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-// User Status Panel - uses real empty state
-function UserStatusPanel() {
-  const status = EMPTY_USER_STATUS;
-  const navigate = useNavigate();
-
-  return (
-    <Card className="bg-card/80 backdrop-blur-sm border-border/50">
-      <CardHeader>
-        <CardTitle className="text-lg font-display">My Championship Status</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Verification Lane */}
-        <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-secondary/30">
-          <div className="flex items-center gap-2">
-            <User className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm">Open Lane</span>
-          </div>
-          <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
-            Pending
-          </Badge>
-        </div>
-
-        {/* Tracks Joined */}
-        <div className="flex gap-2">
-          {(['solo', 'duo', 'clan'] as TrackType[]).map((track) => {
             return (
-              <Badge 
-                key={track}
-                variant="outline"
-                className="capitalize"
-              >
-                {track}
-              </Badge>
+              <div key={stage.id} className="relative flex gap-4 items-start">
+                <div
+                  className={cn(
+                    "relative z-10 w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
+                    isCompleted && "bg-green-500/20 text-green-400",
+                    isActive && "bg-neon/20 text-neon ring-2 ring-neon animate-pulse",
+                    !isCompleted && !isActive && "bg-secondary text-text-mute"
+                  )}
+                >
+                  {isCompleted ? (
+                    <CheckCircle2 className="h-4 w-4" />
+                  ) : isActive ? (
+                    <Zap className="h-4 w-4" />
+                  ) : (
+                    <span className="text-xs font-mono font-bold">{index + 1}</span>
+                  )}
+                </div>
+
+                <div className="flex-1 pb-4 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className={cn(
+                      "font-display text-sm text-text",
+                      isActive && "text-neon",
+                      isCompleted && "text-green-400"
+                    )}>
+                      {stage.name}
+                    </span>
+                    {isActive && (
+                      <Badge className="bg-neon/20 text-neon border-neon/30 text-[10px] font-mono animate-pulse">
+                        LIVE
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-xs font-mono text-text-mute mt-0.5">
+                    {new Date(stage.startDate).toLocaleDateString('en-IN', {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric',
+                      timeZone: 'Asia/Kolkata'
+                    })}
+                  </p>
+                  <p className="text-xs text-text-dim mt-1">{stage.format}</p>
+                </div>
+              </div>
             );
           })}
         </div>
-
-        {/* Next Action */}
-        <Button 
-          className="w-full group"
-          variant="default"
-          onClick={() => navigate('/challenges')}
-        >
-          <Target className="mr-2 h-4 w-4" />
-          Start Practice Set
-          <ChevronRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-        </Button>
-      </CardContent>
-    </Card>
+      </div>
+    </GlassPanel>
   );
 }
 
-// Main Championship Page
+// Live Standings Empty
+function LiveStandingsPreview() {
+  return (
+    <GlassPanel padding="md">
+      <div className="text-center py-6">
+        <Trophy className="h-10 w-10 mx-auto text-text-mute/40 mb-3" />
+        <p className="text-sm text-text-dim">
+          Standings will appear once competitions begin.
+        </p>
+        <Link to="/championship/standings">
+          <Button variant="ghost" size="sm" className="text-xs mt-3">
+            View All <ChevronRight className="ml-1 h-3 w-3" />
+          </Button>
+        </Link>
+      </div>
+    </GlassPanel>
+  );
+}
+
+// User Status Panel
+function UserStatusPanel() {
+  const navigate = useNavigate();
+
+  return (
+    <GlassPanel padding="md" className="space-y-4">
+      <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-secondary/30">
+        <div className="flex items-center gap-2">
+          <User className="h-4 w-4 text-text-mute" />
+          <span className="text-sm text-text">Open Lane</span>
+        </div>
+        <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 font-mono text-[10px]">
+          PENDING
+        </Badge>
+      </div>
+
+      <div className="flex gap-2">
+        {(['solo', 'duo', 'clan'] as TrackType[]).map((track) => (
+          <Badge key={track} variant="outline" className="capitalize font-mono text-[10px]">
+            {track}
+          </Badge>
+        ))}
+      </div>
+
+      <Button
+        className="w-full group"
+        variant="default"
+        onClick={() => navigate('/challenges')}
+      >
+        <Target className="mr-2 h-4 w-4" />
+        Start Practice Set
+        <ChevronRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+      </Button>
+    </GlassPanel>
+  );
+}
+
+// Main Page
 export default function Championship() {
-  // Get refreshed season data with current stage statuses
   const season = getRefreshedSeasonData();
   const userStatus = EMPTY_USER_STATUS;
-  
-  // Get countdown target dynamically
+
   const nextPhase = getNextPhaseForCountdown(season);
-  const activeStage = season.stages.find(s => s.status === 'active');
   const nextStage = season.stages.find(s => s.status === 'upcoming');
 
   return (
     <div className="min-h-screen pb-12">
-      <div className="container mx-auto px-4 pt-6">
+      <div className="container mx-auto max-w-7xl px-4 pt-6 space-y-8">
         <PageHeader
           sector="010"
           tag={`CHAMPIONSHIP_${season.year}`}
@@ -396,28 +351,22 @@ export default function Championship() {
             </div>
           }
         />
-      </div>
-      <section className="relative overflow-hidden border-b border-line/30">
-        <div className="absolute inset-0 bg-gradient-to-br from-neon/5 via-transparent to-gold/5" />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-neon/10 blur-[120px] rounded-full" />
-        
-        <div className="relative container mx-auto px-4 py-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center space-y-6"
-          >
 
-            {/* Countdown */}
-            <div className="flex flex-col items-center gap-2">
-              <span className="text-sm text-muted-foreground">
-                {nextPhase?.label || 'Championship concluded'}
+        {/* Hero countdown panel */}
+        <GlassPanel strong corners sideStripe padding="lg">
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6"
+          >
+            <div className="flex flex-col items-start gap-3">
+              <span className="font-mono text-[11px] text-neon/70 tracking-wider">
+                [ {nextPhase?.label?.toUpperCase() || 'CHAMPIONSHIP CONCLUDED'} ]
               </span>
               {nextPhase && <CountdownTimer targetDate={nextPhase.targetDate} />}
             </div>
 
-            {/* Primary CTA */}
-            <div className="flex flex-wrap justify-center gap-4 pt-4">
+            <div className="flex flex-wrap gap-3">
               <Link to="/championship/my-progress">
                 <Button size="lg" className="gap-2 font-display">
                   <Trophy className="h-5 w-5" />
@@ -432,59 +381,68 @@ export default function Championship() {
               </Link>
             </div>
           </motion.div>
-        </div>
-      </section>
+        </GlassPanel>
 
-      {/* Main Content */}
-      <div className="container mx-auto px-4 py-8">
+        {/* Main grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Track Cards */}
-          <div className="lg:col-span-2 space-y-6">
-            <h2 className="text-xl font-display font-semibold">Choose Your Track</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              <TrackCard 
-                track="solo" 
-                userStatus={userStatus.tracks.solo}
-                nextStage={nextStage ? { name: nextStage.name, date: nextStage.startDate } : undefined}
-              />
-              <TrackCard 
-                track="duo" 
-                userStatus={userStatus.tracks.duo}
-                nextStage={nextStage ? { name: nextStage.name, date: nextStage.startDate } : undefined}
-              />
-              <TrackCard 
-                track="clan" 
-                userStatus={userStatus.tracks.clan}
-                nextStage={nextStage ? { name: nextStage.name, date: nextStage.startDate } : undefined}
-              />
+          {/* Left/Main */}
+          <div className="lg:col-span-2 space-y-8">
+            <div>
+              <SectionHeader tag="TRACKS" />
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                <TrackCard
+                  track="solo"
+                  userStatus={userStatus.tracks.solo}
+                  nextStage={nextStage ? { name: nextStage.name, date: nextStage.startDate } : undefined}
+                />
+                <TrackCard
+                  track="duo"
+                  userStatus={userStatus.tracks.duo}
+                  nextStage={nextStage ? { name: nextStage.name, date: nextStage.startDate } : undefined}
+                />
+                <TrackCard
+                  track="clan"
+                  userStatus={userStatus.tracks.clan}
+                  nextStage={nextStage ? { name: nextStage.name, date: nextStage.startDate } : undefined}
+                />
+              </div>
             </div>
 
-            {/* Stage Timeline */}
-            <StageTimeline />
+            <div>
+              <SectionHeader tag="SELECTION PATH" />
+              <StageTimeline />
+            </div>
           </div>
 
-          {/* Right Sidebar */}
-          <div className="space-y-6">
-            <UserStatusPanel />
-            <LiveStandingsPreview />
+          {/* Right rail */}
+          <div className="space-y-8">
+            <div>
+              <SectionHeader tag="MY STATUS" />
+              <UserStatusPanel />
+            </div>
 
-            {/* Hall of Champions CTA */}
-            <Card className="bg-gradient-to-br from-yellow-500/10 to-amber-600/5 border-yellow-500/20">
-              <CardContent className="pt-6">
+            <div>
+              <SectionHeader tag="LIVE STANDINGS" />
+              <LiveStandingsPreview />
+            </div>
+
+            <div>
+              <SectionHeader tag="HALL OF CHAMPIONS" />
+              <GlassPanel padding="md" className="bg-gradient-to-br from-gold/10 to-amber-600/5 border-gold/20">
                 <div className="flex items-center gap-3 mb-4">
-                  <Crown className="h-6 w-6 text-yellow-400" />
-                  <h3 className="font-display font-semibold">Hall of Champions</h3>
+                  <Crown className="h-6 w-6 text-gold" />
+                  <h3 className="font-display text-text">Past Champions</h3>
                 </div>
-                <p className="text-sm text-muted-foreground mb-4">
+                <p className="text-sm text-text-dim mb-4">
                   View past champions and their legendary journeys.
                 </p>
                 <Link to="/hall-of-champions">
-                  <Button variant="outline" className="w-full border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/10">
+                  <Button variant="outline" className="w-full border-gold/30 text-gold hover:bg-gold/10">
                     Enter Hall <ChevronRight className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>
-              </CardContent>
-            </Card>
+              </GlassPanel>
+            </div>
           </div>
         </div>
       </div>
