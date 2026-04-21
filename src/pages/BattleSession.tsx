@@ -400,7 +400,7 @@ export default function BattleSessionPage() {
     } finally {
       setSubmitting(false);
     }
-  }, [session, user, selectedMatchProblem, code, language, testCases.length, submissions.length]);
+  }, [session, user, selectedMatchProblem, code, language, testCases.length, submissions.length, getPasteRatio]);
 
   const handleForfeit = useCallback(async () => {
     if (!session || isEndingRef.current) return;
