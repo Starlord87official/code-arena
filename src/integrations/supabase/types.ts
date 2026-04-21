@@ -4652,6 +4652,7 @@ export type Database = {
         Args: { p_daily?: number; p_monthly?: number; p_weekly?: number }
         Returns: Json
       }
+      validate_battle_session: { Args: { p_session_id: string }; Returns: Json }
       validate_invite_code: { Args: { p_code: string }; Returns: Json }
     }
     Enums: {
