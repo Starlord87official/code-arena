@@ -25,21 +25,25 @@ Deno.serve(async (req) => {
   const supabase = createClient(supabaseUrl, serviceKey);
 
   try {
-    const [finalized, created] = await Promise.all([
+    const [finalized, created, sweep] = await Promise.all([
       supabase.rpc("tick_active_matches"),
       supabase.rpc("mm_tick"),
+      supabase.rpc("reconnect_sweep"),
     ]);
 
     if (finalized.error) console.error("tick_active_matches:", finalized.error);
     if (created.error) console.error("mm_tick:", created.error);
+    if (sweep.error) console.error("reconnect_sweep:", sweep.error);
 
     return new Response(
       JSON.stringify({
         matches_finalized: finalized.data ?? 0,
         matches_created: created.data ?? 0,
+        forfeits_processed: sweep.data ?? 0,
         errors: {
           finalize: finalized.error?.message ?? null,
           mm_tick: created.error?.message ?? null,
+          sweep: sweep.error?.message ?? null,
         },
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },

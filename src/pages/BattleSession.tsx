@@ -16,6 +16,8 @@ import { ConsolePanel, type TestCase, type SubmissionRow } from "@/components/ba
 import { StatusBar } from "@/components/battle-v2/workspace/StatusBar";
 import { VerdictOverlay } from "@/components/battle-v2/workspace/VerdictOverlay";
 import type { Verdict } from "@/components/battle-v2/types";
+import { useBattleRealtime } from "@/hooks/useBattleRealtime";
+import { useBattleHeartbeat } from "@/hooks/useBattleHeartbeat";
 
 interface MatchProblem {
   id: string;
@@ -82,9 +84,23 @@ export default function BattleSessionPage() {
     refetchInterval: (q) => {
       const d = q.state.data as BattleSessionT | undefined;
       if (d?.status === "completed") return false;
-      return 5000;
+      return 15000; // realtime is the primary; this is a safety net
     },
   });
+
+  // Realtime subscription — drives instant opponent + completion updates
+  const { match: rtMatch, participants: rtParticipants, latestSubmission, isConnected: rtConnected } = useBattleRealtime(sessionId);
+
+  // Heartbeat to prevent reconnect-sweep forfeit
+  useBattleHeartbeat(sessionId, !!user && session?.status !== "completed");
+
+  // When realtime says match is completed, kick navigation immediately (don't wait for poll)
+  useEffect(() => {
+    if (rtMatch?.state === "completed" && sessionId) {
+      queryClient.invalidateQueries({ queryKey: ["battle-session", sessionId] });
+      navigate(`/battle?completed=${sessionId}`, { replace: true });
+    }
+  }, [rtMatch?.state, sessionId, navigate, queryClient]);
 
   // Auto-redirect to post-battle on completion
   useEffect(() => {
@@ -179,35 +195,41 @@ export default function BattleSessionPage() {
     );
   }, [problemDetail]);
 
-  // Realtime opponent submissions
+  // Realtime opponent submissions — derived from useBattleRealtime
   useEffect(() => {
-    if (!sessionId || !user) return;
-    const channel = supabase
-      .channel(`battle-${sessionId}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "battle_match_submissions", filter: `match_id=eq.${sessionId}` },
-        (payload: any) => {
-          const sub = payload.new;
-          if (!sub || sub.user_id === user.id) return;
-          const status: OpponentSnapshot["status"] =
-            sub.status === "accepted" ? "CLEARED" :
-            sub.status === "wrong_answer" || sub.status === "rejected" ? "STUCK" :
-            "CODING";
-          setOpponentSnap({
-            handle: opponentProfile?.username || "Opponent",
-            status,
-            progress: Math.min(100, ((sub.testcases_passed || 0) / Math.max(1, sub.testcases_total || 1)) * 100),
-            testsPassed: sub.testcases_passed || 0,
-            testsTotal: sub.testcases_total || (testCases.length || 0),
-            submissions: 1,
-            tone: "ember",
-          });
-        },
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [sessionId, user, opponentProfile, testCases.length]);
+    const sub = latestSubmission;
+    if (!sub || !user || sub.user_id === user.id) return;
+    const status: OpponentSnapshot["status"] =
+      sub.status === "accepted" ? "CLEARED" :
+      sub.status === "wrong_answer" || sub.status === "rejected" ? "STUCK" :
+      "CODING";
+    setOpponentSnap({
+      handle: opponentProfile?.username || "Opponent",
+      status,
+      progress: Math.min(100, ((sub.testcases_passed || 0) / Math.max(1, sub.testcases_total || 1)) * 100),
+      testsPassed: sub.testcases_passed || 0,
+      testsTotal: sub.testcases_total || (testCases.length || 0),
+      submissions: 1,
+      tone: "ember",
+    });
+  }, [latestSubmission, user, opponentProfile, testCases.length]);
+
+  // Opponent disconnect tracking from realtime participants
+  const opponentParticipant = rtParticipants.find((p) => p.user_id !== user?.id);
+  const opponentDisconnectedAt = opponentParticipant?.disconnected_at
+    ? new Date(opponentParticipant.disconnected_at).getTime()
+    : null;
+  const [, forceTick] = useState(0);
+  useEffect(() => {
+    if (!opponentDisconnectedAt) return;
+    const t = setInterval(() => forceTick((n) => n + 1), 1000);
+    return () => clearInterval(t);
+  }, [opponentDisconnectedAt]);
+  const opponentDisconnected = !!opponentDisconnectedAt;
+  const opponentSecondsRemaining = opponentDisconnectedAt
+    ? Math.ceil((opponentDisconnectedAt + 60_000 - Date.now()) / 1000)
+    : 60;
+
 
   const handleLanguageChange = (lid: LangId) => {
     setLanguage(lid);
@@ -451,8 +473,10 @@ export default function BattleSessionPage() {
 
       <OpponentTicker
         teammate={teammateSnap}
-        opponents={opponentSnap ? [opponentSnap] : []}
+        opponents={opponentSnap ? [opponentSnap] : (opponentDisconnected ? [{ handle: opponentProfile?.username || "Opponent", status: "IDLE", progress: 0, testsPassed: 0, testsTotal: testCases.length, submissions: 0, tone: "ember" }] : [])}
         momentum={50}
+        opponentDisconnected={opponentDisconnected}
+        secondsRemaining={opponentSecondsRemaining}
       />
 
       <div className="flex flex-1 overflow-hidden min-h-0">
