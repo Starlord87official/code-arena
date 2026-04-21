@@ -1,92 +1,38 @@
 
+Fix the Duo Battle redirect by making matchmaking recovery-driven instead of trusting a single state transition.
 
-# Plan: Fix Battle Match Redirect — Both Players Land in Session
+1. Harden `useMatchmaking.ts` against stale async overwrites
+- Add a small state machine rule: once a user has a `sessionId` or is in `matched` / `in_battle`, ignore later `idle` / `searching` results unless the user explicitly cancels or the battle is completed.
+- Replace the current one-time `checkInitialState` logic with a guarded sync that checks state again after the async RPC returns, so an older request cannot overwrite a fresh match result.
+- Use a ref for the latest matchmaking state so polling and mount-time checks compare against current state before calling `setMatchmakingState`.
 
-## The Bug
+2. Add self-healing active-session detection
+- Change the `activeSession` query in `useMatchmaking.ts` to run whenever the user is logged in, not only when local matchmaking state already says `matched` / `in_battle`.
+- If an active `battle_sessions` row exists for the current user, immediately sync local state to:
+  - `status: 'in_battle'`
+  - `sessionId: activeSession.id`
+  - `battleId`, `opponentId`
+- This lets a player recover even if they missed the original redirect moment and are stuck on `/battle`.
 
-When two players match, only **one** gets routed to `/battle/session/:id`. The other stays on `/battle`.
+3. Prevent polling from downgrading a real match
+- In the search polling effect, ignore `searching` / `idle` responses if local state already has a valid `sessionId`.
+- Only stop polling with timeout behavior when the user is genuinely still in `searching` and has no active session.
+- Keep the success path the same for `matched` / `in_battle`, but prefer syncing to `in_battle` once the session row is detected.
 
-## Root Cause
+4. Make `Battle.tsx` redirect from recovered session state too
+- Keep the existing immediate redirect from `matchmakingState.sessionId`.
+- Also redirect when the unconditional `activeSession` query returns a live session, even if matchmaking state was stale.
+- Use `replace: true` so the stuck player does not bounce back into `/battle`.
 
-In `useMatchmaking.ts`, the `activeSession` query is **gated** by:
-```ts
-enabled: !!user && (matchmakingState.status === 'matched' || matchmakingState.status === 'in_battle')
-```
+5. Keep battle cleanup intact
+- Do not change `BattleSession.tsx` scoring/lifecycle.
+- Keep `BattleResults.tsx` reset behavior, since it correctly clears matchmaking state when returning to the lobby.
 
-And `Battle.tsx` waits for **both** conditions before navigating:
-```ts
-if (isMatched && matchmakingState.sessionId && activeSession?.status === 'active') navigate(...)
-```
+Files to update
+- `src/hooks/useMatchmaking.ts`
+- `src/pages/Battle.tsx`
 
-**Player A** (joins queue first): polls every 2s via `check_battle_queue_status` → state flips to `matched` → `activeSession` query enables → fetches session → redirects ✅
-
-**Player B** (joins second, gets matched immediately by `join_battle_queue` RPC): the `joinQueue.onSuccess` sets `status: 'matched'` with `sessionId`. But then `checkInitialState` (mount effect) and other timing can reset state, OR `activeSession` query races and returns stale/empty before the session row is committed-visible to this client → redirect condition never satisfied → user stuck on `/battle`.
-
-Also: requiring `activeSession?.status === 'active'` is **redundant** — the RPC already returns `session_id` only after inserting a row with `status='active'`. The extra round-trip introduces the race.
-
-## The Fix
-
-### File: `src/pages/Battle.tsx` (lines 72–77)
-
-Remove the `activeSession?.status === 'active'` gate. Trust the RPC response — if we have a `sessionId` from a `matched` or `in_battle` state, navigate immediately.
-
-```ts
-useEffect(() => {
-  if ((isMatched || matchmakingState.status === 'in_battle') && matchmakingState.sessionId) {
-    navigate(`/battle/session/${matchmakingState.sessionId}`, { replace: true });
-  }
-}, [isMatched, matchmakingState.status, matchmakingState.sessionId, navigate]);
-```
-
-### File: `src/hooks/useMatchmaking.ts`
-
-**Change 1 — `joinQueue.onSuccess` (lines 179–186):** when the RPC returns `matched: true`, the session is already created in DB. Set state to `matched` (already done) — no change needed here, this is correct.
-
-**Change 2 — `checkInitialState` mount effect (lines 132–151):** currently overwrites state from RPC even right after a successful match. Add a guard to skip if we already have a `sessionId` in state, preventing the just-set match from being clobbered:
-
-```ts
-useEffect(() => {
-  const checkInitialState = async () => {
-    if (!user) return;
-    // Skip if we already have a fresh match in local state
-    if (matchmakingState.sessionId) return;
-    const result = await checkQueueStatus();
-    if (result?.success && result.status !== 'idle') {
-      setMatchmakingState({
-        status: result.status,
-        queueId: result.queue_id,
-        sessionId: result.session_id,
-        battleId: result.battle_id,
-        opponentId: result.opponent_id,
-        waitTime: result.wait_time,
-        mode: result.mode,
-      });
-    }
-  };
-  checkInitialState();
-}, [user]); // remove checkQueueStatus from deps to avoid re-running
-```
-
-**Change 3 — Polling effect (lines 90–104):** when poll detects `matched` or `in_battle`, it currently sets state correctly. Confirmed fine — no change.
-
-**Change 4 — Remove now-unused `activeSession` query gating dependency from `Battle.tsx`:** since we no longer read `activeSession.status` for redirect, can leave the query (still useful for `BattleSession.tsx`) but don't destructure it in Battle.tsx.
-
-## Why This Works
-
-- **Player A** (waiting in queue): poll detects match → `setMatchmakingState({status:'matched', sessionId})` → effect fires → navigates ✅
-- **Player B** (joins and matches instantly): `joinQueue.onSuccess` sets `{status:'matched', sessionId}` → effect fires → navigates ✅
-- Mount-effect race eliminated by sessionId guard
-- DB session row is guaranteed to exist (RPC inserts before returning) — no need to re-verify via separate query
-- `replace: true` prevents back-button bounce to `/battle`
-
-## Files Touched
-
-- `src/pages/Battle.tsx` — simplify redirect effect (5 lines)
-- `src/hooks/useMatchmaking.ts` — guard mount effect against clobbering fresh match (3 lines)
-
-## Acceptance
-
-- Two clients joining quick match → both auto-navigate to the same `/battle/session/:id`
-- No regressions to cancel/timeout/in-battle reconnect flows
-- Existing `BattleSession.tsx` lifecycle (memory: `battle-result-routing-split`, `battle-state-lifecycle-cleanup`) untouched
-
+Expected result
+- If Player A and Player B match, both land on `/battle/session/:id`.
+- If one client misses the initial state update, the next active-session sync automatically recovers and redirects them.
+- No regressions to cancel, timeout, reconnect, or results-page cleanup flows.
