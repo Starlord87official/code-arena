@@ -1,4 +1,4 @@
-import { Activity, Shield, Swords } from "lucide-react";
+import { Activity, Shield, Swords, WifiOff } from "lucide-react";
 
 export interface OpponentSnapshot {
   handle: string;
@@ -14,6 +14,27 @@ interface Props {
   teammate?: OpponentSnapshot | null;
   opponents: OpponentSnapshot[];
   momentum?: number;
+  opponentDisconnected?: boolean;
+  secondsRemaining?: number;
+}
+
+function DisconnectChip({ handle, secondsRemaining }: { handle: string; secondsRemaining: number }) {
+  return (
+    <div className="flex min-w-[220px] items-center gap-3 border border-ember/60 bg-ember/10 px-3 h-9 bl-clip-chevron">
+      <WifiOff className="h-3.5 w-3.5 text-ember bl-flicker" />
+      <div className="flex flex-col leading-none">
+        <span className="font-display text-[10px] font-bold tracking-[0.2em] text-ember">
+          {handle.toUpperCase()}
+        </span>
+        <span className="font-mono text-[9px] tracking-[0.14em] text-ember/80">
+          RECONNECTING · {Math.max(0, secondsRemaining)}s
+        </span>
+      </div>
+      <div className="ml-auto font-mono text-[10px] text-ember tabular-nums">
+        {Math.max(0, secondsRemaining)}s
+      </div>
+    </div>
+  );
 }
 
 function ProgressChip({ snap }: { snap: OpponentSnapshot }) {
@@ -43,7 +64,7 @@ function ProgressChip({ snap }: { snap: OpponentSnapshot }) {
   );
 }
 
-export function OpponentTicker({ teammate, opponents, momentum = 50 }: Props) {
+export function OpponentTicker({ teammate, opponents, momentum = 50, opponentDisconnected = false, secondsRemaining = 60 }: Props) {
   return (
     <div className="relative z-20 flex items-center gap-3 border-b border-line/60 bg-void/70 backdrop-blur-md px-4 py-2 md:px-6 overflow-x-auto">
       <div className="pointer-events-none absolute inset-0 bl-grid opacity-15" />
@@ -69,7 +90,9 @@ export function OpponentTicker({ teammate, opponents, momentum = 50 }: Props) {
       </div>
 
       <div className="flex items-center gap-2">
-        {opponents.length === 0 ? (
+        {opponentDisconnected && opponents[0] ? (
+          <DisconnectChip handle={opponents[0].handle} secondsRemaining={secondsRemaining} />
+        ) : opponents.length === 0 ? (
           <span className="font-mono text-[10px] text-text-mute">No opponent data</span>
         ) : (
           opponents.map((o) => <ProgressChip key={o.handle} snap={o} />)
