@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Crown, Trophy, Shield } from "lucide-react";
+import { Crown, Trophy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/bl/PageHeader";
 import { RankBadge } from "@/components/rank/RankBadge";
@@ -74,9 +74,15 @@ export default function RankedLeaderboard() {
   return (
     <div className="container mx-auto max-w-6xl px-4 py-6">
       <PageHeader
-        title="Ranked Ladder"
+        sector="012"
+        tag="RANKED_LADDER"
+        title={
+          <span className="inline-flex items-center gap-3">
+            <Trophy className="h-7 w-7 text-gold" />
+            Ranked Ladder
+          </span>
+        }
         subtitle="Top warriors of the active season — sorted by tier, division, and LP."
-        icon={Trophy}
       />
 
       {/* Tier filter */}
