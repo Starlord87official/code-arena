@@ -1,16 +1,23 @@
 import { Crown, Medal, Sparkles, Trophy } from "lucide-react";
 
 interface Props {
-  winnerName: string;
-  loserName: string;
+  outcome: "win" | "loss" | "draw";
+  callerName: string;
+  opponentName: string;
   finalScore: string;
   duration: string;
-  lpGain: number;
-  lpLoss: number;
-  isDraw?: boolean;
+  lpDelta: number; // signed for caller
 }
 
-export function ResultBanner({ winnerName, loserName, finalScore, duration, lpGain, lpLoss, isDraw }: Props) {
+export function ResultBanner({ outcome, callerName, opponentName, finalScore, duration, lpDelta }: Props) {
+  const isDraw = outcome === "draw";
+  const callerWon = outcome === "win";
+
+  const winnerName = isDraw ? callerName : callerWon ? callerName : opponentName;
+  const loserName = isDraw ? opponentName : callerWon ? opponentName : callerName;
+  const lpGain = callerWon ? Math.abs(lpDelta) : 0;
+  const lpLoss = !callerWon && !isDraw ? Math.abs(lpDelta) : 0;
+
   return (
     <div className="relative overflow-hidden border border-neon/40 bg-panel/60 bl-glass bl-corners bl-result-in">
       <div className="pointer-events-none absolute inset-0 bl-grid opacity-25" />
@@ -23,11 +30,11 @@ export function ResultBanner({ winnerName, loserName, finalScore, duration, lpGa
           <div className="flex items-center gap-2">
             <Crown className="h-4 w-4 text-gold drop-shadow-[0_0_8px_rgba(251,191,36,0.7)]" />
             <span className="font-display text-[10px] font-bold tracking-[0.3em] text-gold">
-              {isDraw ? "STALEMATE" : "CHAMPIONS"}
+              {isDraw ? "STALEMATE" : "CHAMPION"}
             </span>
           </div>
           <h2 className="mt-2 font-display text-[28px] font-black leading-none tracking-tight text-neon text-glow md:text-[36px]">
-            {isDraw ? "DRAW" : "VICTORY"}
+            {isDraw ? "DRAW" : callerWon ? "VICTORY" : "DEFEAT"}
           </h2>
           <p className="mt-2 font-display text-[15px] font-bold tracking-tight text-text">{winnerName}</p>
           {!isDraw && lpGain > 0 && (
@@ -58,11 +65,11 @@ export function ResultBanner({ winnerName, loserName, finalScore, duration, lpGa
           <div className="flex items-center gap-2">
             <Medal className="h-4 w-4 text-ember" />
             <span className="font-display text-[10px] font-bold tracking-[0.3em] text-ember">
-              {isDraw ? "DEADLOCK" : "RUNNERS-UP"}
+              {isDraw ? "DEADLOCK" : "RUNNER-UP"}
             </span>
           </div>
           <h2 className="mt-2 font-display text-[28px] font-black leading-none tracking-tight text-ember text-glow-ember md:text-[36px]">
-            {isDraw ? "TIE" : "DEFEAT"}
+            {isDraw ? "TIE" : callerWon ? "OUTPLAYED" : "REGROUP"}
           </h2>
           <p className="mt-2 font-display text-[15px] font-bold tracking-tight text-text">{loserName}</p>
           {!isDraw && lpLoss > 0 && (

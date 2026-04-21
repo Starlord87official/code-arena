@@ -1,27 +1,20 @@
-import { Award, Crown } from "lucide-react";
-import type { Accent } from "../types";
+import { Award, Crown, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-export interface PlayerPerf {
-  handle: string;
-  initial: string;
-  isCaptain?: boolean;
-  accent: "neon" | "ember";
-  solved: number;
-  submissions: number;
-  attempts: number;
-  accuracy: number;
-  wpm: number;
-  avgTime: string;
-  impact: number;
-  mvp?: boolean;
-}
+import type { ResultPlayer } from "@/hooks/useBattleResult";
 
 interface Props {
-  rows: PlayerPerf[];
+  players: ResultPlayer[];
+  callerId?: string;
 }
 
-export function PlayerStatsTable({ rows }: Props) {
+function fmtTime(sec: number): string {
+  if (!sec || sec <= 0) return "—";
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+
+export function PlayerStatsTable({ players, callerId }: Props) {
   return (
     <div className="relative overflow-hidden border border-line bg-panel/60 bl-glass bl-corners">
       <div className="pointer-events-none absolute inset-0 bl-grid opacity-20" />
@@ -36,26 +29,26 @@ export function PlayerStatsTable({ rows }: Props) {
           <span className="font-mono text-[10px] tracking-[0.14em] text-text-mute">PER WARRIOR</span>
         </header>
 
-        {rows.length === 0 ? (
+        {players.length === 0 ? (
           <div className="py-10 text-center">
             <p className="font-display text-[12px] font-bold tracking-[0.2em] text-text-dim">
-              NO PLAYER DATA
+              {"// no player data yet"}
             </p>
           </div>
         ) : (
           <>
-            <div className="hidden grid-cols-[1.4fr_70px_70px_90px_70px_80px_1fr] items-center border-b border-line/40 px-5 py-2 font-display text-[9.5px] font-bold tracking-[0.22em] text-text-mute md:grid">
+            <div className="hidden grid-cols-[1.4fr_70px_70px_80px_80px_80px_90px] items-center border-b border-line/40 px-5 py-2 font-display text-[9.5px] font-bold tracking-[0.22em] text-text-mute md:grid">
               <span>WARRIOR</span>
+              <span className="text-center">SCORE</span>
               <span className="text-center">SOLVED</span>
-              <span className="text-center">SUBS</span>
-              <span className="text-center">ACCURACY</span>
-              <span className="text-center">WPM</span>
-              <span className="text-center">AVG TIME</span>
-              <span className="text-right">IMPACT</span>
+              <span className="text-center">WRONG</span>
+              <span className="text-center">SOLVE TIME</span>
+              <span className="text-center">INTEGRITY</span>
+              <span className="text-right">LP</span>
             </div>
             <ul className="flex flex-col divide-y divide-line/30">
-              {rows.map((r) => (
-                <Row key={r.handle} p={r} />
+              {players.map((p) => (
+                <Row key={p.user_id} p={p} isCaller={p.user_id === callerId} />
               ))}
             </ul>
           </>
@@ -65,13 +58,18 @@ export function PlayerStatsTable({ rows }: Props) {
   );
 }
 
-function Row({ p }: { p: PlayerPerf }) {
-  const isBlue = p.accent === "neon";
+function Row({ p, isCaller }: { p: ResultPlayer; isCaller: boolean }) {
+  const accent = isCaller ? "neon" : "ember";
+  const isBlue = accent === "neon";
+  const integrityTone =
+    p.integrity_score >= 80 ? "text-neon" : p.integrity_score >= 50 ? "text-gold" : "text-blood";
+  const lp = p.elo_change ?? 0;
+
   return (
-    <li className="grid grid-cols-2 items-center gap-3 px-5 py-3 hover:bg-void/40 md:grid-cols-[1.4fr_70px_70px_90px_70px_80px_1fr]">
+    <li className="grid grid-cols-2 items-center gap-3 px-5 py-3 hover:bg-void/40 md:grid-cols-[1.4fr_70px_70px_80px_80px_80px_90px]">
       <div className="col-span-2 flex items-center gap-3 md:col-span-1">
         <div className="relative shrink-0">
-          {p.isCaptain && (
+          {isCaller && (
             <Crown className="absolute -top-3 left-1/2 h-3 w-3 -translate-x-1/2 text-gold drop-shadow-[0_0_8px_rgba(251,191,36,0.7)]" />
           )}
           <div
@@ -80,53 +78,41 @@ function Row({ p }: { p: PlayerPerf }) {
               isBlue ? "border-neon/60 bg-neon/10 text-neon" : "border-ember/60 bg-ember/10 text-ember",
             )}
           >
-            {p.initial}
+            {p.handle.slice(0, 1).toUpperCase()}
           </div>
         </div>
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <span className="truncate font-display text-[13px] font-bold text-text">{p.handle}</span>
-            {p.mvp && (
-              <span className="inline-flex items-center gap-1 border border-gold/50 bg-gold/10 px-1.5 py-0.5 font-display text-[9px] font-bold tracking-[0.2em] text-gold">
-                MVP
+            {p.is_forfeit && (
+              <span className="inline-flex items-center gap-1 border border-blood/50 bg-blood/10 px-1.5 py-0.5 font-display text-[9px] font-bold tracking-[0.2em] text-blood">
+                <Shield className="h-2.5 w-2.5" />
+                FORFEIT
               </span>
             )}
           </div>
           <div className="font-mono text-[10px] tracking-[0.1em] text-text-dim md:hidden">
-            {p.solved} solved · {p.accuracy}% acc · {p.wpm} wpm
+            {p.score} pts · {p.problems_solved} solved · int {p.integrity_score}
           </div>
         </div>
       </div>
 
-      <Cell value={p.solved} className="hidden md:flex" />
-      <Cell value={`${p.submissions}/${p.attempts}`} className="hidden md:flex" />
-      <Cell
-        value={`${p.accuracy}%`}
-        tone={p.accuracy >= 90 ? "neon" : p.accuracy >= 75 ? "text" : "ember"}
-        className="hidden md:flex"
-      />
-      <Cell value={p.wpm} className="hidden md:flex" />
-      <Cell value={p.avgTime} className="hidden md:flex" mono />
+      <Cell value={p.score} className="hidden md:flex" tone={isBlue ? "neon" : "ember"} />
+      <Cell value={p.problems_solved} className="hidden md:flex" />
+      <Cell value={p.wrong_submissions} className="hidden md:flex" tone={p.wrong_submissions > 3 ? "ember" : "text"} />
+      <Cell value={fmtTime(p.total_solve_time_sec)} className="hidden md:flex" mono />
+      <div className={cn("hidden md:flex items-center justify-center font-display text-[13px] font-bold tabular-nums", integrityTone)}>
+        {p.integrity_score}
+      </div>
 
-      <div className="col-span-2 flex items-center gap-2 md:col-span-1">
-        <div className="bl-bar-track relative h-1.5 flex-1 overflow-hidden">
-          <div
-            className={cn(
-              "h-full",
-              isBlue
-                ? "bg-gradient-to-r from-electric via-neon to-neon-soft"
-                : "bg-gradient-to-r from-ember via-ember-soft to-gold",
-            )}
-            style={{ width: `${p.impact}%` }}
-          />
-        </div>
+      <div className="col-span-2 flex items-center justify-end gap-2 md:col-span-1">
         <span
           className={cn(
-            "w-9 text-right font-mono text-[12px] font-bold tabular-nums",
-            isBlue ? "text-neon" : "text-ember",
+            "font-display text-[13px] font-bold tabular-nums",
+            lp > 0 ? "text-neon" : lp < 0 ? "text-ember" : "text-text-mute",
           )}
         >
-          {p.impact}
+          {lp > 0 ? "+" : ""}{lp}
         </span>
       </div>
     </li>
@@ -140,7 +126,7 @@ function Cell({
   className,
 }: {
   value: string | number;
-  tone?: Accent | "text";
+  tone?: "neon" | "ember" | "gold" | "text";
   mono?: boolean;
   className?: string;
 }) {
