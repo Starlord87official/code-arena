@@ -11,11 +11,15 @@ import { PhaseToggle } from "@/components/battle-v2/PhaseToggle";
 
 // Entry
 import { EntryHero } from "@/components/battle-v2/entry/EntryHero";
-import { ModeSelector } from "@/components/battle-v2/entry/ModeSelector";
-import { QueueButton } from "@/components/battle-v2/entry/QueueButton";
+import { CombatantProfile, type CombatantData } from "@/components/battle-v2/entry/CombatantProfile";
+import { FormatSelector, type BattleFormat } from "@/components/battle-v2/entry/FormatSelector";
+import { RegionSelector } from "@/components/battle-v2/entry/RegionSelector";
+import { ModeGrid, type ModeId } from "@/components/battle-v2/entry/ModeGrid";
+import { LoadoutBar } from "@/components/battle-v2/entry/LoadoutBar";
+import { GlobalStatsStrip } from "@/components/battle-v2/entry/GlobalStatsStrip";
+import { SectionLabel } from "@/components/battle-v2/entry/SectionLabel";
 import { OnlineWarriorsList } from "@/components/battle-v2/entry/OnlineWarriorsList";
 import { RecentBattlesList } from "@/components/battle-v2/entry/RecentBattlesList";
-import { StatsPanel } from "@/components/battle-v2/entry/StatsPanel";
 
 // Pre-battle
 import { LobbyHeader } from "@/components/battle-v2/pre-battle/LobbyHeader";
