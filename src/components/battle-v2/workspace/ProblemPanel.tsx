@@ -15,13 +15,23 @@ export interface ProblemDetail {
   hints?: string[];
 }
 
+export interface ProblemSummary {
+  id: string;
+  title: string;
+  difficulty: string;
+  solved?: boolean;
+}
+
 interface Props {
   problem: ProblemDetail | null;
   collapsed: boolean;
   onToggle: () => void;
+  problems?: ProblemSummary[];
+  selectedIndex?: number;
+  onSelectProblem?: (index: number) => void;
 }
 
-export function ProblemPanel({ problem, collapsed, onToggle }: Props) {
+export function ProblemPanel({ problem, collapsed, onToggle, problems, selectedIndex = 0, onSelectProblem }: Props) {
   const [tab, setTab] = useState<"problem" | "hints" | "notes">("problem");
   const [revealedHints, setRevealedHints] = useState(0);
 
