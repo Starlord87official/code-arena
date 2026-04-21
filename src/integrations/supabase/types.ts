@@ -3971,19 +3971,10 @@ export type Database = {
         Returns: string
       }
       mm_dequeue: { Args: { p_reason?: string }; Returns: number }
-      mm_enqueue:
-        | {
-            Args: { _config_key?: string; _mode: string; _region?: string }
-            Returns: string
-          }
-        | {
-            Args: {
-              p_config_key?: string
-              p_mode: string
-              p_target_user?: string
-            }
-            Returns: string
-          }
+      mm_enqueue: {
+        Args: { p_config_key?: string; p_mode: string; p_target_user?: string }
+        Returns: string
+      }
       mm_status: { Args: never; Returns: Json }
       mm_tick: { Args: never; Returns: number }
       pick_topic: {
