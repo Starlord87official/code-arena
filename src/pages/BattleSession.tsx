@@ -239,6 +239,24 @@ export default function BattleSessionPage() {
     });
   }, [latestSubmission, user, opponentProfile, testCases.length]);
 
+  // Surface latest submission verdict_payload (stdout/stderr/runtime) into the console tab
+  useEffect(() => {
+    const sub = latestSubmission;
+    if (!sub || !user || sub.user_id !== user.id) return;
+    const payload = (sub as any).verdict_payload || {};
+    const lines: string[] = [];
+    lines.push(`$ judge → ${sub.verdict?.toUpperCase?.() ?? sub.status?.toUpperCase?.() ?? "RESULT"}`);
+    if (typeof payload.runtime_ms === "number") lines.push(`· runtime: ${payload.runtime_ms}ms`);
+    if (typeof sub.testcases_passed === "number" && typeof sub.testcases_total === "number") {
+      lines.push(`· testcases: ${sub.testcases_passed}/${sub.testcases_total}`);
+    }
+    if (payload.stdout) lines.push("\n--- stdout ---\n" + String(payload.stdout));
+    if (payload.stderr) lines.push("\n--- stderr ---\n" + String(payload.stderr));
+    if (payload.compile_log) lines.push("\n--- compile ---\n" + String(payload.compile_log));
+    setConsoleOutput(lines.join("\n"));
+  }, [latestSubmission, user]);
+
+
   // Opponent disconnect tracking from realtime participants
   const opponentParticipant = rtParticipants.find((p) => p.user_id !== user?.id);
   const opponentDisconnectedAt = opponentParticipant?.disconnected_at
