@@ -543,7 +543,7 @@ export default function BattleSessionPage() {
         </div>
       </div>
 
-      <StatusBar battleId={battleIdShort} language={LANGUAGES.find((l) => l.id === language)?.label} />
+      <StatusBar battleId={battleIdShort} language={LANGUAGES.find((l) => l.id === language)?.label} integrityScore={myIntegrityScore} />
 
       <VerdictOverlay
         verdict={verdict}
