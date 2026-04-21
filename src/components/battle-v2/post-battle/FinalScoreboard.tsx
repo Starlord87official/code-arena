@@ -1,6 +1,8 @@
 import { Flag, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ResultPlayer, ResultRound } from "@/hooks/useBattleResult";
+import { useRankState } from "@/hooks/useRankState";
+import { RankBadge } from "@/components/rank/RankBadge";
 
 interface Props {
   rounds: ResultRound[];

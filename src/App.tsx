@@ -80,6 +80,12 @@ import AdminNotifications from "./pages/admin/AdminNotifications";
 import AdminChampionship from "./pages/admin/AdminChampionship";
 import AdminSystem from "./pages/admin/AdminSystem";
 import AdminOA from "./pages/admin/AdminOA";
+import { useRankToasts } from "@/hooks/useRankToasts";
+
+function RankToastsMount() {
+  useRankToasts();
+  return null;
+}
 
 // Phase 1: Student-focused app - mentor/clan features disabled
 // Battle Mode is always available to all authenticated users
@@ -98,6 +104,7 @@ const App = () => {
   <QueryClientProvider client={queryClient}>
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} storageKey="codetrackx-theme">
       <AuthProvider>
+        <RankToastsMount />
         <TooltipProvider>
           <Toaster />
           <Sonner />
