@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BookOpen, Lightbulb, StickyNote, Zap, PanelLeftClose, PanelLeftOpen, TrendingUp, Target } from "lucide-react";
+import { BookOpen, Lightbulb, StickyNote, Zap, PanelLeftClose, PanelLeftOpen, TrendingUp, Target, Check } from "lucide-react";
 
 export interface ProblemDetail {
   id: string;
