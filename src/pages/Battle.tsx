@@ -261,6 +261,13 @@ export default function Battle() {
           onExit={handleExitPostBattle}
         />
       )}
+
+      {/* Floating dev switcher for non-entry phases (entry renders it inline) */}
+      {phase !== "entry" && import.meta.env.DEV && (
+        <div className="fixed bottom-4 right-4 z-[100] max-w-md">
+          <PhaseToggle current={phase} onChange={setDevPhase} />
+        </div>
+      )}
     </div>
   );
 }
