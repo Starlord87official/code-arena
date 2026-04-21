@@ -359,12 +359,15 @@ export function useMatchmaking() {
     },
     enabled: !!user,
     refetchInterval: 5000,
+    staleTime: 0,
   });
 
-  // Self-healing: if an active session exists in the DB, sync local state
-  // and force the redirect path even when matchmaking state was stale.
+  // Self-healing: if a TRULY ACTIVE session exists in the DB, sync local state.
+  // Guard against stale/completed cached rows so we never re-lock state after
+  // a battle has already finished.
   useEffect(() => {
     if (!activeSession) return;
+    if (activeSession.status !== 'active') return;
     if (stateRef.current.sessionId === activeSession.id) return;
     const opponentId =
       activeSession.player_a_id === user?.id
