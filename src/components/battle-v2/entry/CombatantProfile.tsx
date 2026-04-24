@@ -110,22 +110,40 @@ export function CombatantProfile({ data, isLoading }: Props) {
           </div>
         </div>
 
-        {/* LP progress */}
-        <div>
-          <div className="mb-1.5 flex items-center justify-between font-mono text-[10px] tracking-[0.16em]">
-            <span className="text-text-dim">LP TO {data.nextRank.toUpperCase()}</span>
-            <span className="text-text">
-              <span className="font-display text-neon font-bold">{data.lpCurrent}</span>
-              <span className="text-text-mute"> / {data.lpTarget}</span>
-            </span>
+        {/* LP progress / placement state */}
+        {data.rank === "UNRANKED" || data.lpTarget === 0 ? (
+          <div>
+            <div className="mb-1.5 flex items-center justify-between font-mono text-[10px] tracking-[0.16em]">
+              <span className="text-text-dim">PLACEMENT MATCHES</span>
+              <span className="text-text">
+                <span className="font-display text-gold font-bold">{data.lpTarget - data.lpCurrent}</span>
+                <span className="text-text-mute"> remaining</span>
+              </span>
+            </div>
+            <div className="bl-bar-track h-2 overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-gold/60 via-gold to-gold/60"
+                style={{ width: `${data.lpTarget > 0 ? (data.lpCurrent / data.lpTarget) * 100 : 0}%` }}
+              />
+            </div>
           </div>
-          <div className="bl-bar-track h-2 overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-electric via-neon to-neon-soft"
-              style={{ width: `${lpPct}%` }}
-            />
+        ) : (
+          <div>
+            <div className="mb-1.5 flex items-center justify-between font-mono text-[10px] tracking-[0.16em]">
+              <span className="text-text-dim">LP TO {data.nextRank.toUpperCase()}</span>
+              <span className="text-text">
+                <span className="font-display text-neon font-bold">{data.lpCurrent}</span>
+                <span className="text-text-mute"> / {data.lpTarget}</span>
+              </span>
+            </div>
+            <div className="bl-bar-track h-2 overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-electric via-neon to-neon-soft"
+                style={{ width: `${lpPct}%` }}
+              />
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Stat tiles */}
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -136,18 +154,20 @@ export function CombatantProfile({ data, isLoading }: Props) {
         </div>
 
         {/* Daily objective */}
-        <div className="flex items-center justify-between border-t border-line/40 pt-3">
-          <div>
-            <div className="font-mono text-[10px] tracking-[0.18em] text-text-mute">DAILY OBJECTIVE</div>
-            <div className="font-display text-[13px] font-bold text-text mt-0.5">
-              {data.dailyLabel}
+        {data.dailyTotal > 0 && (
+          <div className="flex items-center justify-between border-t border-line/40 pt-3">
+            <div>
+              <div className="font-mono text-[10px] tracking-[0.18em] text-text-mute">DAILY OBJECTIVE</div>
+              <div className="font-display text-[13px] font-bold text-text mt-0.5">
+                {data.dailyLabel}
+              </div>
+            </div>
+            <div className="font-display tabular-nums">
+              <span className="text-2xl font-black text-gold">{data.dailyDone}</span>
+              <span className="text-sm text-text-mute">/{data.dailyTotal}</span>
             </div>
           </div>
-          <div className="font-display tabular-nums">
-            <span className="text-2xl font-black text-gold">{data.dailyDone}</span>
-            <span className="text-sm text-text-mute">/{data.dailyTotal}</span>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

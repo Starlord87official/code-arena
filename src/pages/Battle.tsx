@@ -4,6 +4,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useBattleEntryData } from "@/hooks/useBattleEntryData";
 import { useBattleResult } from "@/hooks/useBattleResult";
 import { useMatchmaking, type BattleMode } from "@/hooks/useMatchmaking";
+import { useRankState, TIER_ORDER, DIVISION_ORDER, type RankTier, type RankDivision } from "@/hooks/useRankState";
+import { useUserLevel } from "@/hooks/useUserLevel";
+import { useTargets } from "@/hooks/useTargets";
 
 import type { BattlePhase } from "@/components/battle-v2/types";
 
@@ -38,6 +41,9 @@ export default function Battle() {
   const [devPhase, setDevPhase] = useState<BattlePhase | null>(null);
 
   const entryData = useBattleEntryData();
+  const { rank } = useRankState();
+  const { data: userLevel } = useUserLevel();
+  const { targets, progress } = useTargets();
   const {
     matchmakingState,
     findOpponent,
@@ -80,6 +86,41 @@ export default function Battle() {
   };
 
   const summary = entryData.summary;
+
+  // Compute real rank label + LP progression from rank_states
+  const rankInfo = useMemo(() => {
+    if (!rank) {
+      const placementsRemaining = 5;
+      return {
+        rank: "UNRANKED",
+        nextRank: "PLACEMENT",
+        lpCurrent: 0,
+        lpTarget: placementsRemaining,
+      };
+    }
+    const tierLabel = rank.tier.toUpperCase();
+    const nextDivIdx = DIVISION_ORDER.indexOf(rank.division) + 1;
+    let nextLabel: string;
+    if (nextDivIdx < DIVISION_ORDER.length) {
+      nextLabel = `${tierLabel} ${DIVISION_ORDER[nextDivIdx]}`;
+    } else {
+      const nextTierIdx = TIER_ORDER.indexOf(rank.tier) + 1;
+      const nextTier = TIER_ORDER[nextTierIdx] ?? rank.tier;
+      nextLabel = `${nextTier.toUpperCase()} ${DIVISION_ORDER[0]}`;
+    }
+    return {
+      rank: `${tierLabel} ${rank.division}`,
+      nextRank: nextLabel,
+      lpCurrent: rank.lp ?? 0,
+      lpTarget: 100,
+    };
+  }, [rank]);
+
+  // Daily objective from real targets
+  const dailyDone = progress?.today ?? 0;
+  const dailyTotal = targets?.daily ?? 0;
+  const dailyLabel = dailyTotal > 0 ? `Solve ${dailyTotal} problems today` : "";
+
   const combatant: CombatantData | undefined = user
     ? {
         pid: (user.id ?? "0000").slice(0, 4).toUpperCase(),
@@ -94,21 +135,21 @@ export default function Battle() {
         )
           .slice(0, 1)
           .toUpperCase(),
-        level: Math.max(1, Math.floor((summary?.elo ?? 1000) / 100)),
-        rank: summary?.rank_label ?? "Bronze",
+        level: userLevel ?? 1,
+        rank: rankInfo.rank,
         topPercent: undefined,
-        lpCurrent: summary?.elo ?? 1000,
-        lpTarget: (summary?.elo ?? 1000) + 200,
-        nextRank: summary?.rank_label ?? "Bronze",
+        lpCurrent: rankInfo.lpCurrent,
+        lpTarget: rankInfo.lpTarget,
+        nextRank: rankInfo.nextRank,
         isCaptain: selectedFormat === "duo",
         wins: summary?.wins ?? 0,
         losses: summary?.losses ?? 0,
         winRate: summary?.win_rate ?? 0,
         streak: summary?.current_streak ?? 0,
         mvps: summary?.mvp_count ?? 0,
-        dailyDone: 0,
-        dailyTotal: 3,
-        dailyLabel: "Win 3 Ranked duels",
+        dailyDone,
+        dailyTotal,
+        dailyLabel,
         form: [],
         recent: [],
       }
