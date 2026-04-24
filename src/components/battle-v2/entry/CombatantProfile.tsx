@@ -113,7 +113,7 @@ export function CombatantProfile({ data, isLoading }: Props) {
         {/* LP progress / placement state */}
         {data.rank === "UNRANKED" || data.lpTarget === 0 ? (
           <div>
-            <div className="mb-1.5 flex items-center justify-between font-mono to-[10px] tracking-[0.16em]">
+            <div className="mb-1.5 flex items-center justify-between font-mono text-[10px] tracking-[0.16em]">
               <span className="text-text-dim">PLACEMENT MATCHES</span>
               <span className="text-text">
                 <span className="font-display text-gold font-bold">{data.lpTarget - data.lpCurrent}</span>
