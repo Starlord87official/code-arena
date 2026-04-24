@@ -4,6 +4,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useBattleEntryData } from "@/hooks/useBattleEntryData";
 import { useBattleResult } from "@/hooks/useBattleResult";
 import { useMatchmaking, type BattleMode } from "@/hooks/useMatchmaking";
+import { useRankState, TIER_ORDER, DIVISION_ORDER, type RankTier, type RankDivision } from "@/hooks/useRankState";
+import { useUserLevel } from "@/hooks/useUserLevel";
+import { useTargets } from "@/hooks/useTargets";
 
 import type { BattlePhase } from "@/components/battle-v2/types";
 
