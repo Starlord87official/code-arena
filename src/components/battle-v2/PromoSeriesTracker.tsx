@@ -29,10 +29,12 @@ export function PromoSeriesTracker({ series, compact }: Props) {
   for (let i = 0; i < series.losses; i++) pips.push("loss");
   for (let i = played; i < total; i++) pips.push("pending");
 
+  const tierKey = series.target_tier ?? "";
+  const tierLabel = TIER_LABEL[tierKey] ?? (tierKey ? tierKey.toUpperCase() : "—");
   const targetLabel =
     series.kind === "tier"
-      ? `${TIER_LABEL[series.target_tier] ?? series.target_tier.toUpperCase()} ${series.target_division ?? "IV"}`
-      : `${TIER_LABEL[series.target_tier] ?? series.target_tier.toUpperCase()} ${series.target_division ?? ""}`;
+      ? `${tierLabel} ${series.target_division ?? "IV"}`
+      : `${tierLabel} ${series.target_division ?? ""}`;
 
   return (
     <div
