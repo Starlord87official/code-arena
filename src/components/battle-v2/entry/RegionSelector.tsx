@@ -4,7 +4,6 @@ import { cn } from "@/lib/utils";
 export interface Region {
   code: string;
   label: string;
-  ping: number;
 }
 
 interface Props {
@@ -14,10 +13,10 @@ interface Props {
 }
 
 const DEFAULT_REGIONS: Region[] = [
-  { code: "AP-S", label: "Asia · Mumbai", ping: 28 },
-  { code: "EU-W", label: "Europe · Frankfurt", ping: 142 },
-  { code: "US-E", label: "Americas · Virginia", ping: 218 },
-  { code: "AP-T", label: "Asia · Tokyo", ping: 96 },
+  { code: "AP-S", label: "Asia · Mumbai" },
+  { code: "EU-W", label: "Europe · Frankfurt" },
+  { code: "US-E", label: "Americas · Virginia" },
+  { code: "AP-T", label: "Asia · Tokyo" },
 ];
 
 export function RegionSelector({ regions = DEFAULT_REGIONS, selected, onSelect }: Props) {
@@ -36,7 +35,6 @@ export function RegionSelector({ regions = DEFAULT_REGIONS, selected, onSelect }
       <ul className="relative p-3 space-y-2">
         {list.map((r) => {
           const active = selected === r.code;
-          const pingTone = r.ping < 60 ? "text-neon" : r.ping < 150 ? "text-gold" : "text-ember";
           return (
             <li key={r.code}>
               <button
@@ -54,9 +52,8 @@ export function RegionSelector({ regions = DEFAULT_REGIONS, selected, onSelect }
                     {r.label}
                   </span>
                 </div>
-                <span className="inline-flex items-center gap-1.5 font-mono text-[11px] tabular-nums">
-                  <span className={cn("h-1.5 w-1.5 rounded-full", pingTone.replace("text-", "bg-"))} />
-                  <span className={pingTone}>{r.ping}ms</span>
+                <span className="font-mono text-[10px] tracking-[0.18em] text-text-dim">
+                  // NODE
                 </span>
               </button>
             </li>
