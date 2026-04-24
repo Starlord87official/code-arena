@@ -41,6 +41,9 @@ export default function Battle() {
   const [devPhase, setDevPhase] = useState<BattlePhase | null>(null);
 
   const entryData = useBattleEntryData();
+  const { rank } = useRankState();
+  const { data: userLevel } = useUserLevel();
+  const { targets, progress } = useTargets();
   const {
     matchmakingState,
     findOpponent,
