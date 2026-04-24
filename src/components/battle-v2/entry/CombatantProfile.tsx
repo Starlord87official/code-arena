@@ -154,18 +154,20 @@ export function CombatantProfile({ data, isLoading }: Props) {
         </div>
 
         {/* Daily objective */}
-        <div className="flex items-center justify-between border-t border-line/40 pt-3">
-          <div>
-            <div className="font-mono text-[10px] tracking-[0.18em] text-text-mute">DAILY OBJECTIVE</div>
-            <div className="font-display text-[13px] font-bold text-text mt-0.5">
-              {data.dailyLabel}
+        {data.dailyTotal > 0 && (
+          <div className="flex items-center justify-between border-t border-line/40 pt-3">
+            <div>
+              <div className="font-mono text-[10px] tracking-[0.18em] text-text-mute">DAILY OBJECTIVE</div>
+              <div className="font-display text-[13px] font-bold text-text mt-0.5">
+                {data.dailyLabel}
+              </div>
+            </div>
+            <div className="font-display tabular-nums">
+              <span className="text-2xl font-black text-gold">{data.dailyDone}</span>
+              <span className="text-sm text-text-mute">/{data.dailyTotal}</span>
             </div>
           </div>
-          <div className="font-display tabular-nums">
-            <span className="text-2xl font-black text-gold">{data.dailyDone}</span>
-            <span className="text-sm text-text-mute">/{data.dailyTotal}</span>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
