@@ -18,6 +18,7 @@ export default function Roadmap() {
   const { data: activeRoadmaps, isLoading: activeLoading } = useUserActiveRoadmaps();
 
   const { topicStats } = useTopicProblems(data?.topics ?? []);
+  const { targets, progress, streak } = useTargets();
 
   const isStarted = activeRoadmaps?.some(r => r.roadmap_id === roadmapId);
 
@@ -42,7 +43,7 @@ export default function Roadmap() {
     );
   }
 
-  const { targets, progress, streak } = useTargets();
+
   const currentTopic = data.topics.find(t => t.isCurrentTopic);
   const currentTopicStats = currentTopic ? topicStats[currentTopic.id] || null : null;
   const problemsTarget = targets?.daily || 2;
